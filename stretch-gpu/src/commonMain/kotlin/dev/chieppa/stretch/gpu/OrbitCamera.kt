@@ -13,13 +13,15 @@ import kotlin.math.tan
 /** How far the camera turns per pixel dragged, in radians. */
 private const val ORBIT_PER_PIXEL = 0.008f
 
+private const val RADIANS_PER_DEGREE = (PI / 180).toFloat()
+
 /** Keeps the camera just short of straight up or down, where the view's up direction flips. */
 private const val PITCH_LIMIT = (PI / 2 - 0.01).toFloat()
 
 /**
  * A camera that circles a [target]: [yaw] turns it around the vertical axis, [pitch] raises it above or below the
  * target, and [distance] is how far away it sits. Its values are Compose state, so a view that reads [view] redraws
- * when it moves. [Modifier.orbitNavigation] moves it with the mouse.
+ * when it moves. [Modifier.orbitNavigation] moves it with the mouse and touch.
  */
 @Stable
 class OrbitCamera(
@@ -52,6 +54,11 @@ class OrbitCamera(
     fun orbitBy(dx: Float, dy: Float) {
         yaw -= dx * ORBIT_PER_PIXEL
         pitch = (pitch + dy * ORBIT_PER_PIXEL).coerceIn(-PITCH_LIMIT, PITCH_LIMIT)
+    }
+
+    /** Turns the camera around the target's vertical axis by [degrees], so the scene turns clockwise as seen from above. */
+    fun turnBy(degrees: Float) {
+        yaw += degrees * RADIANS_PER_DEGREE
     }
 
     /** Slides the camera and target sideways so the scene follows a drag of [dx], [dy] pixels on a [viewHeight] view. */

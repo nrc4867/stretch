@@ -1,6 +1,5 @@
 package dev.chieppa.stretch.frame
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
@@ -31,14 +30,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onSizeChanged
@@ -47,8 +42,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.generated.Res
@@ -357,127 +350,4 @@ private fun SplitHandle(layout: () -> FrameLayout, onResize: (start: FrameLayout
             .windowDrag(vertical = true, onStart = { start = layout() }) { dy -> start?.let { resize(it, dy) } }
             .semantics { contentDescription = description },
     ) { DrawerSplit() }
-}
-
-/**
- * The slot the app renders into: the well color with a grid. Floating UI goes in its corners, 12dp in:
- * [topStart] for the toolbar, [topEnd] for view tools like the [ViewNavigator], [bottomStart] and [bottomEnd] for
- * readouts, and [bottomCenter] for passing messages such as toasts. When a viewport is too narrow for a pair side by
- * side, the end one moves under (or above) the start one instead of overlapping it, and the centre one rises above
- * the bottom corners it would touch. [content] draws the scene; a native GPU surface can sit there instead.
- *
- * With a [camera], the wheel, middle button and two-finger touch move the view (see [viewportNavigation]) and the grid
- * follows it. [rulers] adds rulers on the top and left edges in scene units, with [guides] across the view that
- * people drag out of the rulers and back; each change comes back through [onGuidesChange].
- */
-@Composable
-fun Viewport(
-    modifier: Modifier = Modifier,
-    grid: Boolean = true,
-    camera: ViewportCamera? = null,
-    rulers: Boolean = false,
-    guides: List<Guide> = emptyList(),
-    onGuidesChange: ((List<Guide>) -> Unit)? = null,
-    topStart: (@Composable () -> Unit)? = null,
-    topEnd: (@Composable () -> Unit)? = null,
-    bottomStart: (@Composable () -> Unit)? = null,
-    bottomEnd: (@Composable () -> Unit)? = null,
-    bottomCenter: (@Composable () -> Unit)? = null,
-    content: @Composable BoxScope.() -> Unit,
-) {
-    val c = Stretch.colors
-    val withRulers = rulers && camera != null
-    val guideDrag = remember { GuideDrag() }
-    Box(
-        modifier.fillMaxSize().clipToBounds().background(c.surfaceWell)
-            .then(if (camera != null) Modifier.viewportNavigation(camera) else Modifier)
-            .then(if (withRulers) Modifier.guideGrabbing(camera, guides, onGuidesChange, guideDrag) else Modifier),
-    ) {
-        if (grid) {
-            Canvas(Modifier.fillMaxSize()) {
-                var step = 32.dp.toPx() * (camera?.zoom ?: 1f)
-                while (step < 12.dp.toPx()) step *= 4
-                val origin = camera?.offset ?: Offset.Zero
-                var x = ((origin.x % step) + step) % step
-                while (x < size.width) {
-                    drawLine(c.gridLine, Offset(x, 0f), Offset(x, size.height), 1f)
-                    x += step
-                }
-                var y = ((origin.y % step) + step) % step
-                while (y < size.height) {
-                    drawLine(c.gridLine, Offset(0f, y), Offset(size.width, y), 1f)
-                    y += step
-                }
-            }
-        }
-        content()
-        if (withRulers) RulersAndGuides(camera, guides, guideDrag)
-        ViewportCorners(topStart, topEnd, bottomStart, bottomEnd, bottomCenter, lead = if (withRulers) RulerSize else 0.dp) {
-            guideDrag.blocked = it
-        }
-    }
-}
-
-/**
- * Places the viewport's corner UI, moving an end corner off its start corner when the two would overlap, and the
- * bottom centre above any bottom corner it would touch. [lead] keeps the top and start edges clear for rulers.
- * [onPlaced] gets the area each one covers, in the viewport's pixels, every time they are placed.
- */
-@Composable
-private fun ViewportCorners(
-    topStart: (@Composable () -> Unit)?,
-    topEnd: (@Composable () -> Unit)?,
-    bottomStart: (@Composable () -> Unit)?,
-    bottomEnd: (@Composable () -> Unit)?,
-    bottomCenter: (@Composable () -> Unit)?,
-    lead: Dp,
-    onPlaced: (List<Rect>) -> Unit = {},
-) {
-    val none: @Composable () -> Unit = {}
-    Layout(
-        contents = listOf(topStart ?: none, topEnd ?: none, bottomStart ?: none, bottomEnd ?: none, bottomCenter ?: none),
-        modifier = Modifier.fillMaxSize(),
-    ) { slots, constraints ->
-        val inset = 12.dp.roundToPx()
-        val top = inset + lead.roundToPx()
-        // Rulers sit on the scene's left, which is the end side in a right-to-left layout.
-        val ltr = layoutDirection == LayoutDirection.Ltr
-        val start = if (ltr) top else inset
-        val endInset = if (ltr) inset else top
-        val gap = 8.dp.roundToPx()
-        val room = Constraints(
-            maxWidth = (constraints.maxWidth - start - endInset).coerceAtLeast(0),
-            maxHeight = (constraints.maxHeight - inset - top).coerceAtLeast(0),
-        )
-        val (ts, te, bs, be, bc) = slots.map { it.firstOrNull()?.measure(room) }
-        fun fit(first: Placeable?, end: Placeable) = first == null || first.width + gap + end.width <= room.maxWidth
-        layout(constraints.maxWidth, constraints.maxHeight) {
-            val areas = mutableListOf<Rect>()
-            fun Placeable.put(x: Int, y: Int) {
-                placeRelative(x, y)
-                val left = if (ltr) x else constraints.maxWidth - x - width
-                areas += Rect(left.toFloat(), y.toFloat(), (left + width).toFloat(), (y + height).toFloat())
-            }
-            val right = constraints.maxWidth - endInset
-            val bottom = constraints.maxHeight - inset
-            ts?.put(start, top)
-            te?.put(right - te.width, if (fit(ts, te)) top else top + ts!!.height + gap)
-            bs?.put(start, bottom - bs.height)
-            val beTop = when {
-                be == null -> bottom
-                fit(bs, be) -> bottom - be.height
-                else -> bottom - bs!!.height - gap - be.height
-            }
-            be?.put(right - be.width, beTop)
-            if (bc != null) {
-                val x = start + (room.maxWidth - bc.width) / 2
-                val tops = buildList {
-                    if (bs != null && x < start + bs.width + gap) add(bottom - bs.height)
-                    if (be != null && x + bc.width > right - be.width - gap) add(beTop)
-                }
-                bc.put(x, (tops.minOrNull()?.minus(gap) ?: bottom) - bc.height)
-            }
-            onPlaced(areas)
-        }
-    }
 }

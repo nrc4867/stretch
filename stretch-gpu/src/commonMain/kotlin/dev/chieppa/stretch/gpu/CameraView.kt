@@ -33,6 +33,28 @@ data class CameraView(
         return Offset((clip[0] / w + 1f) / 2f * width, (1f - clip[1] / w) / 2f * height)
     }
 
+    /**
+     * The ray from the eye through [at] on a [width] by [height] pixel surface, measured from its top-left corner: what
+     * is under that pixel lies along it. Its direction has length 1. The opposite of [project].
+     */
+    fun ray(at: Offset, width: Int, height: Int): Ray {
+        val inverse = checkNotNull(viewProjection(width, height).inverse()) { "The camera's eye and target are the same point" }
+        val x = at.x / width * 2f - 1f
+        val y = 1f - at.y / height * 2f
+        val near = checkNotNull(inverse.project(Vec3(x, y, 0f)))
+        val far = checkNotNull(inverse.project(Vec3(x, y, 1f)))
+        return Ray(eye, (far - near).normalized())
+    }
+
+    /**
+     * The world point at [at] on a [width] by [height] pixel surface whose depth buffer holds [depth] there, from 0 at
+     * the near plane to 1 at the far one, as GPU picking reads it back. Null when the camera cannot be undone.
+     */
+    fun unproject(at: Offset, depth: Float, width: Int, height: Int): Vec3? {
+        val inverse = viewProjection(width, height).inverse() ?: return null
+        return inverse.project(Vec3(at.x / width * 2f - 1f, 1f - at.y / height * 2f, depth))
+    }
+
     companion object {
         /** 40 degrees, a natural lens for modelling. */
         const val DEFAULT_FOV = 0.698f

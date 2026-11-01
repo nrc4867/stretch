@@ -29,7 +29,7 @@ import kotlin.math.roundToInt
  * cannot draw over the surface: what belongs on top of the scene is drawn by the renderer (see [ViewportOverlay]),
  * and popups show over it once [NativeSurfaces] is enabled. Windows only for now; elsewhere [onFailure] gets an
  * [UnsupportedOperationException]. [onFailure] also gets anything the renderer throws, on the UI thread, after which
- * the surface stops drawing.
+ * the surface stops drawing. With [picks], the app can ask what is under a point (see [SurfacePickQueue]).
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -37,12 +37,15 @@ fun <S> NativeSurface(
     state: S,
     renderer: SurfaceRenderer<S>,
     modifier: Modifier = Modifier,
+    picks: SurfacePickQueue<*>? = null,
     onFailure: (Throwable) -> Unit = {},
 ) {
     val failure by rememberUpdatedState(onFailure)
     val window = LocalAwtWindow.current
     val background = java.awt.Color(Stretch.colors.surfaceWell.toArgb())
-    val canvas = remember(renderer) { SurfaceCanvas(renderer, state) { error -> SwingUtilities.invokeLater { failure(error) } } }
+    val canvas = remember(renderer, picks) {
+        SurfaceCanvas(renderer, state, onFailure = { error -> SwingUtilities.invokeLater { failure(error) } }, picks = picks)
+    }
     SideEffect {
         canvas.publish(state)
         canvas.background = background

@@ -79,23 +79,30 @@ private val Size.center get() = Offset(width / 2, height / 2)
 /** How far one wheel notch pans the view, in pixels. */
 private const val WHEEL_STEP = 48f
 
+/** How much one wheel notch with Ctrl or Cmd zooms the view. */
+private const val WHEEL_ZOOM = 0.15f
+
 /**
  * Moves [camera] the ways every canvas app does: the wheel pans (with Shift, sideways) and Ctrl or Cmd with the
  * wheel zooms at the pointer, as does a touchpad pinch; the middle button drags the view; two fingers on a touch
- * screen pan and pinch-zoom together. One finger, the pen and the left button are left to the app's tools.
+ * screen pan and pinch-zoom together (see [twoFingerGestures]). One finger, the pen and the left button are left to
+ * the app's tools. Events a modifier further out already consumed are left alone.
  */
 fun Modifier.viewportNavigation(camera: ViewportCamera): Modifier =
     onSizeChanged { camera.viewSize = it.toSize() }
+        .twoFingerGestures(onPan = camera::panBy, onZoom = camera::zoomBy)
         .pointerInput(camera) {
             awaitPointerEventScope {
                 while (true) {
                     val event = awaitPointerEvent(PointerEventPass.Initial)
                     when {
+                        // Something outside the viewport, such as a 3D camera's navigation, took the event.
+                        event.changes.all { it.isConsumed } -> Unit
                         event.type == PointerEventType.Scroll -> {
                             val change = event.changes.first()
                             val delta = change.scrollDelta
                             if (event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed) {
-                                camera.zoomBy(exp(-delta.y * 0.15f), change.position)
+                                camera.zoomBy(exp(-delta.y * WHEEL_ZOOM), change.position)
                             } else {
                                 camera.panBy(-delta * WHEEL_STEP)
                             }
@@ -107,27 +114,7 @@ fun Modifier.viewportNavigation(camera: ViewportCamera): Modifier =
                                 change.consume()
                             }
                         }
-                        else -> {
-                            val touches = event.changes.filter { it.type == PointerType.Touch && it.pressed }
-                            if (touches.size >= 2) {
-                                val moving = touches.filter { it.previousPressed }
-                                if (moving.size >= 2) {
-                                    val before = moving.map { it.previousPosition }
-                                    val after = moving.map { it.position }
-                                    val from = centroid(before)
-                                    val to = centroid(after)
-                                    val spreadBefore = spread(before, from)
-                                    camera.panBy(to - from)
-                                    if (spreadBefore > 0f) camera.zoomBy(spread(after, to) / spreadBefore, to)
-                                }
-                                touches.forEach { it.consume() }
-                            }
-                        }
                     }
                 }
             }
         }
-
-private fun centroid(points: List<Offset>): Offset = points.fold(Offset.Zero) { sum, p -> sum + p } / points.size.toFloat()
-
-private fun spread(points: List<Offset>, centre: Offset): Float = points.sumOf { (it - centre).getDistance().toDouble() }.toFloat() / points.size

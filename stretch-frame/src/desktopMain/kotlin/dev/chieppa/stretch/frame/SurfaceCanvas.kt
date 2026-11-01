@@ -11,12 +11,13 @@ import kotlin.math.roundToInt
 /**
  * A heavyweight AWT canvas whose native window a [SurfaceRenderer] draws into. The renderer runs on a [SurfaceLoop]
  * from the moment the native window exists until just before it is destroyed, and input passes through the window
- * to Compose (see [HitTestPassThrough]).
+ * to Compose (see [HitTestPassThrough]). Picks from [picks] go to the loop while it runs.
  */
 internal class SurfaceCanvas<S>(
     private val renderer: SurfaceRenderer<S>,
     initial: S,
     private val onFailure: (Throwable) -> Unit,
+    private val picks: SurfacePickQueue<*>? = null,
 ) : Canvas() {
     @Volatile private var latest: S = initial
     private var loop: SurfaceLoop<S>? = null
@@ -40,7 +41,7 @@ internal class SurfaceCanvas<S>(
             return
         }
         passThrough = HitTestPassThrough.install(handle)
-        loop = SurfaceLoop(handle, renderer, latest, onFailure).also { it.resize(pixelSize()) }
+        loop = SurfaceLoop(handle, renderer, latest, onFailure, picks).also { it.resize(pixelSize()) }
     }
 
     override fun removeNotify() {

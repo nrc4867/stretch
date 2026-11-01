@@ -20,6 +20,7 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
+            implementation(project(":stretch-test"))
         }
     }
 }

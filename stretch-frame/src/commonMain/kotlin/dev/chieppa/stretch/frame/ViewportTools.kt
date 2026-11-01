@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
@@ -48,6 +49,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.generated.Res
 import dev.chieppa.stretch.frame.generated.ruler_horizontal
@@ -72,44 +74,32 @@ internal const val GRAB = 5f
 /** How far past a guide, ruler or handle a fingertip still grabs it; a finger covers far more than a pointer. */
 internal val FingerReach = 14.dp
 
+/** A marquee drag in progress: the rectangle being dragged, in the view's pixels, or null when there is none. */
+@Stable
+class MarqueeState {
+    var box: Rect? by mutableStateOf(null)
+        internal set
+}
+
+@Composable
+fun rememberMarqueeState(): MarqueeState = remember { MarqueeState() }
+
+/** How strongly a marquee tints what it covers. */
+private const val MARQUEE_FILL_ALPHA = 0.1f
+
 /**
  * Drag a rectangle over empty scene to select what it touches: [onMarquee] gets the rectangle in scene units, and
  * whether Shift, Ctrl or Cmd was held to add to the selection. Presses something else used, such as
- * [transformHandles], are left alone, and a press that does not move far is left as a click.
+ * [transformHandles], are left alone, and a press that does not move far is left as a click. Draws the rectangle
+ * while it is dragged.
  */
 fun Modifier.marquee(camera: ViewportCamera, onMarquee: (scene: Rect, additive: Boolean) -> Unit): Modifier = composed {
     val c = Stretch.colors
-    val report by rememberUpdatedState(onMarquee)
-    var box by remember { mutableStateOf<Rect?>(null) }
-    pointerInput(camera) {
-        awaitEachGesture {
-            val down = awaitFirstDown()
-            if (!currentEvent.buttons.isPrimaryPressed && down.type == PointerType.Mouse) return@awaitEachGesture
-            val start = down.position
-            var dragged = false
-            var additive = false
-            while (true) {
-                val event = awaitPointerEvent()
-                val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                if (change.isConsumed) {
-                    box = null
-                    return@awaitEachGesture
-                }
-                additive = event.keyboardModifiers.isShiftPressed || event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed
-                if (!dragged && (change.position - start).getDistance() > viewConfiguration.touchSlop) dragged = true
-                if (dragged) {
-                    box = Rect(start, change.position).normalized()
-                    change.consume()
-                }
-                if (!change.pressed) break
-            }
-            box?.let { report(camera.toScene(it), additive) }
-            box = null
-        }
-    }.drawWithContent {
+    val state = rememberMarqueeState()
+    marquee(state, camera, onMarquee).drawWithContent {
         drawContent()
-        box?.let { r ->
-            drawRect(c.ringSelected.copy(alpha = 0.1f), r.topLeft, r.size)
+        state.box?.let { r ->
+            drawRect(c.ringSelected.copy(alpha = MARQUEE_FILL_ALPHA), r.topLeft, r.size)
             drawRect(
                 c.ringSelected,
                 r.topLeft,
@@ -120,10 +110,55 @@ fun Modifier.marquee(camera: ViewportCamera, onMarquee: (scene: Rect, additive: 
     }
 }
 
+/**
+ * [marquee]'s pointer handling alone: the rectangle being dragged goes in [state] for something else to draw, such as
+ * a renderer through [marqueeOverlay].
+ */
+fun Modifier.marquee(state: MarqueeState, camera: ViewportCamera, onMarquee: (scene: Rect, additive: Boolean) -> Unit): Modifier = composed {
+    val report by rememberUpdatedState(onMarquee)
+    pointerInput(camera, state) {
+        awaitEachGesture {
+            val down = awaitFirstDown()
+            if (!currentEvent.buttons.isPrimaryPressed && down.type == PointerType.Mouse) return@awaitEachGesture
+            val start = down.position
+            var dragged = false
+            var additive = false
+            while (true) {
+                val event = awaitPointerEvent()
+                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                if (change.isConsumed) {
+                    state.box = null
+                    return@awaitEachGesture
+                }
+                additive = event.keyboardModifiers.isShiftPressed || event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed
+                if (!dragged && (change.position - start).getDistance() > viewConfiguration.touchSlop) dragged = true
+                if (dragged) {
+                    state.box = Rect(start, change.position).normalized()
+                    change.consume()
+                }
+                if (!change.pressed) break
+            }
+            state.box?.let { report(camera.toScene(it), additive) }
+            state.box = null
+        }
+    }
+}
+
+/** A marquee rectangle [box], in the view's pixels, for a renderer to draw over its scene: tinted, with a [color] edge. */
+fun marqueeOverlay(box: Rect?, color: Color, width: Float = 1f): ViewportOverlay = buildOverlay {
+    if (box == null) return@buildOverlay
+    rect(box, color.copy(alpha = MARQUEE_FILL_ALPHA))
+    outline(box, color, width)
+}
+
 private fun Rect.normalized() = Rect(minOf(left, right), minOf(top, bottom), maxOf(left, right), maxOf(top, bottom))
 
 /** A selection's box in scene units: its unrotated [bounds] and its [rotation] in degrees about their centre. */
 data class BoxTransform(val bounds: Rect, val rotation: Float = 0f)
+
+/** The size of a handle (half its width) and how far above the box the rotate handle sits. */
+private val HandleSize = 4.dp
+private val RotateStem = 22.dp
 
 /** The handles around a box, by index: corners and edge midpoints clockwise from the top-left, then rotate, then the inside. */
 private const val ROTATE = 8
@@ -137,7 +172,7 @@ private val handleSpots = listOf(
 
 /**
  * Selection handles for [transform]: drag inside the box to move it, a corner or edge handle to resize it from the
- * opposite side (Shift keeps a corner's proportions), and the round handle above it to rotate (Shift snaps to 15Â°).
+ * opposite side (Shift keeps a corner's proportions), and the round handle above it to rotate (Shift snaps to 15°).
  * Each step reports [onTransform]; [onTransformFinished] marks the end of the drag, where an app commits one undo
  * step. Put it after [marquee] on the same element so handles win over starting a marquee. Null draws nothing.
  */
@@ -148,14 +183,31 @@ fun Modifier.transformHandles(
     onTransformFinished: () -> Unit = {},
 ): Modifier = composed {
     val c = Stretch.colors
+    transformHandleInput(transform, camera, onTransform, onTransformFinished).drawWithContent {
+        drawContent()
+        val t = transform ?: return@drawWithContent
+        drawHandles(t, camera, c.ringSelected, c.surfaceFloat, HandleSize.toPx(), RotateStem.toPx())
+    }
+}
+
+/**
+ * [transformHandles]' pointer handling and pointer shapes alone, for handles something else draws, such as a renderer
+ * through [handlesOverlay].
+ */
+fun Modifier.transformHandleInput(
+    transform: BoxTransform?,
+    camera: ViewportCamera,
+    onTransform: (BoxTransform) -> Unit,
+    onTransformFinished: () -> Unit = {},
+): Modifier = composed {
     val current by rememberUpdatedState(transform)
     val report by rememberUpdatedState(onTransform)
     val finished by rememberUpdatedState(onTransformFinished)
     var hover by remember { mutableStateOf(-1) }
     val icon = cursorFor(hover, transform?.rotation ?: 0f)
     pointerInput(camera) {
-        val handle = 4.dp.toPx()
-        val stem = 22.dp.toPx()
+        val handle = HandleSize.toPx()
+        val stem = RotateStem.toPx()
         val fingerReach = FingerReach.toPx()
         awaitPointerEventScope {
             while (true) {
@@ -178,10 +230,28 @@ fun Modifier.transformHandles(
                 finished()
             }
         }
-    }.then(if (icon != null) Modifier.pointerHoverIcon(icon) else Modifier).drawWithContent {
-        drawContent()
-        val t = transform ?: return@drawWithContent
-        drawHandles(t, camera, c.ringSelected, c.surfaceFloat, 4.dp.toPx(), 22.dp.toPx())
+    }.then(if (icon != null) Modifier.pointerHoverIcon(icon) else Modifier)
+}
+
+/**
+ * This box's handles for a renderer to draw over its scene, in [camera]'s view pixels at [density]: the box's
+ * outline and the rotate handle's stem in [lineColor], and each handle as a [fillColor] dot ringed in [lineColor]. Dots stay round
+ * however the box turns, where [transformHandles] draws square ones.
+ */
+fun BoxTransform.handlesOverlay(camera: ViewportCamera, lineColor: Color, fillColor: Color, density: Density): ViewportOverlay = buildOverlay {
+    val handle = with(density) { HandleSize.toPx() }
+    val stem = with(density) { RotateStem.toPx() }
+    val stroke = density.density
+    val screen = camera.toScreen(bounds)
+    fun turned(p: Offset) = rotateAround(p, screen.center, rotation)
+    val corners = listOf(screen.topLeft, screen.topRight, screen.bottomRight, screen.bottomLeft).map(::turned)
+    corners.forEachIndexed { i, p -> line(p, corners[(i + 1) % corners.size], lineColor, stroke) }
+    val top = Offset(screen.center.x, screen.top)
+    line(turned(top), turned(top - Offset(0f, stem - handle)), lineColor, stroke)
+    val spots = handleSpots.map { s -> Offset(screen.left + s.x * screen.width, screen.top + s.y * screen.height) } + (top - Offset(0f, stem))
+    for (spot in spots) {
+        dot(turned(spot), handle + 1f + stroke, lineColor)
+        dot(turned(spot), handle + 1f, fillColor)
     }
 }
 

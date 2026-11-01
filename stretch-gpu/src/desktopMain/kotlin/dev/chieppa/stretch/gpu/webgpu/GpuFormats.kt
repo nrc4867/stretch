@@ -22,6 +22,16 @@ enum class TextureFormat(private val value: () -> Int) {
     }
 }
 
+/** Which part of a texture a copy reads: all of it, or only the depth or the stencil of a depth-stencil texture. */
+enum class TextureAspect(private val value: () -> Int) {
+    All(wgpu_h::WGPUTextureAspect_All),
+    DepthOnly(wgpu_h::WGPUTextureAspect_DepthOnly),
+    StencilOnly(wgpu_h::WGPUTextureAspect_StencilOnly),
+    ;
+
+    internal val native: Int get() = value()
+}
+
 /** The type of one vertex attribute. [native] is webgpu.h's WGPUVertexFormat value. */
 enum class VertexFormat(private val value: () -> Int) {
     Float32(wgpu_h::WGPUVertexFormat_Float32),

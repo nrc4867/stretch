@@ -30,6 +30,10 @@ data class ViewportOverlay(
 ) {
     val isEmpty: Boolean get() = rects.isEmpty() && lines.isEmpty() && dots.isEmpty()
 
+    /** Both overlays in one; within each kind of part, [other]'s draw after this one's. */
+    operator fun plus(other: ViewportOverlay): ViewportOverlay =
+        if (other.isEmpty) this else if (isEmpty) other else ViewportOverlay(rects + other.rects, lines + other.lines, dots + other.dots)
+
     companion object {
         val Empty = ViewportOverlay()
     }
