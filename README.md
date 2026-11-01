@@ -7,7 +7,7 @@ A shared app shell for creative tools on Kotlin Multiplatform and Compose: desig
 
 ## Build, run and test
 
-Needs JDK 25 for Gradle (`JAVA_HOME`); Gradle provisions the toolchain.
+Needs JDK 25 for Gradle (`JAVA_HOME`); Gradle provisions the toolchain. Apps run on the JetBrains Runtime 25 (the gallery's run task picks it), whose custom title bar API lets `StretchWindow` draw its own title bar inside a native frame on Windows and macOS. On other runtimes and on Linux the window keeps the system title bar.
 
 ```
 ./gradlew check          # unit, contrast and component tests, generated-code checks

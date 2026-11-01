@@ -24,8 +24,10 @@ tasks.withType<Test>().configureEach {
 compose.desktop {
     application {
         mainClass = "dev.chieppa.stretch.gallery.MainKt"
+        // The JetBrains Runtime, so StretchWindow can draw its own title bar in a native frame.
         javaHome = javaToolchains.launcherFor {
             languageVersion.set(JavaLanguageVersion.of(libs.versions.jvmToolchain.get().toInt()))
+            vendor.set(JvmVendorSpec.JETBRAINS)
         }.get().metadata.installationPath.asFile.absolutePath
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
     }

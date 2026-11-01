@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.generated.Res
 import dev.chieppa.stretch.frame.generated.commands
@@ -41,11 +42,32 @@ fun TopBar(
     modifier: Modifier = Modifier,
     modes: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
+) = TopBarLayout(appName, document, modifier, modes = modes, actions = actions)
+
+/**
+ * The [TopBar] with room kept at its [start] and [end] for buttons the OS draws over it, and [barModifier] on the bar
+ * itself (not the line under it).
+ */
+@Composable
+internal fun TopBarLayout(
+    appName: String,
+    document: String,
+    modifier: Modifier = Modifier,
+    barModifier: Modifier = Modifier,
+    start: Dp = 0.dp,
+    end: Dp = 0.dp,
+    modes: @Composable () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     val c = Stretch.colors
     Column(modifier.fillMaxWidth()) {
         Row(
-            Modifier.fillMaxWidth().height(StretchSizes.header).background(c.surfaceRail).padding(start = 16.dp, end = 8.dp),
+            Modifier
+                .fillMaxWidth()
+                .height(StretchSizes.header)
+                .background(c.surfaceRail)
+                .then(barModifier)
+                .padding(start = start + 16.dp, end = end + 8.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {

@@ -20,10 +20,6 @@
     <string name="actual_size">Actual size</string>
     <string name="fit_view">Fit to view</string>
     <string name="navigator">Navigator</string>
-    <string name="minimize">Minimize</string>
-    <string name="maximize">Maximize</string>
-    <string name="restore">Restore</string>
-    <string name="close_window">Close window</string>
     <string name="collapsed">Collapsed</string>
     <string name="expanded">Expanded</string>
 </resources>

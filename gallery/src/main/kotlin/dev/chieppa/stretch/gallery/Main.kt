@@ -10,7 +10,7 @@ fun main() = application {
     val state = rememberWindowState(width = 1200.dp, height = 820.dp)
     StretchWindow(onCloseRequest = ::exitApplication, title = "Stretch gallery", state = state) {
         Gallery { document, modes, actions ->
-            WindowTopBar("Stretch", document, state, ::exitApplication, modes = modes, actions = actions)
+            WindowTopBar("Stretch", document, modes = modes, actions = actions)
         }
     }
 }

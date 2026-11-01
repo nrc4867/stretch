@@ -16,8 +16,7 @@ kotlin {
         }
         val desktopMain by getting {
             dependencies {
-                implementation(libs.jna)
-                implementation(libs.jna.platform)
+                implementation(libs.jbr.api)
             }
         }
         commonTest.dependencies {
