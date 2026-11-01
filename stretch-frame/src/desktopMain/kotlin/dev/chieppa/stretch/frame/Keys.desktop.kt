@@ -32,9 +32,19 @@ internal actual fun KeyEvent.chord(): KeyChord? {
     }
     return KeyChord(
         key = if (name.length == 1) name.uppercase() else name,
-        ctrl = isCtrlPressed,
+        ctrl = if (isMac) isMetaPressed else isCtrlPressed,
         shift = isShiftPressed,
         alt = isAltPressed,
-        meta = isMetaPressed,
+        meta = if (isMac) isCtrlPressed else isMetaPressed,
     )
+}
+
+internal val isMac = System.getProperty("os.name").orEmpty().startsWith("Mac")
+
+internal actual fun modifierCap(name: String): String = if (!isMac) name else when (name) {
+    "Ctrl" -> "\u2318"
+    "Alt" -> "\u2325"
+    "Shift" -> "\u21E7"
+    "Meta" -> "\u2303"
+    else -> name
 }

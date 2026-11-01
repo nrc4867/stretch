@@ -33,4 +33,7 @@
     <string name="navigator">Navigator</string>
     <string name="collapsed">Collapsed</string>
     <string name="expanded">Expanded</string>
+    <string name="ruler_horizontal">Horizontal ruler. Drag down into the view to place a guide</string>
+    <string name="ruler_vertical">Vertical ruler. Drag across into the view to place a guide</string>
+    <string name="document_edited">Unsaved changes</string>
 </resources>

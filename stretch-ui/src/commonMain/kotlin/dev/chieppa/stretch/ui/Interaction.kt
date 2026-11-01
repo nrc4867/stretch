@@ -1,5 +1,9 @@
 package dev.chieppa.stretch.ui
 
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -165,4 +169,23 @@ internal fun contrast(a: Color, b: Color): Float {
     val la = a.luminance()
     val lb = b.luminance()
     return (maxOf(la, lb) + 0.05f) / (minOf(la, lb) + 0.05f)
+}
+
+/** Whether the layout runs right to left. */
+@Composable
+@ReadOnlyComposable
+internal fun isRtl(): Boolean = LocalLayoutDirection.current == LayoutDirection.Rtl
+
+/**
+ * Flips a control drawn left to right, such as a slider, so it runs right to left in an RTL layout. Pointer
+ * positions flip with it, so the control's own maths stays left to right.
+ */
+internal fun Modifier.mirrored(rtl: Boolean): Modifier = if (rtl) graphicsLayer(scaleX = -1f) else this
+
+/** [key] with Left and Right swapped in a right-to-left control, so an arrow moves a knob the way it points. */
+internal fun along(key: Key, rtl: Boolean): Key = when {
+    !rtl -> key
+    key == Key.DirectionLeft -> Key.DirectionRight
+    key == Key.DirectionRight -> Key.DirectionLeft
+    else -> key
 }

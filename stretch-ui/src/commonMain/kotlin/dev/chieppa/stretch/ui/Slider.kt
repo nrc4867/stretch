@@ -54,6 +54,7 @@ fun Slider(
     val change by rememberUpdatedState(onValueChange)
     val finished by rememberUpdatedState(onValueChangeFinished)
     val knobRadius = 8.dp
+    val rtl = isRtl()
 
     fun valueAt(x: Float, width: Float, inset: Float): Float {
         val f = ((x - inset) / (width - 2 * inset)).coerceIn(0f, 1f)
@@ -65,13 +66,14 @@ fun Slider(
             .widthIn(min = 96.dp)
             .fillMaxWidth()
             .height(StretchSizes.chip)
+            .mirrored(rtl)
             .focusRing(state, Stretch.shapes.pillShape)
             .hoverable(state.source)
             .focusable(interactionSource = state.source)
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
                 val step = span / if (event.isShiftPressed) 10f else 100f
-                val next = when (event.key) {
+                val next = when (along(event.key, rtl)) {
                     Key.DirectionRight, Key.DirectionUp -> value + step
                     Key.DirectionLeft, Key.DirectionDown -> value - step
                     Key.MoveHome -> valueRange.start

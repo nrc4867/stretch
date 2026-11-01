@@ -34,12 +34,15 @@ class AppIdentity(val name: String, val id: String, val icons: List<Image>) {
         /**
          * Tells the OS who this process is, before the first window opens: on Windows, run as plain `java`, a taskbar
          * id of its own so the app groups and pins apart from other Java apps (a packaged launcher already has one);
-         * the dock icon on macOS; the window class on Linux, so the desktop matches the app's icon and name.
+         * the dock icon, app name and screen menu bar on macOS; the window class on Linux, so the desktop matches the
+         * app's icon and name.
          */
         fun applyToProcess() {
             if (applied) return
             applied = true
+            if (os.startsWith("Mac")) System.setProperty("apple.laf.useScreenMenuBar", "true")
             val identity = current ?: return
+            if (os.startsWith("Mac")) System.setProperty("apple.awt.application.name", identity.name)
             runCatching {
                 when {
                     os.startsWith("Windows") -> if (System.getProperty("jpackage.app-path") == null) {

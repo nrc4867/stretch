@@ -218,7 +218,7 @@ fun ActionMenuItem(action: Action, keymap: Keymap, icons: (String) -> ImageVecto
             action.run()
         },
         icon = action.icon?.let(icons),
-        keys = keymap.keysFor(action.id).firstOrNull()?.toString(),
+        keys = keymap.keysFor(action.id).firstOrNull()?.caps()?.joinToString(" "),
     )
 }
 

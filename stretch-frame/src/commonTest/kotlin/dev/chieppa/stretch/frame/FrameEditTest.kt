@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -135,6 +136,13 @@ class FrameEditTest {
     /** Draws popped-out drawers inline, recording what the frame asks of their windows. */
     private class InlineWindows : DrawerWindowHost {
         val raises = mutableMapOf<String, Int>()
+        val docks = mutableMapOf<String, (Side, Boolean) -> Unit>()
+        val rails = mutableMapOf<Side, Rect?>()
+        override var dockTarget: DockTarget? by mutableStateOf(null)
+
+        override fun railBounds(side: Side, bounds: Rect?) {
+            rails[side] = bounds
+        }
 
         @Composable
         override fun DrawerWindow(
@@ -145,9 +153,11 @@ class FrameEditTest {
             raise: Int,
             onBoundsChange: (WindowBounds) -> Unit,
             onClose: () -> Unit,
+            onDock: (side: Side, bottom: Boolean) -> Unit,
             content: @Composable () -> Unit,
         ) {
             raises[title] = raise
+            docks[title] = onDock
             Box(Modifier.size(300.dp, 200.dp).testTag("window $title")) { content() }
         }
     }
@@ -174,6 +184,26 @@ class FrameEditTest {
 
         onNodeWithContentDescription("Dock").performClick()
         assertEquals(listOf("help"), layout.openOn(Side.Left).map { it.id })
+        onNodeWithTag("window Help").assertDoesNotExist()
+    }
+
+    @Test
+    fun aDrawerWindowDraggedOntoARailDocksThere() = runComposeUiTest {
+        var layout by mutableStateOf(FrameLayout(listOf(DrawerPlacement("help", Side.Left, detached = true))))
+        val windows = InlineWindows()
+        setStretchContent {
+            CompositionLocalProvider(LocalDrawerWindows provides windows) {
+                StretchApp(layout, { layout = it }, drawers, onResetLayout = {}, topBar = { TopBar("App", "Untitled") }) { Viewport {} }
+            }
+        }
+        waitForIdle()
+        assertTrue(windows.rails[Side.Left] != null && windows.rails[Side.Right] != null, "both rails report where they are")
+        windows.dockTarget = DockTarget(Side.Right, bottom = true)
+        waitForIdle()
+        windows.docks.getValue("Help")(Side.Right, true)
+        waitForIdle()
+        val help = layout["help"]!!
+        assertTrue(!help.detached && help.side == Side.Right && help.bottom && help.open, "docked into the right rail's bottom group: $help")
         onNodeWithTag("window Help").assertDoesNotExist()
     }
 

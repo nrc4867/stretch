@@ -26,4 +26,12 @@ fun Modifier.actionKeys(keymap: Keymap, mode: String?): Modifier = onKeyEvent { 
 val LocalActionText = staticCompositionLocalOf<(String) -> String> { { it } }
 
 /** Key caps for an action's first key, as menus and tooltips show them. */
-fun Keymap.capsFor(action: Action): List<String>? = keysFor(action.id).firstOrNull()?.toString()?.split(' ')
+fun Keymap.capsFor(action: Action): List<String>? = keysFor(action.id).firstOrNull()?.caps()
+
+/**
+ * The key caps for a chord on this platform. Ctrl in a chord is the platform's main shortcut modifier, so on macOS it
+ * reads and works as Cmd, and Meta is the Control key.
+ */
+fun KeyChord.caps(): List<String> = toString().split(' ').map { if (it == key) it else modifierCap(it) }
+
+internal expect fun modifierCap(name: String): String

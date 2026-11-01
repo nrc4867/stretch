@@ -1,5 +1,8 @@
 package dev.chieppa.stretch.ui
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -248,8 +251,13 @@ fun NumberField(
                 leading()
                 Spacer(Modifier.weight(1f))
             }
-            Label(format(value), style, c.inkStrong)
-            if (unit.isNotEmpty()) Label(unit, Stretch.type.value, c.inkMuted)
+            // The number and its unit read left to right in every language.
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Label(format(value), style, c.inkStrong)
+                    if (unit.isNotEmpty()) Label(unit, Stretch.type.value, c.inkMuted)
+                }
+            }
             if (trailing != null) {
                 Spacer(Modifier.width(iconGap))
                 trailing()
@@ -296,19 +304,22 @@ fun formatNumber(value: Float): String {
 @Composable
 fun Kbd(keys: List<String>, modifier: Modifier = Modifier) {
     val c = Stretch.colors
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
-        for (key in keys) {
-            val shape = RoundedCornerShape(4.dp)
-            Box(
-                Modifier
-                    .heightIn(min = 18.dp)
-                    .clip(shape)
-                    .background(c.surfaceFloat)
-                    .border(1.dp, c.lineStrong, shape)
-                    .padding(horizontal = 4.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Label(key, Stretch.type.valueSm, c.inkControl)
+    // Shortcuts read left to right in every language, as the OS writes them.
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(modifier, horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
+            for (key in keys) {
+                val shape = RoundedCornerShape(4.dp)
+                Box(
+                    Modifier
+                        .heightIn(min = 18.dp)
+                        .clip(shape)
+                        .background(c.surfaceFloat)
+                        .border(1.dp, c.lineStrong, shape)
+                        .padding(horizontal = 4.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Label(key, Stretch.type.valueSm, c.inkControl)
+                }
             }
         }
     }

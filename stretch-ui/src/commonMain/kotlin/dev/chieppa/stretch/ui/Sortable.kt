@@ -77,6 +77,7 @@ private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.dragItem
     target: (DragSession) -> Int,
     drop: (from: Int, to: Int) -> Unit,
     onStart: () -> Unit,
+    mirrorX: Boolean = false,
 ) = detectDragGestures(
     onDragStart = { at ->
         state.session = start(at)
@@ -85,7 +86,7 @@ private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.dragItem
     onDrag = { change: PointerInputChange, amount: Offset ->
         val session = state.session ?: return@detectDragGestures
         change.consume()
-        session.pointer += amount
+        session.pointer += if (mirrorX) Offset(-amount.x, amount.y) else amount
         session.target = target(session)
     },
     onDragEnd = {
@@ -125,7 +126,6 @@ fun <T> SortableList(
     val state = remember { SortState() }
     val current by rememberUpdatedState(items)
     val move by rememberUpdatedState(onMove)
-    val listFocus = remember { FocusRequester() }
     val session = state.session
 
     @Composable
@@ -137,10 +137,9 @@ fun <T> SortableList(
         content(item)
     }
 
+    // Esc reaches this from the dragged row, which takes the focus when a drag starts.
     Box(
         modifier
-            .focusRequester(listFocus)
-            .focusable()
             .onKeyEvent {
                 if (it.type == KeyEventType.KeyDown && it.key == Key.Escape && state.session != null) {
                     state.session = null
@@ -153,6 +152,7 @@ fun <T> SortableList(
                 keyed(key(item)) {
                     val itemKey = key(item)
                     val control = rememberControlState()
+                    val itemFocus = remember { FocusRequester() }
                     val drag = remember(itemKey, slot) {
                         Modifier.pointerInput(itemKey, slot) {
                             dragItem(
@@ -163,7 +163,7 @@ fun <T> SortableList(
                                 },
                                 target = { s -> dropIndex(s.from, s.pointer.y - s.grab.y, slot, current.size) },
                                 drop = { from, to -> move(from, to) },
-                                onStart = { listFocus.requestFocus() },
+                                onStart = { itemFocus.requestFocus() },
                             )
                         }
                     }
@@ -176,6 +176,7 @@ fun <T> SortableList(
                             .clip(shape)
                             .background(control.fill(c.surfacePanel, c.surfaceControl, c.surfaceControlHi))
                             .hoverable(control.source)
+                            .focusRequester(itemFocus)
                             .then(if (onClick != null) Modifier.clickable(control.source, null, role = Role.Button) { onClick(item) } else Modifier.focusable(interactionSource = control.source))
                             .onKeyEvent { event ->
                                 val at = current.indexOfFirst { key(it) == itemKey }
@@ -233,10 +234,11 @@ fun <T> SortableGrid(
     val shape = Stretch.shapes.cardShape
     val density = LocalDensity.current
     val slot = with(density) { (cell + gap).toPx() }
+    val cellPx = with(density) { cell.toPx() }
+    val rtl = isRtl()
     val state = remember { SortState() }
     val current by rememberUpdatedState(items)
     val move by rememberUpdatedState(onMove)
-    val gridFocus = remember { FocusRequester() }
     val session = state.session
     val rows = (items.size + columns - 1) / columns
     fun origin(index: Int) = Offset((index % columns) * slot, (index / columns) * slot)
@@ -244,8 +246,6 @@ fun <T> SortableGrid(
     Box(
         modifier
             .size(cell * columns + gap * (columns - 1), cell * rows + gap * (rows - 1).coerceAtLeast(0))
-            .focusRequester(gridFocus)
-            .focusable()
             .onKeyEvent {
                 if (it.type == KeyEventType.KeyDown && it.key == Key.Escape && state.session != null) {
                     state.session = null
@@ -257,6 +257,7 @@ fun <T> SortableGrid(
             keyed(key(item)) {
                 val itemKey = key(item)
                 val control = rememberControlState()
+                val itemFocus = remember { FocusRequester() }
                 val at = origin(index)
                 val target = session != null && session.target == index && session.target != session.from
                 Box(
@@ -269,10 +270,11 @@ fun <T> SortableGrid(
                         .background(control.fill(c.surfacePanel, c.surfaceControl, c.surfaceControlHi))
                         .border(if (target) 2.dp else Stretch.stroke, if (target) c.ringSelected else c.linePanel, shape)
                         .hoverable(control.source)
+                        .focusRequester(itemFocus)
                         .then(if (onClick != null) Modifier.clickable(control.source, null, role = Role.Button) { onClick(item) } else Modifier.focusable(interactionSource = control.source))
                         .onKeyEvent { event ->
                             val from = current.indexOfFirst { key(it) == itemKey }
-                            val to = when (event.altArrow()) {
+                            val to = when (event.altArrow()?.let { along(it, rtl) }) {
                                 Key.DirectionLeft -> from - 1
                                 Key.DirectionRight -> from + 1
                                 Key.DirectionUp -> from - columns
@@ -282,17 +284,20 @@ fun <T> SortableGrid(
                             if (to in current.indices) move(from, to)
                             true
                         }
-                        .then(remember(itemKey, slot, columns) {
-                            Modifier.pointerInput(itemKey, slot, columns) {
+                        .then(remember(itemKey, slot, columns, rtl) {
+                            Modifier.pointerInput(itemKey, slot, columns, rtl) {
                                 dragItem(
                                     state,
-                                    start = { grab ->
+                                    start = { at ->
                                         val from = current.indexOfFirst { key(it) == itemKey }
+                                        // Tiles are placed from the start edge, so in RTL the grab is measured from the right.
+                                        val grab = if (rtl) Offset(cellPx - at.x, at.y) else at
                                         if (from < 0) null else DragSession(from, origin(from) + grab)
                                     },
                                     target = { s -> gridIndexAt(s.pointer.x, s.pointer.y, slot, columns, current.size) },
                                     drop = { from, to -> move(from, to) },
-                                    onStart = { gridFocus.requestFocus() },
+                                    onStart = { itemFocus.requestFocus() },
+                                    mirrorX = rtl,
                                 )
                             }
                         }),

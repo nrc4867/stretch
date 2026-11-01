@@ -1,7 +1,7 @@
 package dev.chieppa.stretch.frame
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -72,7 +72,8 @@ fun railDrop(y: Float, height: Float, top: Int, bottom: Int, slot: Float, pad: F
 /**
  * The 48px icon rail on one edge. Each button opens or closes one drawer; open drawers show as on. Buttons sit in a
  * top group and a bottom group. With [onMove] they reorder by dragging, between the groups too, or with Alt Up and
- * Alt Down; Esc cancels a drag.
+ * Alt Down; Esc cancels a drag. [windowDrop] lights the top (false) or bottom (true) group while a drawer window
+ * dragged over the rail would dock there.
  */
 @Composable
 fun Rail(
@@ -82,6 +83,7 @@ fun Rail(
     onToggle: (String) -> Unit,
     modifier: Modifier = Modifier,
     onMove: ((id: String, drop: RailDrop) -> Unit)? = null,
+    windowDrop: Boolean? = null,
 ) {
     val c = Stretch.colors
     val density = LocalDensity.current
@@ -96,7 +98,6 @@ fun Rail(
     var pointerY by remember { mutableFloatStateOf(0f) }
     val current by rememberUpdatedState(items)
     val move by rememberUpdatedState(onMove)
-    val railFocus = remember { FocusRequester() }
 
     fun top(id: String): Float {
         val item = current.first { it.id == id }
@@ -113,6 +114,7 @@ fun Rail(
     @Composable
     fun button(item: RailItem) {
         val itemId = item.id
+        val buttonFocus = remember { FocusRequester() }
         val drag = if (onMove == null) {
             Modifier
         } else {
@@ -123,7 +125,7 @@ fun Rail(
                             dragging = itemId
                             grabY = at.y
                             pointerY = top(itemId) + at.y
-                            railFocus.requestFocus()
+                            buttonFocus.requestFocus()
                         },
                         onDrag = { change, amount ->
                             if (dragging == itemId) {
@@ -151,7 +153,7 @@ fun Rail(
                     true
                 }
         }
-        Box(Modifier.alpha(if (dragging == itemId) 0.4f else 1f).then(drag)) {
+        Box(Modifier.alpha(if (dragging == itemId) 0.4f else 1f).focusRequester(buttonFocus).then(drag)) {
             Tooltip(item.label) {
                 BadgedBox(item.badge, listOfNotNull(item.label, item.badge?.ifEmpty { null }).joinToString(" · ")) {
                     ToolButton(item.icon, item.label, item.id in open, { onToggle(item.id) })
@@ -168,8 +170,7 @@ fun Rail(
                 .width(StretchSizes.rail)
                 .background(c.surfaceRail)
                 .onSizeChanged { height = it.height.toFloat() }
-                .focusRequester(railFocus)
-                .focusable()
+                // Esc reaches this from the dragged button, which takes the focus when a drag starts.
                 .onKeyEvent {
                     if (it.type == KeyEventType.KeyDown && it.key == Key.Escape && dragging != null) {
                         dragging = null
@@ -187,6 +188,17 @@ fun Rail(
                 for (item in items.filter { !it.bottom }) key(item.id) { button(item) }
                 Spacer(Modifier.weight(1f))
                 for (item in items.filter { it.bottom }) key(item.id) { button(item) }
+            }
+            if (windowDrop != null) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.5f)
+                        .align(if (windowDrop) Alignment.BottomCenter else Alignment.TopCenter)
+                        .padding(4.dp)
+                        .background(c.ringSelected.copy(alpha = 0.14f), Stretch.shapes.rowShape)
+                        .border(2.dp, c.ringSelected, Stretch.shapes.rowShape),
+                )
             }
             val id = dragging
             val dragged = items.firstOrNull { it.id == id }

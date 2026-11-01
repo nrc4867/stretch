@@ -18,6 +18,7 @@ kotlin {
 
 dependencies {
     implementation(project(":stretch-frame"))
+    implementation(project(":stretch-document"))
     implementation(project(":stretch-core"))
     implementation(project(":stretch-devtools"))
     implementation(compose.desktop.currentOs)

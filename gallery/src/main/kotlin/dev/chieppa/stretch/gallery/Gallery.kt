@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -83,36 +84,49 @@ import kotlin.math.roundToInt
 private enum class Page(val label: String) { Components("Components"), Data("Data"), Tools("Tools"), Frame("App frame") }
 
 /** The window's top bar: the plain [TopBar] in tests, the title bar when the gallery owns its window. */
-typealias GalleryBar = @Composable (document: String, modes: @Composable () -> Unit, actions: @Composable RowScope.() -> Unit) -> Unit
+typealias GalleryBar = @Composable (document: String, edited: Boolean, modes: @Composable () -> Unit, actions: @Composable RowScope.() -> Unit) -> Unit
 
-private val plainBar: GalleryBar = { document, modes, actions -> TopBar("Stretch", document, modes = modes, actions = actions) }
+private val plainBar: GalleryBar = { document, edited, modes, actions -> TopBar("Stretch", document, edited = edited, modes = modes, actions = actions) }
+
+/** What the gallery's window lends the frame demo: its frame, for file dialogs, and a check to run before closing. */
+class GalleryHost {
+    var window: java.awt.Frame? = null
+    var closeGuard: ((then: () -> Unit) -> Unit)? = null
+
+    /** Where unsaved work is kept for after a crash; none in tests. */
+    var recovery: dev.chieppa.stretch.document.Recovery? = null
+}
+
+val LocalGalleryHost = staticCompositionLocalOf { GalleryHost() }
 
 /** Every component and the app frame in every theme. Labels here are examples, not app text. */
 @Composable
 fun Gallery(bar: GalleryBar = plainBar) {
-    var theme by remember { mutableStateOf(StretchThemes.Ink) }
+    var themeChoice by remember { mutableStateOf<StretchTheme?>(StretchThemes.Ink) }
+    val theme = themeChoice ?: StretchThemes.system()
+    var scale by remember { mutableFloatStateOf(1f) }
     var page by remember { mutableStateOf(Page.Components) }
-    StretchTheme(theme) {
+    StretchTheme(theme, scale) {
         val switcher: @Composable () -> Unit = {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Segmented(Page.entries, page, { page = it }, { it.label }, mode = true)
-                Dropdown(StretchThemes.all, theme, { theme = it }, { it.name }, "Theme", Modifier.width(180.dp))
+                Dropdown(listOf(null) + StretchThemes.all, themeChoice, { themeChoice = it }, { it?.name ?: "Match system" }, "Theme", Modifier.width(180.dp))
             }
         }
         when (page) {
             Page.Components -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
-                bar("Gallery", switcher) {}
+                bar("Gallery", false, switcher) {}
                 ComponentsPage()
             }
             Page.Data -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
-                bar("Gallery", switcher) {}
+                bar("Gallery", false, switcher) {}
                 DataPage()
             }
             Page.Tools -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
-                bar("Gallery", switcher) {}
+                bar("Gallery", false, switcher) {}
                 ToolsPage()
             }
-            Page.Frame -> FrameDemo(switcher, bar)
+            Page.Frame -> FrameDemo(switcher, bar, scale) { scale = it }
         }
     }
 }

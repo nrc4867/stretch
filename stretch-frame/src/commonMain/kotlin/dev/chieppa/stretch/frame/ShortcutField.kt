@@ -24,7 +24,7 @@ import org.jetbrains.compose.resources.stringResource
 fun ShortcutField(chord: KeyChord?, onChordChange: (KeyChord?) -> Unit, contentDescription: String, modifier: Modifier = Modifier) {
     var listening by remember { mutableStateOf(false) }
     KeyCaptureField(
-        caps = chord?.toString()?.split(' '),
+        caps = chord?.caps(),
         listening = listening,
         onListeningChange = { listening = it },
         onKey = { event -> capture(event, { onChordChange(it) }) { listening = false } },

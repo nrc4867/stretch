@@ -34,7 +34,7 @@ class KeyCastState(private val limit: Int = 4) {
     internal var serial by mutableIntStateOf(0)
 
     fun record(chord: KeyChord) {
-        val keys = chord.toString().split(' ')
+        val keys = chord.caps()
         val last = entries.lastOrNull()
         if (last?.keys == keys) {
             entries[entries.lastIndex] = last.copy(count = last.count + 1)

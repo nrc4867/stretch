@@ -2,6 +2,7 @@ package dev.chieppa.stretch.frame
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Dp
 
 /**
@@ -12,8 +13,9 @@ interface DrawerWindowHost {
     /**
      * A window holding one drawer, titled [title], at [bounds] or, the first time, inside the app's window on [side]
      * and [defaultWidth] wide. It stays above the app's window and minimizes with it. Whenever [raise] changes it
-     * comes to the front. Moving or resizing it reports [onBoundsChange]; closing it calls [onClose]. [content] draws
-     * the whole window, header included.
+     * comes to the front. Moving or resizing it reports [onBoundsChange]; closing it calls [onClose]. Dragging it
+     * over a rail and letting go calls [onDock] with that rail's side and group. [content] draws the whole window,
+     * header included.
      */
     @Composable
     fun DrawerWindow(
@@ -24,9 +26,18 @@ interface DrawerWindowHost {
         raise: Int,
         onBoundsChange: (WindowBounds) -> Unit,
         onClose: () -> Unit,
+        onDock: (side: Side, bottom: Boolean) -> Unit,
         content: @Composable () -> Unit,
     )
+
+    /** Where the app's window shows the rail on [side], in its window's pixels, so drawer windows can dock there. */
+    fun railBounds(side: Side, bounds: Rect?)
+
+    /** The rail and group a drawer window would dock into if let go now, while one is dragged over a rail. */
+    val dockTarget: DockTarget?
 }
+
+data class DockTarget(val side: Side, val bottom: Boolean)
 
 /** The host for popped-out drawers, or null where drawers cannot leave the frame. */
 val LocalDrawerWindows = staticCompositionLocalOf<DrawerWindowHost?> { null }

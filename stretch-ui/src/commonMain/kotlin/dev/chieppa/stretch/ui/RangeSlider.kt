@@ -1,5 +1,8 @@
 package dev.chieppa.stretch.ui
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -93,50 +96,55 @@ fun RangeSlider(
         return if (toStart == toEnd) v <= current.start else toStart < toEnd
     }
 
-    Box(
-        modifier
-            .widthIn(min = 96.dp)
-            .fillMaxWidth()
-            .height(StretchSizes.chip)
-            .onSizeChanged { width = it.width.toFloat() }
-            .pointerInput(valueRange, usable) {
-                detectTapGestures { at ->
-                    move(nearerIsStart(at.x), valueAt(at.x))
-                    finished()
+    val rtl = isRtl()
+    // Laid out left to right and flipped whole, so knobs, fill and pointer agree.
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Box(
+            modifier
+                .widthIn(min = 96.dp)
+                .fillMaxWidth()
+                .height(StretchSizes.chip)
+                .mirrored(rtl)
+                .onSizeChanged { width = it.width.toFloat() }
+                .pointerInput(valueRange, usable) {
+                    detectTapGestures { at ->
+                        move(nearerIsStart(at.x), valueAt(at.x))
+                        finished()
+                    }
                 }
+                .pointerInput(valueRange, usable) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { at -> dragging = nearerIsStart(at.x).also { move(it, valueAt(at.x)) } },
+                        onDragEnd = { dragging = null; finished() },
+                        onDragCancel = { dragging = null; finished() },
+                    ) { input, _ -> dragging?.let { move(it, valueAt(input.position.x)) } }
+                },
+        ) {
+            Canvas(Modifier.fillMaxSize()) {
+                val trackHeight = 8.dp.toPx()
+                val top = (size.height - trackHeight) / 2
+                val radius = CornerRadius(trackHeight / 2)
+                drawRoundRect(c.track, Offset(0f, top), Size(size.width, trackHeight), radius)
+                drawRoundRect(c.trackEdge, Offset(0.5f, top + 0.5f), Size(size.width - 1f, trackHeight - 1f), radius, style = Stroke(1f))
+                val a = inset + fraction(value.start) * usable
+                val b = inset + fraction(value.endInclusive) * usable
+                drawRoundRect(c.accent, Offset(a, top), Size(b - a, trackHeight), radius)
             }
-            .pointerInput(valueRange, usable) {
-                detectHorizontalDragGestures(
-                    onDragStart = { at -> dragging = nearerIsStart(at.x).also { move(it, valueAt(at.x)) } },
-                    onDragEnd = { dragging = null; finished() },
-                    onDragCancel = { dragging = null; finished() },
-                ) { input, _ -> dragging?.let { move(it, valueAt(input.position.x)) } }
-            },
-    ) {
-        Canvas(Modifier.fillMaxSize()) {
-            val trackHeight = 8.dp.toPx()
-            val top = (size.height - trackHeight) / 2
-            val radius = CornerRadius(trackHeight / 2)
-            drawRoundRect(c.track, Offset(0f, top), Size(size.width, trackHeight), radius)
-            drawRoundRect(c.trackEdge, Offset(0.5f, top + 0.5f), Size(size.width - 1f, trackHeight - 1f), radius, style = Stroke(1f))
-            val a = inset + fraction(value.start) * usable
-            val b = inset + fraction(value.endInclusive) * usable
-            drawRoundRect(c.accent, Offset(a, top), Size(b - a, trackHeight), radius)
-        }
-        Knob(inset + fraction(value.start) * usable - inset, startDescription, value.start, valueRange.start..value.endInclusive, span) {
-            move(true, it)
-            finished()
-        }
-        Knob(inset + fraction(value.endInclusive) * usable - inset, endDescription, value.endInclusive, value.start..valueRange.endInclusive, span) {
-            move(false, it)
-            finished()
+            Knob(inset + fraction(value.start) * usable - inset, startDescription, value.start, valueRange.start..value.endInclusive, span, rtl) {
+                move(true, it)
+                finished()
+            }
+            Knob(inset + fraction(value.endInclusive) * usable - inset, endDescription, value.endInclusive, value.start..valueRange.endInclusive, span, rtl) {
+                move(false, it)
+                finished()
+            }
         }
     }
 }
 
 /** One knob of a [RangeSlider], [x] px from the left; [allowed] is where it may go without crossing the other. */
 @Composable
-private fun BoxScope.Knob(x: Float, description: String, value: Float, allowed: ClosedFloatingPointRange<Float>, span: Float, onSet: (Float) -> Unit) {
+private fun BoxScope.Knob(x: Float, description: String, value: Float, allowed: ClosedFloatingPointRange<Float>, span: Float, rtl: Boolean, onSet: (Float) -> Unit) {
     val c = Stretch.colors
     val state = rememberControlState()
     val edge = Stretch.stroke
@@ -151,7 +159,7 @@ private fun BoxScope.Knob(x: Float, description: String, value: Float, allowed: 
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
                 val step = span / if (event.isShiftPressed) 10f else 100f
-                val next = when (event.key) {
+                val next = when (along(event.key, rtl)) {
                     Key.DirectionRight, Key.DirectionUp -> value + step
                     Key.DirectionLeft, Key.DirectionDown -> value - step
                     Key.MoveHome -> allowed.start

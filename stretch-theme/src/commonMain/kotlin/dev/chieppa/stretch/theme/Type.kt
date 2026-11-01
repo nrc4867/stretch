@@ -3,6 +3,7 @@ package dev.chieppa.stretch.theme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
@@ -69,6 +70,7 @@ class StretchType(fonts: StretchFonts, display: DisplayFace) {
     val heading = style(TypeTokens.heading)
     val boardTitle = style(TypeTokens.boardTitle)
     val pageTitle = style(TypeTokens.pageTitle)
-    val value = style(TypeTokens.value)
-    val valueSm = style(TypeTokens.valueSm)
+    // Numbers with their units read left to right in every language: "2.5 px", "-4", "20-70%".
+    val value = style(TypeTokens.value).copy(textDirection = TextDirection.Ltr)
+    val valueSm = style(TypeTokens.valueSm).copy(textDirection = TextDirection.Ltr)
 }

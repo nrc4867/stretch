@@ -22,9 +22,10 @@ IntelliJ IDEA: open the folder; the Gallery and Check run configurations are inc
 | Module | Holds |
 | --- | --- |
 | `stretch-core` | Commands, undo and gestures, session log, actions and keymap, the Settled interface |
-| `stretch-theme` | Tokens, the four themes, fonts, icons |
+| `stretch-theme` | Tokens, the four themes and following the OS's light or dark, interface size, fonts, icons |
 | `stretch-ui` | Components: buttons, toggle, slider, chips, segmented, fields, swatch, key caps, callout, progress, spinner, skeleton, grid, field icons and errors, checkbox, radio, tabs, badge, empty state, scrollbars, tooltip, tree, dropzone, sortable lists and grids, stats, charts, table, color picker, shading ramp, curve editor, angle dial, timeline, range slider, vector field, key capture field |
-| `stretch-frame` | The app frame: top bar, rails (reorderable, with a bottom group), resizable side and bottom drawers and their layout, menus, context menu, dropdown, popover, palette, dialog, toast, toolbar, viewport, view navigator, status bar, window title bar, action keys, key display, shortcut field, and the opt-in keymap editor and history panel |
+| `stretch-frame` | The app frame: top bar, rails (reorderable, with a bottom group), resizable side and bottom drawers and their layout, menus, context menu, dropdown, popover, palette, dialog, toast, toolbar, viewport, view navigator, status bar, window title bar, action keys, key display, shortcut field, the opt-in keymap editor and history panel, the viewport camera (wheel, middle button, two-finger pan and pinch), rulers and guides, selection handles, marquee, clipboard routing, and the macOS menu bar |
+| `stretch-document` | One open document: unsaved-changes tracking and prompt, save and open with the OS's dialogs, recent files, crash recovery |
 | `stretch-input` | Pointer and pen samples; Windows Ink pen input on desktop |
 | `stretch-devtools` | Development only: a 127.0.0.1 endpoint that screenshots the app's own windows (`-Pdevtools=<port>` on the gallery's run task) |
 | `stretch-gradle-plugin` | The `dev.chieppa.stretch.app` plugin: app name, id and icon for launchers, installers and running windows |
@@ -38,6 +39,17 @@ IntelliJ IDEA: open the folder; the Gallery and Check run configurations are inc
 ## Using Stretch from an app
 
 Include it as a composite build in the app's `settings.gradle.kts` and depend on `dev.chieppa.stretch:stretch-ui` (and `stretch-core`).
+
+### Platform
+
+- **Appearance and size.** `StretchTheme(StretchThemes.system(light, dark), scale = size)` follows the OS's light or dark appearance and draws everything at the interface size a person picked. Popped-out drawer windows keep the same size.
+- **Clipboard.** Mark a part of the app that has its own selection with `Modifier.clipboardTarget(router, handler)`; Ctrl C, X and V (Cmd on macOS) and the router's `actions()` go to whichever target has the focus. Text fields keep their own clipboard.
+- **macOS.** Ctrl in a `KeyChord` is Cmd on macOS, and key caps show the Mac symbols. Inside `StretchWindow`, `MacMenuBar(menus, registry, keymap, mode)` fills the menu bar from the app's actions and hooks up About, Settings and Quit; it shows nothing elsewhere.
+- **Viewport.** Give `Viewport` a `ViewportCamera` for wheel, middle-button and two-finger navigation, and `rulers = true` with guides. Put `Modifier.marquee(camera)` and then `Modifier.transformHandles(...)` on the scene layer.
+
+### Documents
+
+`stretch-document` keeps one open document: `DocumentSession(format, initial, FileStorage)` wraps its undo history and knows when it has unsaved changes (`rememberEdited`), even after undoing back to the save. `session.whenSaved { close() }` asks with `UnsavedChangesDialog` first when there are changes; `save`, `saveAs` and `open` use `rememberFileChooser(window)`, the OS's own dialogs. `Autosave(session, Recovery.forApp())` keeps a recovery copy while there are changes, and `Recovery.pending()` with `RecoveryDialog` offers them after a crash. `RecentFiles` and `RecentFilesMenuItems` list recent files; keeping the list between runs is the app's job, like all its settings.
 
 ### App identity
 

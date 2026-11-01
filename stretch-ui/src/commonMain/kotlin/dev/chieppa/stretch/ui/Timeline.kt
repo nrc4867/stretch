@@ -1,5 +1,8 @@
 package dev.chieppa.stretch.ui
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -144,147 +147,150 @@ fun Timeline(
     val rulerHeight = 22.dp
     val scroll = rememberScrollState()
 
-    Column(
-        modifier
-            .focusRequester(focus)
-            .focusable()
-            .onKeyEvent { e ->
-                if (e.type != KeyEventType.KeyDown) return@onKeyEvent false
-                val by = if (e.isShiftPressed) 10 else 1
-                when (e.key) {
-                    Key.DirectionRight -> change((now + by).coerceAtMost(frames - 1))
-                    Key.DirectionLeft -> change((now - by).coerceAtLeast(0))
-                    Key.MoveHome -> change(0)
-                    Key.MoveEnd -> change(frames - 1)
-                    Key.Spacebar -> onPlayingChange(!playing)
-                    else -> return@onKeyEvent false
-                }
-                true
-            },
-    ) {
-        Row(
-            Modifier.fillMaxWidth().height(36.dp).padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(StretchIcons.StepBack, labels.stepBack, { change((now - 1).coerceAtLeast(0)) })
-            IconButton(if (playing) StretchIcons.Pause else StretchIcons.Play, if (playing) labels.pause else labels.play, { onPlayingChange(!playing) }, on = playing)
-            IconButton(StretchIcons.StepForward, labels.stepForward, { change((now + 1).coerceAtMost(frames - 1)) })
-            Label("${current + 1} / $frames · $fps ${labels.fps}", Stretch.type.value, c.inkMuted, Modifier.padding(start = 8.dp))
-        }
-        Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
-        Row(Modifier.fillMaxWidth()) {
-            Column(Modifier.width(120.dp)) {
-                Box(Modifier.height(rulerHeight))
-                for (t in tracks) Label(t.label, Stretch.type.bodySm, c.ink, Modifier.height(rowHeight).padding(start = 12.dp, top = 4.dp))
-            }
-            Box(Modifier.weight(1f).horizontalScroll(scroll)) {
-                val width = frameWidth * frames
-                Column(Modifier.width(width)) {
-                    Canvas(
-                        Modifier
-                            .width(width)
-                            .height(rulerHeight)
-                            .semantics {
-                                contentDescription = labels.ruler
-                                stateDescription = "${current + 1}"
-                            }
-                            .pointerInput(frames, fw) {
-                                awaitEachGesture {
-                                    val down = awaitFirstDown()
-                                    focus.requestFocus()
-                                    change(frameAt(down.position.x, fw, frames))
-                                    drag(down.id) { ch ->
-                                        ch.consume()
-                                        change(frameAt(ch.position.x, fw, frames))
-                                    }
-                                }
-                            },
-                    ) {
-                        drawRect(c.surfaceRail)
-                        for (f in 0 until frames) {
-                            val x = f * fw
-                            val major = f % step == 0
-                            drawLine(if (major) c.chartAxis else c.chartGrid, Offset(x, size.height), Offset(x, size.height - if (major) 8.dp.toPx() else 4.dp.toPx()), 1f)
-                            if (major) drawText(measurer.measure("${f + 1}", tick), topLeft = Offset(x + 2.dp.toPx(), 1.dp.toPx()))
-                        }
-                        drawLine(c.linePanel, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1f)
+    // Time runs left to right in every language, as in media players.
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Column(
+            modifier
+                .focusRequester(focus)
+                .focusable()
+                .onKeyEvent { e ->
+                    if (e.type != KeyEventType.KeyDown) return@onKeyEvent false
+                    val by = if (e.isShiftPressed) 10 else 1
+                    when (e.key) {
+                        Key.DirectionRight -> change((now + by).coerceAtMost(frames - 1))
+                        Key.DirectionLeft -> change((now - by).coerceAtLeast(0))
+                        Key.MoveHome -> change(0)
+                        Key.MoveEnd -> change(frames - 1)
+                        Key.Spacebar -> onPlayingChange(!playing)
+                        else -> return@onKeyEvent false
                     }
-                    for (t in tracks) {
+                    true
+                },
+        ) {
+            Row(
+                Modifier.fillMaxWidth().height(36.dp).padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(StretchIcons.StepBack, labels.stepBack, { change((now - 1).coerceAtLeast(0)) })
+                IconButton(if (playing) StretchIcons.Pause else StretchIcons.Play, if (playing) labels.pause else labels.play, { onPlayingChange(!playing) }, on = playing)
+                IconButton(StretchIcons.StepForward, labels.stepForward, { change((now + 1).coerceAtMost(frames - 1)) })
+                Label("${current + 1} / $frames · $fps ${labels.fps}", Stretch.type.value, c.inkMuted, Modifier.padding(start = 8.dp))
+            }
+            Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+            Row(Modifier.fillMaxWidth()) {
+                Column(Modifier.width(120.dp)) {
+                    Box(Modifier.height(rulerHeight))
+                    for (t in tracks) Label(t.label, Stretch.type.bodySm, c.ink, Modifier.height(rowHeight).padding(start = 12.dp, top = 4.dp))
+                }
+                Box(Modifier.weight(1f).horizontalScroll(scroll)) {
+                    val width = frameWidth * frames
+                    Column(Modifier.width(width)) {
                         Canvas(
                             Modifier
                                 .width(width)
-                                .height(rowHeight)
-                                .semantics { contentDescription = "${t.label}: ${t.keys.joinToString { "${it + 1}" }}" }
-                                .pointerInput(t, fw) {
+                                .height(rulerHeight)
+                                .semantics {
+                                    contentDescription = labels.ruler
+                                    stateDescription = "${current + 1}"
+                                }
+                                .pointerInput(frames, fw) {
                                     awaitEachGesture {
                                         val down = awaitFirstDown()
                                         focus.requestFocus()
-                                        val frame = frameAt(down.position.x, fw, frames)
-                                        val hit = t.keys.firstOrNull { it == frame }
-                                        if (hit == null) {
-                                            if (!currentEvent.keyboardModifiers.isShiftPressed) select(emptySet())
-                                            change(frame)
-                                            return@awaitEachGesture
-                                        }
-                                        val key = TimelineKey(t.id, hit)
-                                        val sel = when {
-                                            currentEvent.keyboardModifiers.isShiftPressed -> if (key in currentSelection) currentSelection - key else currentSelection + key
-                                            key in currentSelection -> currentSelection
-                                            else -> setOf(key)
-                                        }
-                                        select(sel)
-                                        val m = move ?: return@awaitEachGesture
-                                        var delta = 0
+                                        change(frameAt(down.position.x, fw, frames))
                                         drag(down.id) { ch ->
                                             ch.consume()
-                                            delta = frameAt(ch.position.x, fw, frames) - frame
-                                            preview = delta
+                                            change(frameAt(ch.position.x, fw, frames))
                                         }
-                                        preview = 0
-                                        if (delta != 0 && key in sel) m(sel, delta)
                                     }
                                 },
                         ) {
-                            for (f in 0 until frames step step) drawLine(c.chartGrid, Offset(f * fw, 0f), Offset(f * fw, size.height), 1f)
-                            drawLine(c.chartGrid, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1f)
-                            for (k in t.keys) {
-                                val isSel = TimelineKey(t.id, k) in selected
-                                val f = if (isSel) k + preview else k
-                                val cx = f * fw + fw / 2
-                                val cy = size.height / 2
-                                val r = 5.dp.toPx()
-                                val diamond = Path().apply {
-                                    moveTo(cx, cy - r)
-                                    lineTo(cx + r, cy)
-                                    lineTo(cx, cy + r)
-                                    lineTo(cx - r, cy)
-                                    close()
+                            drawRect(c.surfaceRail)
+                            for (f in 0 until frames) {
+                                val x = f * fw
+                                val major = f % step == 0
+                                drawLine(if (major) c.chartAxis else c.chartGrid, Offset(x, size.height), Offset(x, size.height - if (major) 8.dp.toPx() else 4.dp.toPx()), 1f)
+                                if (major) drawText(measurer.measure("${f + 1}", tick), topLeft = Offset(x + 2.dp.toPx(), 1.dp.toPx()))
+                            }
+                            drawLine(c.linePanel, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1f)
+                        }
+                        for (t in tracks) {
+                            Canvas(
+                                Modifier
+                                    .width(width)
+                                    .height(rowHeight)
+                                    .semantics { contentDescription = "${t.label}: ${t.keys.joinToString { "${it + 1}" }}" }
+                                    .pointerInput(t, fw) {
+                                        awaitEachGesture {
+                                            val down = awaitFirstDown()
+                                            focus.requestFocus()
+                                            val frame = frameAt(down.position.x, fw, frames)
+                                            val hit = t.keys.firstOrNull { it == frame }
+                                            if (hit == null) {
+                                                if (!currentEvent.keyboardModifiers.isShiftPressed) select(emptySet())
+                                                change(frame)
+                                                return@awaitEachGesture
+                                            }
+                                            val key = TimelineKey(t.id, hit)
+                                            val sel = when {
+                                                currentEvent.keyboardModifiers.isShiftPressed -> if (key in currentSelection) currentSelection - key else currentSelection + key
+                                                key in currentSelection -> currentSelection
+                                                else -> setOf(key)
+                                            }
+                                            select(sel)
+                                            val m = move ?: return@awaitEachGesture
+                                            var delta = 0
+                                            drag(down.id) { ch ->
+                                                ch.consume()
+                                                delta = frameAt(ch.position.x, fw, frames) - frame
+                                                preview = delta
+                                            }
+                                            preview = 0
+                                            if (delta != 0 && key in sel) m(sel, delta)
+                                        }
+                                    },
+                            ) {
+                                for (f in 0 until frames step step) drawLine(c.chartGrid, Offset(f * fw, 0f), Offset(f * fw, size.height), 1f)
+                                drawLine(c.chartGrid, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1f)
+                                for (k in t.keys) {
+                                    val isSel = TimelineKey(t.id, k) in selected
+                                    val f = if (isSel) k + preview else k
+                                    val cx = f * fw + fw / 2
+                                    val cy = size.height / 2
+                                    val r = 5.dp.toPx()
+                                    val diamond = Path().apply {
+                                        moveTo(cx, cy - r)
+                                        lineTo(cx + r, cy)
+                                        lineTo(cx, cy + r)
+                                        lineTo(cx - r, cy)
+                                        close()
+                                    }
+                                    drawPath(diamond, if (isSel) c.onFill else c.surfaceFloat)
+                                    drawPath(diamond, if (isSel) c.onEdge else c.inkStrong, style = Stroke(1.5.dp.toPx()))
                                 }
-                                drawPath(diamond, if (isSel) c.onFill else c.surfaceFloat)
-                                drawPath(diamond, if (isSel) c.onEdge else c.inkStrong, style = Stroke(1.5.dp.toPx()))
                             }
                         }
                     }
-                }
-                Canvas(Modifier.width(width).height(rulerHeight + rowHeight * tracks.size)) {
-                    val x = current * fw + fw / 2
-                    drawLine(c.accent, Offset(x, 0f), Offset(x, size.height), 2.dp.toPx())
-                    val head = Path().apply {
-                        moveTo(x - 5.dp.toPx(), 0f)
-                        lineTo(x + 5.dp.toPx(), 0f)
-                        lineTo(x + 5.dp.toPx(), 8.dp.toPx())
-                        lineTo(x, 12.dp.toPx())
-                        lineTo(x - 5.dp.toPx(), 8.dp.toPx())
-                        close()
+                    Canvas(Modifier.width(width).height(rulerHeight + rowHeight * tracks.size)) {
+                        val x = current * fw + fw / 2
+                        drawLine(c.accent, Offset(x, 0f), Offset(x, size.height), 2.dp.toPx())
+                        val head = Path().apply {
+                            moveTo(x - 5.dp.toPx(), 0f)
+                            lineTo(x + 5.dp.toPx(), 0f)
+                            lineTo(x + 5.dp.toPx(), 8.dp.toPx())
+                            lineTo(x, 12.dp.toPx())
+                            lineTo(x - 5.dp.toPx(), 8.dp.toPx())
+                            close()
+                        }
+                        drawPath(head, c.accent)
                     }
-                    drawPath(head, c.accent)
                 }
             }
-        }
-        LaunchedEffect(current) {
-            val x = (current * fw).roundToInt()
-            if (x < scroll.value || x > scroll.value + scroll.viewportSize - fw) scroll.animateScrollTo((x - scroll.viewportSize / 2).coerceAtLeast(0))
+            LaunchedEffect(current) {
+                val x = (current * fw).roundToInt()
+                if (x < scroll.value || x > scroll.value + scroll.viewportSize - fw) scroll.animateScrollTo((x - scroll.viewportSize / 2).coerceAtLeast(0))
+            }
         }
     }
 }

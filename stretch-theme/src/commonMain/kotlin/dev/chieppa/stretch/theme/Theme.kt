@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -7,6 +8,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -59,16 +62,52 @@ object StretchThemes {
     )
 
     val all = listOf(Ink, InkDark, WorkshopDark, WorkshopLight)
+
+    /** [light] or [dark] to match the OS's light or dark appearance, switching while the app runs when the OS does. */
+    @Composable
+    fun system(light: StretchTheme = Ink, dark: StretchTheme = InkDark): StretchTheme = if (isSystemInDarkTheme()) dark else light
 }
 
 val LocalStretchTheme = staticCompositionLocalOf { StretchThemes.Ink }
 val LocalStretchType = staticCompositionLocalOf<StretchType> { error("No StretchTheme above this composable") }
 
+/**
+ * Applies [theme] to [content]. [scale] is the interface size a person picked, 1 being normal: every dp and sp
+ * inside grows or shrinks with it, on top of the display's own scaling.
+ */
 @Composable
-fun StretchTheme(theme: StretchTheme, content: @Composable () -> Unit) {
+fun StretchTheme(theme: StretchTheme, scale: Float = LocalUiScale.current, content: @Composable () -> Unit) {
     val fonts = stretchFonts()
     val type = remember(fonts, theme.display) { StretchType(fonts, theme.display) }
-    CompositionLocalProvider(LocalStretchTheme provides theme, LocalStretchType provides type, content = content)
+    UiScale(scale) {
+        CompositionLocalProvider(LocalStretchTheme provides theme, LocalStretchType provides type, content = content)
+    }
+}
+
+/** The interface size [content] is drawn at, 1 being normal. */
+val LocalUiScale = staticCompositionLocalOf { 1f }
+
+/** The density a [UiScale] started from and the one it provided, to tell its own density from a new window's. */
+private class ScaledDensity(val display: Density, val scaled: Density)
+
+private val LocalScaledDensity = staticCompositionLocalOf<ScaledDensity?> { null }
+
+/**
+ * Draws [content] at interface size [scale], 1 being normal. Nested calls replace the outer size rather than
+ * multiply it, and content in a window of its own scales from that window's display.
+ */
+@Composable
+fun UiScale(scale: Float, content: @Composable () -> Unit) {
+    val current = LocalDensity.current
+    val outer = LocalScaledDensity.current
+    val display = if (outer != null && outer.scaled === current) outer.display else current
+    val scaled = remember(display, scale) { ScaledDensity(display, Density(display.density * scale, display.fontScale)) }
+    CompositionLocalProvider(
+        LocalUiScale provides scale,
+        LocalDensity provides scaled.scaled,
+        LocalScaledDensity provides scaled,
+        content = content,
+    )
 }
 
 /** The current theme's parts, read inside a [StretchTheme]. */

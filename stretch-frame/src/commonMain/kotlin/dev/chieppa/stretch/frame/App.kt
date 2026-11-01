@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -38,12 +39,16 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.generated.Res
 import dev.chieppa.stretch.frame.generated.close
@@ -90,7 +95,7 @@ class DrawerSpec(
  * inner edge, the split between stacked drawers and the bottom panel's
  * top edge; rail buttons reorder by dragging. Where the platform has a [LocalDrawerWindows] host, a drawer's menu
  * pops it out into a window of its own; its rail button stays lit and brings the window to the front, and docking
- * or closing the window puts it back. The layout is the app's state: every change comes back through
+ * or closing the window puts it back, as does dragging the window onto either rail. The layout is the app's state: every change comes back through
  * [onLayoutChange]. Pass a [keyCast] to show key presses over the viewport and a [statusBar] for the window's foot.
  */
 @Composable
@@ -111,10 +116,13 @@ fun StretchApp(
     val change by rememberUpdatedState(onLayoutChange)
     val windows = LocalDrawerWindows.current
     val raises = remember { mutableStateMapOf<String, Int>() }
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
     @Composable
     fun rail(side: Side) = Rail(
         side = side,
+        modifier = if (windows == null) Modifier else Modifier.onGloballyPositioned { windows.railBounds(side, it.boundsInWindow()) },
+        windowDrop = windows?.dockTarget?.takeIf { it.side == side }?.bottom,
         items = layout.on(side).mapNotNull { placement -> specs[placement.id]?.let { RailItem(it.id, it.icon, it.title, placement.bottom, it.badge) } },
         open = layout.on(side).filter { it.open || it.detached }.map { it.id }.toSet(),
         onToggle = { id ->
@@ -134,12 +142,12 @@ fun StretchApp(
             modifier = modifier,
             actions = {
                 spec.actions(this)
-                DrawerMenuButton(placement, canPopOut = windows != null, { change(it(current)) }, onResetLayout)
+                DrawerMenuButton(placement, canPopOut = windows != null, rtl, { change(it(current)) }, onResetLayout)
                 if (placement.detached) {
                     val dock = stringResource(Res.string.dock)
                     Tooltip(dock) {
                         IconButton(
-                            if (placement.side == Side.Left) StretchIcons.DockLeft else StretchIcons.DockRight,
+                            if ((placement.side == Side.Left) != rtl) StretchIcons.DockLeft else StretchIcons.DockRight,
                             dock,
                             { change(current.dockBack(placement.id)) },
                             size = StretchSizes.seg,
@@ -170,7 +178,7 @@ fun StretchApp(
                 if (left != null) drawer(left, DrawerStyle.Docked, Modifier.weight(if (right != null) layout.bottomSplit else 1f).fillMaxHeight())
                 if (left != null && right != null) {
                     EdgeHandle(vertical = false, stringResource(Res.string.resize_split), { startShare = current.bottomSplit }) { px ->
-                        change(current.splitBottom(startShare + px / rowWidth))
+                        change(current.splitBottom(startShare + (if (rtl) -px else px) / rowWidth))
                     }
                 }
                 if (right != null) drawer(right, DrawerStyle.Docked, Modifier.weight(if (left != null) 1 - layout.bottomSplit else 1f).fillMaxHeight())
@@ -187,7 +195,9 @@ fun StretchApp(
         val resize: (Float) -> Unit = { w -> change(open.fold(current) { l, d -> l.resize(d.id, w) }) }
         val shown = maxOf(width * fit, minOf(width, FrameLayout.MIN_WIDTH))
         Row(Modifier.width(shown.dp).fillMaxHeight()) {
-            if (side == Side.Right) ResizeHandle(width, -1f, resize)
+            // The handle is on the inner edge; dragging away from the drawer's own edge grows it.
+            val grow = if ((side == Side.Left) != rtl) 1f else -1f
+            if (side == Side.Right) ResizeHandle(width, grow, resize)
             Column(Modifier.weight(1f).fillMaxHeight().onSizeChanged { columnHeight = it.height.toFloat().coerceAtLeast(1f) }) {
                 open.forEachIndexed { i, placement ->
                     if (i > 0) {
@@ -197,7 +207,7 @@ fun StretchApp(
                     drawer(placement, DrawerStyle.Docked, Modifier.weight(placement.height))
                 }
             }
-            if (side == Side.Left) ResizeHandle(width, 1f, resize)
+            if (side == Side.Left) ResizeHandle(width, grow, resize)
         }
     }
 
@@ -236,6 +246,7 @@ fun StretchApp(
                     raise = raises[placement.id] ?: 0,
                     onBoundsChange = { change(current.moveWindow(placement.id, it)) },
                     onClose = { change(current.dockBack(placement.id)) },
+                    onDock = { side, bottom -> change(current.move(placement.id, side, bottom, Int.MAX_VALUE)) },
                 ) { drawer(placement, DrawerStyle.Docked, Modifier.fillMaxSize()) }
             }
         }
@@ -243,7 +254,7 @@ fun StretchApp(
 }
 
 @Composable
-private fun DrawerMenuButton(placement: DrawerPlacement, canPopOut: Boolean, change: ((FrameLayout) -> FrameLayout) -> Unit, onReset: () -> Unit) {
+private fun DrawerMenuButton(placement: DrawerPlacement, canPopOut: Boolean, rtl: Boolean, change: ((FrameLayout) -> FrameLayout) -> Unit, onReset: () -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(StretchIcons.More, stringResource(Res.string.drawer_menu), { open = true }, size = StretchSizes.seg)
@@ -252,13 +263,15 @@ private fun DrawerMenuButton(placement: DrawerPlacement, canPopOut: Boolean, cha
                 MenuItem(stringResource(Res.string.pop_out), { change { it.popOut(placement.id) }; open = false })
                 MenuDivider()
             }
-            MenuItem(stringResource(Res.string.dock_left), { change { it.dock(placement.id, Side.Left) }; open = false }, icon = StretchIcons.DockLeft)
-            MenuItem(stringResource(Res.string.dock_right), { change { it.dock(placement.id, Side.Right) }; open = false }, icon = StretchIcons.DockRight)
+            // Side.Left is the start side, on the right in a right-to-left layout; the menu names where it shows.
+            val leftSide = if (rtl) Side.Right else Side.Left
+            MenuItem(stringResource(Res.string.dock_left), { change { it.dock(placement.id, leftSide) }; open = false }, icon = StretchIcons.DockLeft)
+            MenuItem(stringResource(Res.string.dock_right), { change { it.dock(placement.id, if (rtl) Side.Left else Side.Right) }; open = false }, icon = StretchIcons.DockRight)
             val toBottom = !placement.bottom
             MenuItem(
                 stringResource(if (toBottom) Res.string.rail_bottom else Res.string.rail_top),
                 { change { it.move(placement.id, placement.side, toBottom, Int.MAX_VALUE) }; open = false },
-                icon = if (toBottom) StretchIcons.DockBottom else if (placement.side == Side.Left) StretchIcons.DockLeft else StretchIcons.DockRight,
+                icon = if (toBottom) StretchIcons.DockBottom else if ((placement.side == Side.Left) != rtl) StretchIcons.DockLeft else StretchIcons.DockRight,
             )
             MenuDivider()
             MenuItem(stringResource(Res.string.reset_layout), { onReset(); open = false })
@@ -348,31 +361,43 @@ private fun SplitHandle(layout: () -> FrameLayout, onResize: (start: FrameLayout
 /**
  * The slot the app renders into: the well color with a grid. Floating UI goes in its corners, 12dp in:
  * [topStart] for the toolbar, [topEnd] for view tools like the [ViewNavigator], [bottomStart] and [bottomEnd] for
- * readouts. When a viewport is too narrow for a pair side by side, the end one moves under (or above) the start one
- * instead of overlapping it. [content] draws the scene and anything else, such as toasts; a native GPU surface can
- * sit there instead of drawn content.
+ * readouts, and [bottomCenter] for passing messages such as toasts. When a viewport is too narrow for a pair side by
+ * side, the end one moves under (or above) the start one instead of overlapping it, and the centre one rises above
+ * the bottom corners it would touch. [content] draws the scene; a native GPU surface can sit there instead.
+ *
+ * With a [camera], the wheel, middle button and two-finger touch move the view (see [viewportNavigation]) and the grid
+ * follows it. [rulers] adds rulers on the top and left edges in scene units, with [guides] across the view that
+ * people drag out of the rulers and back; each change comes back through [onGuidesChange].
  */
 @Composable
 fun Viewport(
     modifier: Modifier = Modifier,
     grid: Boolean = true,
+    camera: ViewportCamera? = null,
+    rulers: Boolean = false,
+    guides: List<Guide> = emptyList(),
+    onGuidesChange: ((List<Guide>) -> Unit)? = null,
     topStart: (@Composable () -> Unit)? = null,
     topEnd: (@Composable () -> Unit)? = null,
     bottomStart: (@Composable () -> Unit)? = null,
     bottomEnd: (@Composable () -> Unit)? = null,
+    bottomCenter: (@Composable () -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val c = Stretch.colors
-    Box(modifier.fillMaxSize().background(c.surfaceWell)) {
+    val withRulers = rulers && camera != null
+    Box(modifier.fillMaxSize().clipToBounds().background(c.surfaceWell).then(if (camera != null) Modifier.viewportNavigation(camera) else Modifier)) {
         if (grid) {
             Canvas(Modifier.fillMaxSize()) {
-                val step = 32.dp.toPx()
-                var x = 0f
+                var step = 32.dp.toPx() * (camera?.zoom ?: 1f)
+                while (step < 12.dp.toPx()) step *= 4
+                val origin = camera?.offset ?: Offset.Zero
+                var x = ((origin.x % step) + step) % step
                 while (x < size.width) {
                     drawLine(c.gridLine, Offset(x, 0f), Offset(x, size.height), 1f)
                     x += step
                 }
-                var y = 0f
+                var y = ((origin.y % step) + step) % step
                 while (y < size.height) {
                     drawLine(c.gridLine, Offset(0f, y), Offset(size.width, y), 1f)
                     y += step
@@ -380,35 +405,62 @@ fun Viewport(
             }
         }
         content()
-        ViewportCorners(topStart, topEnd, bottomStart, bottomEnd)
+        if (withRulers) RulersAndGuides(camera!!, guides, onGuidesChange)
+        ViewportCorners(topStart, topEnd, bottomStart, bottomEnd, bottomCenter, lead = if (withRulers) RulerSize else 0.dp)
     }
 }
 
-/** Places the viewport's corner UI, moving an end corner off its start corner when the two would overlap. */
+/**
+ * Places the viewport's corner UI, moving an end corner off its start corner when the two would overlap, and the
+ * bottom centre above any bottom corner it would touch. [lead] keeps the top and start edges clear for rulers.
+ */
 @Composable
 private fun ViewportCorners(
     topStart: (@Composable () -> Unit)?,
     topEnd: (@Composable () -> Unit)?,
     bottomStart: (@Composable () -> Unit)?,
     bottomEnd: (@Composable () -> Unit)?,
+    bottomCenter: (@Composable () -> Unit)?,
+    lead: Dp,
 ) {
     val none: @Composable () -> Unit = {}
     Layout(
-        contents = listOf(topStart ?: none, topEnd ?: none, bottomStart ?: none, bottomEnd ?: none),
+        contents = listOf(topStart ?: none, topEnd ?: none, bottomStart ?: none, bottomEnd ?: none, bottomCenter ?: none),
         modifier = Modifier.fillMaxSize(),
     ) { slots, constraints ->
         val inset = 12.dp.roundToPx()
+        val top = inset + lead.roundToPx()
+        // Rulers sit on the scene's left, which is the end side in a right-to-left layout.
+        val ltr = layoutDirection == LayoutDirection.Ltr
+        val start = if (ltr) top else inset
+        val endInset = if (ltr) inset else top
         val gap = 8.dp.roundToPx()
-        val room = Constraints(maxWidth = (constraints.maxWidth - 2 * inset).coerceAtLeast(0), maxHeight = (constraints.maxHeight - 2 * inset).coerceAtLeast(0))
-        val (ts, te, bs, be) = slots.map { it.firstOrNull()?.measure(room) }
-        fun fit(start: Placeable?, end: Placeable) = start == null || start.width + gap + end.width <= room.maxWidth
+        val room = Constraints(
+            maxWidth = (constraints.maxWidth - start - endInset).coerceAtLeast(0),
+            maxHeight = (constraints.maxHeight - inset - top).coerceAtLeast(0),
+        )
+        val (ts, te, bs, be, bc) = slots.map { it.firstOrNull()?.measure(room) }
+        fun fit(first: Placeable?, end: Placeable) = first == null || first.width + gap + end.width <= room.maxWidth
         layout(constraints.maxWidth, constraints.maxHeight) {
-            val right = constraints.maxWidth - inset
+            val right = constraints.maxWidth - endInset
             val bottom = constraints.maxHeight - inset
-            ts?.place(inset, inset)
-            te?.place(right - te.width, if (fit(ts, te)) inset else inset + ts!!.height + gap)
-            bs?.place(inset, bottom - bs.height)
-            be?.place(right - be.width, if (fit(bs, be)) bottom - be.height else bottom - bs!!.height - gap - be.height)
+            ts?.placeRelative(start, top)
+            te?.placeRelative(right - te.width, if (fit(ts, te)) top else top + ts!!.height + gap)
+            bs?.placeRelative(start, bottom - bs.height)
+            val beTop = when {
+                be == null -> bottom
+                fit(bs, be) -> bottom - be.height
+                else -> bottom - bs!!.height - gap - be.height
+            }
+            be?.placeRelative(right - be.width, beTop)
+            if (bc != null) {
+                val x = start + (room.maxWidth - bc.width) / 2
+                val tops = buildList {
+                    if (bs != null && x < start + bs.width + gap) add(bottom - bs.height)
+                    if (be != null && x + bc.width > right - be.width - gap) add(beTop)
+                }
+                bc.placeRelative(x, (tops.minOrNull()?.minus(gap) ?: bottom) - bc.height)
+            }
         }
     }
 }

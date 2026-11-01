@@ -60,12 +60,13 @@ fun WindowTopBar(
     appName: String,
     document: String,
     modifier: Modifier = Modifier,
+    edited: Boolean = false,
     modes: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val titleBar = LocalNativeTitleBar.current
     if (titleBar == null || !titleBar.supported) {
-        TopBar(appName, document, modifier, modes, actions)
+        TopBar(appName, document, modifier, edited, modes, actions)
         return
     }
     val insets = titleBar.installed()
@@ -77,6 +78,7 @@ fun WindowTopBar(
         barModifier = Modifier.titleBarHitTest(regions, titleBar::hitTest),
         start = insets.start.dp,
         end = insets.end.dp,
+        edited = edited,
         modes = { Box(Modifier.titleBarControl(regions, "modes")) { modes() } },
         actions = {
             Row(

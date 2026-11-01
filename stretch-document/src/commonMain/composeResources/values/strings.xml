@@ -1,0 +1,19 @@
+<resources>
+    <string name="untitled">Untitled</string>
+    <string name="unsaved_title">Unsaved changes</string>
+    <string name="unsaved_body">Save the changes to %1$s first?</string>
+    <string name="save">Save</string>
+    <string name="dont_save">Don’t save</string>
+    <string name="cancel">Cancel</string>
+    <string name="recover_title">Recover unsaved work</string>
+    <string name="recover_body">The app closed before these were saved. Restore one to keep working on it.</string>
+    <string name="recover_never_saved">Never saved</string>
+    <string name="restore">Restore</string>
+    <string name="discard">Discard</string>
+    <string name="discard_all">Discard all</string>
+    <string name="recent_files">Recent files</string>
+    <string name="recent_clear">Clear recent files</string>
+    <string name="recent_none">No recent files</string>
+    <string name="choose_open">Open</string>
+    <string name="choose_save">Save as</string>
+</resources>

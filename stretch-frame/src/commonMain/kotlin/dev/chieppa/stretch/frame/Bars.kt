@@ -29,11 +29,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.generated.Res
 import dev.chieppa.stretch.frame.generated.commands
+import dev.chieppa.stretch.frame.generated.document_edited
 import dev.chieppa.stretch.frame.generated.redo
 import dev.chieppa.stretch.frame.generated.settings
 import dev.chieppa.stretch.frame.generated.undo
@@ -46,17 +50,19 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The 44px bar across the top of the window: app name, document name and state, the mode switch, then window-level
- * actions. Nothing else goes here. When the window narrows, the document name shortens first, then actions from
- * [TopBarActions] fold into a More menu; the app name, the mode switch and that menu always stay.
+ * actions. Nothing else goes here. [edited] puts a dot after the document name while it has unsaved changes. When
+ * the window narrows, the document name shortens first, then actions from [TopBarActions] fold into a More menu; the
+ * app name, the mode switch and that menu always stay.
  */
 @Composable
 fun TopBar(
     appName: String,
     document: String,
     modifier: Modifier = Modifier,
+    edited: Boolean = false,
     modes: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
-) = TopBarLayout(appName, document, modifier, modes = modes, actions = actions)
+) = TopBarLayout(appName, document, modifier, edited = edited, modes = modes, actions = actions)
 
 /**
  * The [TopBar] with room kept at its [start] and [end] for buttons the OS draws over it, and [barModifier] on the bar
@@ -70,6 +76,7 @@ internal fun TopBarLayout(
     barModifier: Modifier = Modifier,
     start: Dp = 0.dp,
     end: Dp = 0.dp,
+    edited: Boolean = false,
     modes: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -78,7 +85,7 @@ internal fun TopBarLayout(
         Layout(
             contents = listOf(
                 { BasicText(appName, style = Stretch.type.heading.merge(TextStyle(color = c.inkStrong)), maxLines = 1) },
-                { BasicText(document, style = Stretch.type.body.merge(TextStyle(color = c.inkSubtle)), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                { DocumentName(document, edited) },
                 modes,
                 { Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) { actions() } },
             ),
@@ -102,7 +109,7 @@ internal fun TopBarLayout(
             val documentRoom = afterApp - modesWidth - (if (modesWidth > 0) gap else 0) - actions.width - gap
             val document = documentSlot.first().measure(loose(documentRoom))
             layout(width, height) {
-                fun Placeable.centered(x: Int) = place(x, (height - this.height) / 2)
+                fun Placeable.centered(x: Int) = placeRelative(x, (height - this.height) / 2)
                 var x = 0
                 app.centered(x)
                 x += app.width + gap
@@ -115,6 +122,27 @@ internal fun TopBarLayout(
             }
         }
         Spacer(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+    }
+}
+
+/** The document's name, and a dot after it while it has unsaved changes. */
+@Composable
+private fun DocumentName(document: String, edited: Boolean) {
+    val c = Stretch.colors
+    val editedText = stringResource(Res.string.document_edited)
+    Row(
+        Modifier.semantics(mergeDescendants = true) { if (edited) stateDescription = editedText },
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BasicText(
+            document,
+            Modifier.weight(1f, fill = false),
+            style = Stretch.type.body.merge(TextStyle(color = c.inkSubtle)),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (edited) Box(Modifier.size(7.dp).background(c.accent, CircleShape))
     }
 }
 
