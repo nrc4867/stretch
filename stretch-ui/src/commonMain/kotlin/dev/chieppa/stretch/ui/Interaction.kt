@@ -42,25 +42,26 @@ internal fun rememberControlState(): ControlState {
     return ControlState(source, hovered, focused)
 }
 
+/** How much thicker a control's border gets while it has focus. */
+internal val focusGrowth = 1.dp
+
 /**
- * The 2px focus ring, drawn inset: inside the control's border with a small gap, so it never grows the control or
- * touches a neighbor. Controls under 24dp have no room for the gap and get the ring just inside their border.
- * It shows whenever the control has focus; a click on empty space moves focus away (see [focusHome]). On a [fill]
- * the focus color would vanish against (an amber "on" control in a theme whose focus is amber) it uses `ink-strong`.
+ * Focus shows as the control's border turning the focus color and [focusGrowth] thicker. The thicker border is drawn
+ * over the control from its outer edge inward, so focus never changes the control's size or spacing. It shows
+ * whenever the control has focus; a click on empty space moves focus away (see [focusHome]). On a [fill] the focus
+ * color would vanish against (an amber "on" control in a theme whose focus is amber) it uses `ink-strong`.
  */
 @Composable
 internal fun Modifier.focusRing(state: ControlState, shape: Shape, fill: Color? = null): Modifier {
     if (!state.focused) return this
     val focus = Stretch.colors.focus
     val color = if (fill != null && contrast(focus, fill) < 3f) Stretch.colors.inkStrong else focus
-    val width = Stretch.theme.focusStroke
-    val border = Stretch.stroke
+    val width = Stretch.stroke + focusGrowth
     return drawWithContent {
         drawContent()
         val stroke = width.toPx()
-        val gap = if (size.minDimension < 24.dp.toPx()) 0f else 1.5.dp.toPx()
-        val inset = border.toPx() + gap + stroke / 2
-        val outline = shape.createOutline(Size(size.width - 2 * inset, size.height - 2 * inset), layoutDirection, this)
+        val inset = stroke / 2
+        val outline = shape.createOutline(Size(size.width - stroke, size.height - stroke), layoutDirection, this)
         translate(inset, inset) { drawOutline(outline, color, style = Stroke(stroke)) }
     }
 }
