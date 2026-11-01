@@ -1,7 +1,6 @@
 package dev.chieppa.stretch.gallery
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -26,8 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
@@ -154,8 +150,6 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar) {
             else -> null
         }
     }
-    val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focus.requestFocus() }
 
     val drawers = listOf(
         DrawerSpec("layers", "Layers", StretchIcons.Layers, count = doc.layers.size.toString()) {
@@ -232,7 +226,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar) {
         onLayoutChange = { layouts = layouts.update(mode.name) { _ -> it } },
         drawers = drawers,
         onResetLayout = { layouts = layouts.reset(mode.name) },
-        modifier = Modifier.actionKeys(keymap, mode.name).focusRequester(focus).focusable(),
+        modifier = Modifier.actionKeys(keymap, mode.name),
         keyCast = if (showKeys) keyCast else null,
         statusBar = {
             StatusBar(start = { StatusItem("${doc.layers.size} layers") }, end = { StatusItem("${(zoom * 100).toInt()}%", onClick = { zoom = 1f }) })

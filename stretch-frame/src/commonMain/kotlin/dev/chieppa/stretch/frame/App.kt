@@ -55,6 +55,7 @@ import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
 import dev.chieppa.stretch.ui.IconButton
+import dev.chieppa.stretch.ui.focusHome
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -171,7 +172,7 @@ fun StretchApp(
         }
     }
 
-    Column(modifier.fillMaxSize().background(c.surfaceCanvas).then(if (keyCast != null) Modifier.keyCast(keyCast) else Modifier)) {
+    Column(modifier.focusHome().fillMaxSize().background(c.surfaceCanvas).then(if (keyCast != null) Modifier.keyCast(keyCast) else Modifier)) {
         topBar()
         BoxWithConstraints(Modifier.weight(1f)) {
             val narrow = maxWidth.value < FrameLayout.NARROW_WINDOW

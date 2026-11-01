@@ -14,6 +14,15 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawOutline
@@ -81,3 +90,24 @@ internal fun Label(text: String, style: TextStyle, color: Color, modifier: Modif
 }
 
 internal val iconGap = 6.dp
+
+/**
+ * Makes this element the focus home: it takes focus when it appears and whenever a click lands on empty space inside
+ * it, meaning nothing under the pointer used the click. Clicking away from a text field or a button then takes focus
+ * off it, as people expect, while keys keep reaching shortcut handlers on this element. Clicks on controls, inside a
+ * text field included, are left alone. Put it on the window or app root.
+ */
+fun Modifier.focusHome(): Modifier = composed {
+    val home = remember { FocusRequester() }
+    LaunchedEffect(Unit) { home.requestFocus() }
+    focusRequester(home)
+        .focusable()
+        .pointerInput(Unit) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Final)
+                if (down.isConsumed) return@awaitEachGesture
+                val up = waitForUpOrCancellation(PointerEventPass.Final) ?: return@awaitEachGesture
+                if (!up.isConsumed) home.requestFocus()
+            }
+        }
+}

@@ -44,7 +44,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -138,7 +140,7 @@ fun NumberField(
     val state = rememberControlState()
     val shape = Stretch.shapes.ctlShape
     var editing by remember { mutableStateOf(false) }
-    var text by remember { mutableStateOf("") }
+    var text by remember { mutableStateOf(TextFieldValue("")) }
     var hadFocus by remember { mutableStateOf(false) }
     val change by rememberUpdatedState(onValueChange)
     val finished by rememberUpdatedState(onValueChangeFinished)
@@ -147,7 +149,7 @@ fun NumberField(
     val style = Stretch.type.value.merge(TextStyle(color = c.inkStrong, textAlign = TextAlign.End))
 
     fun commit() {
-        text.trim().toFloatOrNull()?.let { change(it.coerceIn(range)) }
+        text.text.trim().toFloatOrNull()?.let { change(it.coerceIn(range)) }
         editing = false
         finished()
     }
@@ -204,7 +206,7 @@ fun NumberField(
             frame
                 .hoverable(state.source)
                 .clickable(state.source, indication = null) {
-                    text = format(current)
+                    text = format(current).let { TextFieldValue(it, TextRange(0, it.length)) }
                     editing = true
                 }
                 .onKeyEvent { event ->
@@ -214,7 +216,7 @@ fun NumberField(
                         Key.DirectionUp, Key.DirectionRight -> change((value + amount).coerceIn(range))
                         Key.DirectionDown, Key.DirectionLeft -> change((value - amount).coerceIn(range))
                         Key.Enter -> {
-                            text = format(value)
+                            text = format(value).let { TextFieldValue(it, TextRange(0, it.length)) }
                             editing = true
                             return@onKeyEvent true
                         }

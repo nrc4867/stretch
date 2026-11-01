@@ -48,6 +48,7 @@ import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
+import dev.chieppa.stretch.ui.focusHome
 import org.jetbrains.compose.resources.stringResource
 import java.awt.Cursor
 import java.awt.MouseInfo
@@ -56,7 +57,7 @@ import java.awt.Rectangle
 /**
  * A window without the system title bar, so the Stretch top bar is the only bar: put a [WindowTopBar] at the top of
  * [content]. The window still resizes from its edges and corners, and the top bar drags it, double-clicks to maximize
- * and holds the minimize, maximize and close buttons.
+ * and holds the minimize, maximize and close buttons. Clicking empty space takes focus off fields and buttons.
  */
 @Composable
 fun StretchWindow(
@@ -67,7 +68,7 @@ fun StretchWindow(
     content: @Composable FrameWindowScope.() -> Unit,
 ) {
     Window(onCloseRequest = onCloseRequest, state = state, title = title, icon = icon, undecorated = true) {
-        Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().focusHome()) {
             content()
             if (state.placement == WindowPlacement.Floating) ResizeEdges(this@Window)
         }
