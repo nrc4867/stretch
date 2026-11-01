@@ -1,9 +1,8 @@
 package dev.chieppa.stretch.gpu
 
-import io.ygdrasil.webgpu.Extent3D
-import io.ygdrasil.webgpu.GPUTextureUsage
-import io.ygdrasil.webgpu.GPUTextureView
-import io.ygdrasil.webgpu.TextureDescriptor
+import dev.chieppa.stretch.gpu.webgpu.GpuTextureView
+import dev.chieppa.stretch.gpu.webgpu.TextureSpec
+import dev.chieppa.stretch.gpu.webgpu.TextureUsage
 
 /**
  * The frame's own color and depth textures at the output's size: a multisampled color target that resolves into the
@@ -15,25 +14,23 @@ internal class RenderTargets(private val context: GpuContext) : AutoCloseable {
     private val owned = mutableListOf<AutoCloseable>()
 
     /** The multisampled color view, or null when frames draw straight into the output. */
-    var color: GPUTextureView? = null
+    var color: GpuTextureView? = null
         private set
 
-    var depth: GPUTextureView? = null
+    var depth: GpuTextureView? = null
         private set
 
     fun ensure(width: Int, height: Int) {
         if (width == this.width && height == this.height && depth != null) return
         close()
-        val size = Extent3D(width.toUInt(), height.toUInt())
-        val samples = context.sampleCount.toUInt()
-        if (context.sampleCount > 1) color = view(TextureDescriptor(size = size, format = context.format, usage = setOf(GPUTextureUsage.RenderAttachment), sampleCount = samples))
-        depth = view(TextureDescriptor(size = size, format = context.depthFormat, usage = setOf(GPUTextureUsage.RenderAttachment), sampleCount = samples))
+        if (context.sampleCount > 1) color = view(TextureSpec(width, height, context.format, TextureUsage.RenderAttachment, context.sampleCount))
+        depth = view(TextureSpec(width, height, context.depthFormat, TextureUsage.RenderAttachment, context.sampleCount))
         this.width = width
         this.height = height
     }
 
-    private fun view(descriptor: TextureDescriptor): GPUTextureView {
-        val texture = context.device.createTexture(descriptor)
+    private fun view(spec: TextureSpec): GpuTextureView {
+        val texture = context.device.createTexture(spec)
         val view = texture.createView()
         owned += view
         owned += texture

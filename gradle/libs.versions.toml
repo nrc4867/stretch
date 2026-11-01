@@ -5,9 +5,7 @@ kotlinx-coroutines = "1.11.0"
 jvmToolchain = "25"
 jna = "5.17.0"
 jbr-api = "1.12.0"
-wgpu4k = "0.1.1"
-webgpu-ktypes = "0.0.7"
-slf4j = "2.0.16"
+wgpu-native = "v29.0.1.1"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
@@ -18,10 +16,6 @@ compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
 jbr-api = { module = "org.jetbrains.runtime:jbr-api", version.ref = "jbr-api" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
-wgpu4k = { module = "io.ygdrasil:wgpu4k", version.ref = "wgpu4k" }
-slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
-webgpu-ktypes = { module = "io.ygdrasil:webgpu-ktypes", version.ref = "webgpu-ktypes" }
-webgpu-ktypes-descriptors = { module = "io.ygdrasil:webgpu-ktypes-descriptors", version.ref = "webgpu-ktypes" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }

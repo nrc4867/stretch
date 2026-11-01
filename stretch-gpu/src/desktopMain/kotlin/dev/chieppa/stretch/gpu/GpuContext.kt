@@ -1,7 +1,7 @@
 package dev.chieppa.stretch.gpu
 
-import io.ygdrasil.webgpu.GPUDevice
-import io.ygdrasil.webgpu.GPUTextureFormat
+import dev.chieppa.stretch.gpu.webgpu.GpuDevice
+import dev.chieppa.stretch.gpu.webgpu.TextureFormat
 
 /**
  * What a [GpuScene] builds its pipelines against: the [device], the [format] and [sampleCount] of the frame's color
@@ -10,12 +10,12 @@ import io.ygdrasil.webgpu.GPUTextureFormat
  * API underneath, for an about box or a bug report.
  */
 class GpuContext internal constructor(
-    val device: GPUDevice,
-    val format: GPUTextureFormat,
+    val device: GpuDevice,
+    val format: TextureFormat,
     val sampleCount: Int,
     val description: String,
 ) : AutoCloseable {
-    val depthFormat: GPUTextureFormat = GPUTextureFormat.Depth24Plus
+    val depthFormat: TextureFormat = TextureFormat.Depth24Plus
 
     private var overlayPass: OverlayPass? = null
 
