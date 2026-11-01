@@ -42,6 +42,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -50,11 +51,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
+import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
 
 /**
  * A one-line text or search field. No inline help text: anything that needs explaining goes in the tooltip, often
- * on a [FieldIcon] in [trailing]. [icon] is a shorthand for a plain leading icon.
+ * on a [FieldIcon] in [trailing]. [icon] is a shorthand for a plain leading icon. With [error] the field shows the
+ * error edge and icon, and the message in the icon's tooltip.
  */
 @Composable
 fun TextField(
@@ -66,6 +69,7 @@ fun TextField(
     contentDescription: String = placeholder,
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    error: String? = null,
 ) {
     val c = Stretch.colors
     val state = rememberControlState()
@@ -73,7 +77,10 @@ fun TextField(
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.focusRing(state, shape).semantics { this.contentDescription = contentDescription },
+        modifier = modifier.focusRing(state, shape).semantics {
+            this.contentDescription = contentDescription
+            if (error != null) error(error)
+        },
         singleLine = true,
         textStyle = Stretch.type.body.merge(TextStyle(color = c.inkStrong)),
         cursorBrush = SolidColor(c.inkStrong),
@@ -84,7 +91,7 @@ fun TextField(
                     .height(StretchSizes.ctl)
                     .clip(shape)
                     .background(c.surfaceFloat)
-                    .border(Stretch.stroke, c.lineControl, shape)
+                    .border(Stretch.stroke, if (error != null) c.errorEdge else c.lineControl, shape)
                     .padding(horizontal = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(iconGap),
                 verticalAlignment = Alignment.CenterVertically,
@@ -96,9 +103,15 @@ fun TextField(
                     inner()
                 }
                 trailing?.invoke()
+                if (error != null) ErrorMark(error)
             }
         },
     )
+}
+
+@Composable
+private fun ErrorMark(message: String) {
+    Tooltip(message) { Icon(StretchIcons.Error, Stretch.colors.errorInk, contentDescription = message) }
 }
 
 /**
@@ -119,6 +132,7 @@ fun NumberField(
     onValueChangeFinished: () -> Unit = {},
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    error: String? = null,
 ) {
     val c = Stretch.colors
     val state = rememberControlState()
@@ -144,8 +158,11 @@ fun NumberField(
         .heightIn(min = StretchSizes.ctl)
         .clip(shape)
         .background(c.surfaceFloat)
-        .border(Stretch.stroke, c.lineControl, shape)
-        .semantics { this.contentDescription = contentDescription }
+        .border(Stretch.stroke, if (error != null) c.errorEdge else c.lineControl, shape)
+        .semantics {
+            this.contentDescription = contentDescription
+            if (error != null) error(error)
+        }
 
     if (editing) {
         LaunchedEffect(Unit) {
@@ -178,6 +195,7 @@ fun NumberField(
                     leading?.invoke()
                     Box(Modifier.weight(1f), Alignment.CenterEnd) { inner() }
                     trailing?.invoke()
+                    if (error != null) ErrorMark(error)
                 }
             },
         )
@@ -233,6 +251,10 @@ fun NumberField(
             if (trailing != null) {
                 Spacer(Modifier.width(iconGap))
                 trailing()
+            }
+            if (error != null) {
+                Spacer(Modifier.width(iconGap))
+                ErrorMark(error)
             }
         }
     }

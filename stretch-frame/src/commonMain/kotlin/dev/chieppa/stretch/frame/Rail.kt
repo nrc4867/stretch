@@ -41,11 +41,16 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchSizes
+import dev.chieppa.stretch.ui.BadgedBox
 import dev.chieppa.stretch.ui.ToolButton
+import dev.chieppa.stretch.ui.Tooltip
 import kotlin.math.roundToInt
 
-/** A rail button. [bottom] puts it in the group at the foot of the rail. */
-data class RailItem(val id: String, val icon: ImageVector, val label: String, val bottom: Boolean = false)
+/**
+ * A rail button. [bottom] puts it in the group at the foot of the rail. [badge] marks something new or waiting in
+ * its drawer: a count, or an empty string for a dot.
+ */
+data class RailItem(val id: String, val icon: ImageVector, val label: String, val bottom: Boolean = false, val badge: String? = null)
 
 /** Where a dragged rail button lands: its group and its index there, counted without the dragged button. */
 data class RailDrop(val bottom: Boolean, val index: Int)
@@ -147,7 +152,11 @@ fun Rail(
                 }
         }
         Box(Modifier.alpha(if (dragging == itemId) 0.4f else 1f).then(drag)) {
-            Tooltip(item.label) { ToolButton(item.icon, item.label, item.id in open, { onToggle(item.id) }) }
+            Tooltip(item.label) {
+                BadgedBox(item.badge, listOfNotNull(item.label, item.badge?.ifEmpty { null }).joinToString(" · ")) {
+                    ToolButton(item.icon, item.label, item.id in open, { onToggle(item.id) })
+                }
+            }
         }
     }
 

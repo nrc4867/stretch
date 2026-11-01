@@ -4,8 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +32,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -42,7 +41,13 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchSizes
+import dev.chieppa.stretch.theme.StretchIcons
+import dev.chieppa.stretch.frame.generated.Res
+import dev.chieppa.stretch.frame.generated.collapsed
+import dev.chieppa.stretch.frame.generated.expanded
 import dev.chieppa.stretch.ui.Chip
+import org.jetbrains.compose.resources.stringResource
+import dev.chieppa.stretch.ui.ScrollColumn
 
 enum class DrawerStyle { Docked, Card, Floating }
 
@@ -94,21 +99,51 @@ fun Drawer(
     }
     Column(base) {
         DrawerHeader(title, icon, count, actions)
-        Column(Modifier.verticalScroll(rememberScrollState()), content = content)
+        ScrollColumn(Modifier.weight(1f, fill = false), content = content)
     }
 }
 
-/** A group of rows in a drawer, with an optional eyebrow label and a divider under it. */
+/**
+ * A group of rows in a drawer, with an optional eyebrow label and a divider under it. With [collapsed] set the label
+ * folds the section: a chevron leads it and clicking it reports [onCollapsedChange]. The drawer's app keeps which
+ * sections are folded, like the rest of its layout.
+ */
 @Composable
-fun DrawerSection(label: String? = null, divider: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
+fun DrawerSection(
+    label: String? = null,
+    divider: Boolean = true,
+    collapsed: Boolean? = null,
+    onCollapsedChange: (Boolean) -> Unit = {},
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val c = Stretch.colors
+    val folds = collapsed != null && label != null
     Column {
         Column(
-            Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 12.dp),
+            Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = if (collapsed == true) 10.dp else 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (label != null) BasicText(label.uppercase(), style = Stretch.type.eyebrow.merge(TextStyle(color = c.inkMuted)))
-            content()
+            if (label != null) {
+                if (folds) {
+                    val source = remember { MutableInteractionSource() }
+                    val hovered by source.collectIsHoveredAsState()
+                    val state = stringResource(if (collapsed == true) Res.string.collapsed else Res.string.expanded)
+                    Row(
+                        Modifier
+                            .hoverable(source)
+                            .clickable(source, null, role = Role.Button) { onCollapsedChange(collapsed != true) }
+                            .semantics { stateDescription = state },
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(if (collapsed == true) StretchIcons.ChevronRight else StretchIcons.ChevronDown, if (hovered) c.inkStrong else c.inkMuted, size = 12.dp)
+                        BasicText(label.uppercase(), style = Stretch.type.eyebrow.merge(TextStyle(color = if (hovered) c.inkStrong else c.inkMuted)))
+                    }
+                } else {
+                    BasicText(label.uppercase(), style = Stretch.type.eyebrow.merge(TextStyle(color = c.inkMuted)))
+                }
+            }
+            if (collapsed != true) content()
         }
         if (divider) Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
     }

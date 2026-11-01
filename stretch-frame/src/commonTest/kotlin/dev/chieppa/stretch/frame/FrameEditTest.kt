@@ -22,6 +22,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.runComposeUiTest
@@ -201,6 +203,30 @@ class FrameEditTest {
         }
         val after = onNodeWithText("Format").fetchSemanticsNode().positionInRoot
         assertTrue(after.x < before.x - 40 && after.y > before.y + 30, "Moved from $before to $after")
+    }
+
+    @Test
+    fun rightClickOpensAContextMenuAtThePointer() = runComposeUiTest {
+        var ran = ""
+        setStretchContent {
+            ContextMenuArea({ close -> MenuItem("Duplicate", { ran = "dup"; close() }) }) {
+                Box(Modifier.size(200.dp).testTag("area"))
+            }
+        }
+        onNodeWithText("Duplicate").assertDoesNotExist()
+        onNodeWithTag("area").performMouseInput { rightClick(Offset(40f, 50f)) }
+        onNodeWithText("Duplicate").performClick()
+        assertEquals("dup", ran)
+        onNodeWithText("Duplicate").assertDoesNotExist()
+    }
+
+    @Test
+    fun sectionsFoldFromTheirLabel() = runComposeUiTest {
+        var folded by mutableStateOf(false)
+        setStretchContent { DrawerSection("Outline", collapsed = folded, onCollapsedChange = { folded = it }) { RowText("Width") } }
+        onNodeWithText("OUTLINE").performClick()
+        assertTrue(folded)
+        onNodeWithText("Width").assertDoesNotExist()
     }
 
     @Test

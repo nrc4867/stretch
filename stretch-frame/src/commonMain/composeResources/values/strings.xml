@@ -15,4 +15,6 @@
     <string name="resize_panel">Resize bottom panel</string>
     <string name="search_commands">Search commands</string>
     <string name="no_matches">No matches</string>
+    <string name="collapsed">Collapsed</string>
+    <string name="expanded">Expanded</string>
 </resources>

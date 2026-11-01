@@ -43,7 +43,6 @@ import dev.chieppa.stretch.frame.ToastHost
 import dev.chieppa.stretch.frame.ToastState
 import dev.chieppa.stretch.frame.Toolbar
 import dev.chieppa.stretch.frame.ToolbarSeparator
-import dev.chieppa.stretch.frame.Tooltip
 import dev.chieppa.stretch.frame.TopBar
 import dev.chieppa.stretch.frame.SettingRow
 import dev.chieppa.stretch.theme.Icon
@@ -72,6 +71,7 @@ import dev.chieppa.stretch.ui.Slider
 import dev.chieppa.stretch.ui.Swatch
 import dev.chieppa.stretch.ui.TextField
 import dev.chieppa.stretch.ui.Toggle
+import dev.chieppa.stretch.ui.Tooltip
 import dev.chieppa.stretch.ui.ToolButton
 import kotlin.math.roundToInt
 

@@ -91,16 +91,6 @@ private class BelowAnchor(private val gap: Int) : PopupPositionProvider {
     }
 }
 
-/** Centers a popup over its anchor, above it when there is room. */
-private class AboveAnchor(private val gap: Int) : PopupPositionProvider {
-    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
-        val x = (anchorBounds.center.x - popupContentSize.width / 2).coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0))
-        val above = anchorBounds.top - gap - popupContentSize.height
-        val y = if (above >= 0) above else anchorBounds.bottom + gap
-        return IntOffset(x, y)
-    }
-}
-
 /**
  * Centers a popup in the window, [top] pixels down, or in the middle when [top] is null, then moves it by [moved]
  * while keeping it inside the window.
@@ -116,58 +106,26 @@ private class InWindow(private val top: Int?, private val moved: IntOffset = Int
     }
 }
 
-/**
- * The tooltip: the one place for a full sentence. Names the action and its key, shown after a short hover.
- * Long-press with a pen arrives with the input layer.
- */
-@Composable
-fun Tooltip(text: String, keys: List<String>? = null, content: @Composable () -> Unit) {
-    val source = remember { MutableInteractionSource() }
-    val hovered by source.collectIsHoveredAsState()
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(hovered) {
-        if (hovered) {
-            delay(500)
-            visible = true
-        } else {
-            visible = false
-        }
-    }
-    Box(Modifier.hoverable(source)) {
-        content()
-        if (visible) {
-            val c = Stretch.colors
-            Popup(popupPositionProvider = AboveAnchor(6), properties = PopupProperties(focusable = false)) {
-                Row(
-                    Modifier
-                        .clip(Stretch.shapes.ctlShape)
-                        .background(c.inkStrong)
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    BasicText(text, style = Stretch.type.bodySm.merge(TextStyle(color = c.surfacePanel)))
-                    if (keys != null) Kbd(keys)
-                }
-            }
-        }
-    }
-}
-
 /** A dropdown or context menu under its anchor. Put [MenuItem], [MenuDivider] and [MenuLabel] inside. */
 @Composable
 fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     if (!expanded) return
     Popup(popupPositionProvider = BelowAnchor(4), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
-        Column(
-            Modifier
-                .width(IntrinsicSize.Max)
-                .widthIn(min = 200.dp, max = 360.dp)
-                .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
-                .padding(4.dp),
-            content = content,
-        )
+        MenuPanel(content)
     }
+}
+
+/** The floating list a menu or context menu shows: as wide as its widest item, 200 to 360dp. */
+@Composable
+internal fun MenuPanel(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        Modifier
+            .width(IntrinsicSize.Max)
+            .widthIn(min = 200.dp, max = 360.dp)
+            .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
+            .padding(4.dp),
+        content = content,
+    )
 }
 
 /**

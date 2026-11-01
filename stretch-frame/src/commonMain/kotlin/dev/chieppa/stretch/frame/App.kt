@@ -58,7 +58,8 @@ import dev.chieppa.stretch.ui.IconButton
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * One drawer an app offers: its rail icon, title and contents. [actions] go in its header before the menu. [content]
+ * One drawer an app offers: its rail icon, title and contents. [actions] go in its header before the menu; [badge]
+ * goes on its rail button (see [dev.chieppa.stretch.ui.badgeCount]). [content]
  * is told where the drawer is showing: a tall side column or the wide bottom panel, so it can lay out for either.
  */
 class DrawerSpec(
@@ -66,6 +67,7 @@ class DrawerSpec(
     val title: String,
     val icon: ImageVector,
     val count: String? = null,
+    val badge: String? = null,
     val actions: @Composable RowScope.() -> Unit = {},
     val content: @Composable ColumnScope.(DrawerPosition) -> Unit,
 )
@@ -97,7 +99,7 @@ fun StretchApp(
     @Composable
     fun rail(side: Side) = Rail(
         side = side,
-        items = layout.on(side).mapNotNull { placement -> specs[placement.id]?.let { RailItem(it.id, it.icon, it.title, placement.bottom) } },
+        items = layout.on(side).mapNotNull { placement -> specs[placement.id]?.let { RailItem(it.id, it.icon, it.title, placement.bottom, it.badge) } },
         open = layout.on(side).filter { it.open }.map { it.id }.toSet(),
         onToggle = { change(current.toggle(it)) },
         onMove = { id, drop -> change(current.move(id, side, drop.bottom, drop.index)) },

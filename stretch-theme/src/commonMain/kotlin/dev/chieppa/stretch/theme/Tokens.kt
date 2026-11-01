@@ -60,6 +60,9 @@ data class StretchColors(
     val warnWash: Color,
     val warnEdge: Color,
     val warnInk: Color,
+    val errorWash: Color,
+    val errorEdge: Color,
+    val errorInk: Color,
 )
 
 @Immutable
@@ -121,6 +124,9 @@ internal val InkColors = StretchColors(
     warnWash = Color(0xFFFBE3D3),
     warnEdge = Color(0xFFC2562B),
     warnInk = Color(0xFF8A3410),
+    errorWash = Color(0xFFFDE0DE),
+    errorEdge = Color(0xFFB3261E),
+    errorInk = Color(0xFF9B1C1C),
 )
 
 internal val InkShadows = StretchShadows(
@@ -181,6 +187,9 @@ internal val InkDarkColors = StretchColors(
     warnWash = Color(0xFF3A2419),
     warnEdge = Color(0xFFD9774A),
     warnInk = Color(0xFFF2B394),
+    errorWash = Color(0xFF3B1A1C),
+    errorEdge = Color(0xFFE5706D),
+    errorInk = Color(0xFFF6A8A4),
 )
 
 internal val InkDarkShadows = StretchShadows(
@@ -241,6 +250,9 @@ internal val WorkshopDarkColors = StretchColors(
     warnWash = Color(0xFF2E1F1A),
     warnEdge = Color(0xFFA85A3C),
     warnInk = Color(0xFFF0A585),
+    errorWash = Color(0xFF2F1A1D),
+    errorEdge = Color(0xFFC4504F),
+    errorInk = Color(0xFFF39D9B),
 )
 
 internal val WorkshopDarkShadows = StretchShadows(
@@ -301,6 +313,9 @@ internal val WorkshopLightColors = StretchColors(
     warnWash = Color(0xFFFBE6DC),
     warnEdge = Color(0xFFD98B6A),
     warnInk = Color(0xFF8A3410),
+    errorWash = Color(0xFFFDE5E4),
+    errorEdge = Color(0xFFC4403C),
+    errorInk = Color(0xFF9B1C1C),
 )
 
 internal val WorkshopLightShadows = StretchShadows(
