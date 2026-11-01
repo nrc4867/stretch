@@ -109,6 +109,16 @@ data class FrameLayout(
     /** Sets the left half's share of the bottom panel when both halves are open. */
     fun splitBottom(share: Float): FrameLayout = copy(bottomSplit = share.coerceIn(MIN_BOTTOM_SHARE, 1 - MIN_BOTTOM_SHARE))
 
+    /**
+     * The scale for side drawer widths so that, in a row [width] dp wide, the viewport keeps [MIN_VIEWPORT]. 1 when
+     * they fit. Only drawers in [shown] count. The stored widths stay as they are, so a wider window restores them.
+     */
+    fun sideFit(width: Float, shown: Set<String>): Float {
+        val sides = Side.entries.sumOf { side -> (openOn(side).firstOrNull { it.id in shown }?.width ?: 0f).toDouble() }.toFloat()
+        val room = width - MIN_VIEWPORT
+        return if (sides <= room || sides <= 0f) 1f else (room / sides).coerceAtLeast(0f)
+    }
+
     private fun withDrawers(list: List<DrawerPlacement>) = copy(drawers = list)
 
     private fun update(id: String, change: (DrawerPlacement) -> DrawerPlacement): FrameLayout =
@@ -124,8 +134,8 @@ data class FrameLayout(
         const val DEFAULT_BOTTOM_HEIGHT = 220f
         const val MIN_BOTTOM_SHARE = 0.25f
 
-        /** Below this window width drawers float over the viewport instead of pushing it over. */
-        const val NARROW_WINDOW = 1100f
+        /** The narrowest the viewport gets while side drawers are open; past it the drawers are shown narrower. */
+        const val MIN_VIEWPORT = 240f
     }
 }
 

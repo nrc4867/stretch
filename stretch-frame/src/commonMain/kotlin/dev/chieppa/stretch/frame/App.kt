@@ -76,8 +76,10 @@ class DrawerSpec(
 /**
  * The window every app starts from: top bar, a rail on each edge, docked drawers that push the viewport over, the
  * viewport, and a bottom panel for drawers in the rails' bottom groups. The bottom panel spans the window between
- * the rails, split in two when both sides have a drawer open there. Under 1100dp wide, side drawers float over the
- * viewport instead. Drawers resize from their inner edge, the split between stacked drawers and the bottom panel's
+ * the rails, split in two when both sides have a drawer open there. Drawers always stay docked; in a window too narrow
+ * for their widths they are shown narrower, down to [FrameLayout.MIN_WIDTH], so the viewport keeps
+ * [FrameLayout.MIN_VIEWPORT] as long as it can. Drawers resize from their
+ * inner edge, the split between stacked drawers and the bottom panel's
  * top edge; rail buttons reorder by dragging. The layout is the app's state: every change comes back through
  * [onLayoutChange]. Pass a [keyCast] to show key presses over the viewport and a [statusBar] for the window's foot.
  */
@@ -151,13 +153,14 @@ fun StretchApp(
     }
 
     @Composable
-    fun stack(side: Side, style: DrawerStyle, modifier: Modifier) {
+    fun stack(side: Side, fit: Float) {
         val open = layout.openOn(side).filter { it.id in specs }
         if (open.isEmpty()) return
         val width = open.first().width
         var columnHeight by remember { mutableFloatStateOf(1f) }
         val resize: (Float) -> Unit = { w -> change(open.fold(current) { l, d -> l.resize(d.id, w) }) }
-        Row(modifier.width(width.dp).fillMaxHeight()) {
+        val shown = maxOf(width * fit, minOf(width, FrameLayout.MIN_WIDTH))
+        Row(Modifier.width(shown.dp).fillMaxHeight()) {
             if (side == Side.Right) ResizeHandle(width, -1f, resize)
             Column(Modifier.weight(1f).fillMaxHeight().onSizeChanged { columnHeight = it.height.toFloat().coerceAtLeast(1f) }) {
                 open.forEachIndexed { i, placement ->
@@ -165,7 +168,7 @@ fun StretchApp(
                         val upper = open[i - 1].id
                         SplitHandle({ current }) { start, dy -> change(start.resizeSplit(upper, placement.id, dy / columnHeight)) }
                     }
-                    drawer(placement, style, Modifier.weight(placement.height))
+                    drawer(placement, DrawerStyle.Docked, Modifier.weight(placement.height))
                 }
             }
             if (side == Side.Left) ResizeHandle(width, 1f, resize)
@@ -175,21 +178,17 @@ fun StretchApp(
     Column(modifier.focusHome().fillMaxSize().background(c.surfaceCanvas).then(if (keyCast != null) Modifier.keyCast(keyCast) else Modifier)) {
         topBar()
         BoxWithConstraints(Modifier.weight(1f)) {
-            val narrow = maxWidth.value < FrameLayout.NARROW_WINDOW
+            val fit = layout.sideFit(maxWidth.value - 2 * StretchSizes.rail.value, specs.keys)
             Row(Modifier.fillMaxSize()) {
                 rail(Side.Left)
                 Column(Modifier.weight(1f).fillMaxHeight()) {
                     Row(Modifier.weight(1f).fillMaxWidth()) {
-                        if (!narrow) stack(Side.Left, DrawerStyle.Docked, Modifier)
+                        stack(Side.Left, fit)
                         Box(Modifier.weight(1f).fillMaxHeight()) {
                             viewport()
-                            if (narrow) {
-                                stack(Side.Left, DrawerStyle.Floating, Modifier.align(Alignment.TopStart).padding(8.dp))
-                                stack(Side.Right, DrawerStyle.Floating, Modifier.align(Alignment.TopEnd).padding(8.dp))
-                            }
                             if (keyCast != null) KeyCast(keyCast, Modifier.align(Alignment.BottomEnd).padding(12.dp))
                         }
-                        if (!narrow) stack(Side.Right, DrawerStyle.Docked, Modifier)
+                        stack(Side.Right, fit)
                     }
                     bottomPanel()
                 }

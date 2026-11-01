@@ -50,7 +50,7 @@ import dev.chieppa.stretch.ui.Chip
 import org.jetbrains.compose.resources.stringResource
 import dev.chieppa.stretch.ui.ScrollColumn
 
-enum class DrawerStyle { Docked, Card, Floating }
+enum class DrawerStyle { Docked, Card }
 
 /** A drawer's 44px header: icon, title, then small icon buttons for its actions, menu and close. */
 @Composable
@@ -96,7 +96,6 @@ fun Drawer(
     val base = when (style) {
         DrawerStyle.Docked -> modifier.background(c.surfacePanel)
         DrawerStyle.Card -> modifier.clip(shape).background(c.surfacePanel).border(Stretch.stroke, c.linePanel, shape)
-        DrawerStyle.Floating -> modifier.floating(shape, Stretch.shadows.float).background(c.surfacePanel)
     }
     Column(base) {
         DrawerHeader(title, icon, count, actions)

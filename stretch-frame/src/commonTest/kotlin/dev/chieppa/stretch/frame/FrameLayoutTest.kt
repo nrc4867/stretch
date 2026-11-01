@@ -29,6 +29,16 @@ class FrameLayoutTest {
     }
 
     @Test
+    fun sideDrawersNarrowSoTheViewportKeepsItsMinimum() {
+        val shown = setOf("layers", "brush")
+        val both = 2 * FrameLayout.DEFAULT_WIDTH
+        assertEquals(1f, layout.sideFit(both + FrameLayout.MIN_VIEWPORT + 100f, shown))
+        assertEquals(0.5f, layout.sideFit(both / 2 + FrameLayout.MIN_VIEWPORT, shown))
+        assertEquals(0f, layout.sideFit(100f, shown))
+        assertEquals(1f, layout.sideFit(both / 2 + FrameLayout.MIN_VIEWPORT, setOf("layers")))
+    }
+
+    @Test
     fun dockingMovesToTheEndOfTheOtherSide() {
         val moved = layout.dock("layers", Side.Right)
         assertEquals(listOf("brush", "layers"), moved.on(Side.Right).map { it.id })
