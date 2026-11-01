@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -57,7 +58,8 @@ import java.awt.Rectangle
 /**
  * A window without the system title bar, so the Stretch top bar is the only bar: put a [WindowTopBar] at the top of
  * [content]. The window still resizes from its edges and corners, and the top bar drags it, double-clicks to maximize
- * and holds the minimize, maximize and close buttons. Clicking empty space takes focus off fields and buttons.
+ * and holds the minimize, maximize and close buttons. On Windows the corners are rounded by the shell, like every
+ * other window, and maximizing stops at the taskbar. Clicking empty space takes focus off fields and buttons.
  */
 @Composable
 fun StretchWindow(
@@ -68,6 +70,10 @@ fun StretchWindow(
     content: @Composable FrameWindowScope.() -> Unit,
 ) {
     Window(onCloseRequest = onCloseRequest, state = state, title = title, icon = icon, undecorated = true) {
+        DisposableEffect(window) {
+            followSystemShell(window)
+            onDispose {}
+        }
         Box(Modifier.fillMaxSize().focusHome()) {
             content()
             if (state.placement == WindowPlacement.Floating) ResizeEdges(this@Window)
