@@ -43,6 +43,7 @@ fun StretchWindow(
         if (icon == null) {
             LaunchedEffect(window) { AppIdentity.current?.icons?.takeIf { it.isNotEmpty() }?.let { window.iconImages = it } }
         }
+        TouchInput(window)
         val titleBar = remember(window) { NativeTitleBar(window) }
         val drawerWindows = remember(window) { DesktopDrawerWindows(window) }
         CompositionLocalProvider(LocalNativeTitleBar provides titleBar, LocalDrawerWindows provides drawerWindows) {

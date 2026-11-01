@@ -36,6 +36,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.isMetaPressed
 import androidx.compose.ui.input.pointer.isPrimaryPressed
@@ -234,7 +235,7 @@ fun Modifier.marquee(camera: ViewportCamera, onMarquee: (scene: Rect, additive: 
     pointerInput(camera) {
         awaitEachGesture {
             val down = awaitFirstDown()
-            if (!currentEvent.buttons.isPrimaryPressed && down.type == androidx.compose.ui.input.pointer.PointerType.Mouse) return@awaitEachGesture
+            if (!currentEvent.buttons.isPrimaryPressed && down.type == PointerType.Mouse) return@awaitEachGesture
             val start = down.position
             var dragged = false
             var additive = false
@@ -306,6 +307,8 @@ fun Modifier.transformHandles(
     pointerInput(camera) {
         val handle = 4.dp.toPx()
         val stem = 22.dp.toPx()
+        // A fingertip covers far more than a handle, so touch reaches further.
+        val fingerReach = 14.dp.toPx()
         awaitPointerEventScope {
             while (true) {
                 val event = awaitPointerEvent()
@@ -315,7 +318,8 @@ fun Modifier.transformHandles(
                     hover = -1
                     continue
                 }
-                val part = partAt(t, camera, change.position, handle, stem)
+                val reach = if (change.type == PointerType.Touch) fingerReach else GRAB
+                val part = partAt(t, camera, change.position, handle, stem, reach)
                 if (event.type != PointerEventType.Press) {
                     if (!change.pressed) hover = part
                     continue
@@ -347,6 +351,11 @@ private suspend fun AwaitPointerEventScope.drag(
     while (true) {
         val event = awaitPointerEvent()
         val change = event.changes.firstOrNull { it.id == down.id } ?: break
+        if (change.isConsumed) {
+            // Something else took the gesture, such as a second finger panning the view: put the box back.
+            onTransform(start)
+            break
+        }
         if (!change.pressed) break
         if (change.positionChange() == Offset.Zero) continue
         change.consume()
@@ -401,13 +410,13 @@ private fun rotateAround(p: Offset, centre: Offset, degrees: Float): Offset {
 private fun angleOf(d: Offset): Float = atan2(d.x, -d.y) * 180f / PI.toFloat()
 
 /** Which part of the box is at screen point [at], or -1 for none. */
-private fun partAt(t: BoxTransform, camera: ViewportCamera, at: Offset, handle: Float, stem: Float): Int {
+private fun partAt(t: BoxTransform, camera: ViewportCamera, at: Offset, handle: Float, stem: Float, reach: Float): Int {
     val screen = camera.toScreen(t.bounds)
     val local = rotateAround(at, screen.center, -t.rotation)
-    if ((local - Offset(screen.center.x, screen.top - stem)).getDistance() <= handle + GRAB) return ROTATE
+    if ((local - Offset(screen.center.x, screen.top - stem)).getDistance() <= handle + reach) return ROTATE
     handleSpots.forEachIndexed { i, s ->
         val spot = Offset(screen.left + s.x * screen.width, screen.top + s.y * screen.height)
-        if (abs(local.x - spot.x) <= handle + GRAB && abs(local.y - spot.y) <= handle + GRAB) return i
+        if (abs(local.x - spot.x) <= handle + reach && abs(local.y - spot.y) <= handle + reach) return i
     }
     return if (screen.contains(local)) INSIDE else -1
 }

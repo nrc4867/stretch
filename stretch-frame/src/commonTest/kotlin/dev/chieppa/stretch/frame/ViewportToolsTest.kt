@@ -197,4 +197,57 @@ class ViewportToolsTest {
         val area = assertNotNull(marquee)
         assertEquals(Rect(10f, 10f, 60f, 50f), area)
     }
+
+    @Test
+    fun theMouseDragsHandlesToo() = runComposeUiTest {
+        val camera = ViewportCamera()
+        var box by mutableStateOf(BoxTransform(Rect(100f, 100f, 200f, 160f)))
+        setStretchContent {
+            Box(Modifier.size(400.dp, 300.dp).testTag("scene").marquee(camera) { _, _ -> }.transformHandles(box, camera, { box = it })) {}
+        }
+        onNodeWithTag("scene").performMouseInput {
+            moveTo(Offset(200f, 160f))
+            press()
+            moveTo(Offset(220f, 170f))
+            moveTo(Offset(240f, 180f))
+            release()
+        }
+        assertEquals(Rect(100f, 100f, 240f, 180f), box.bounds, "the corner handle follows the mouse")
+        val turned = box.rotation
+        onNodeWithTag("scene").performMouseInput {
+            moveTo(Offset(170f, 100f - 22f * density))
+            press()
+            moveTo(Offset(260f, 140f))
+            moveTo(Offset(300f, 140f))
+            release()
+        }
+        assertTrue(box.rotation != turned, "the round handle rotates: ${box.rotation}")
+    }
+
+    @Test
+    fun aSecondFingerTurnsAHandleDragIntoAPinch() = runComposeUiTest {
+        val camera = ViewportCamera()
+        var box by mutableStateOf(BoxTransform(Rect(100f, 100f, 200f, 160f)))
+        setStretchContent {
+            Box(Modifier.size(400.dp, 300.dp)) {
+                Viewport(Modifier.testTag("view"), camera = camera) {
+                    Box(Modifier.fillMaxSize().marquee(camera) { _, _ -> }.transformHandles(box, camera, { box = it }))
+                }
+            }
+        }
+        onNodeWithTag("view").performTouchInput {
+            down(0, Offset(150f, 130f))
+            moveTo(0, Offset(160f, 130f))
+            down(1, Offset(260f, 130f))
+            repeat(8) {
+                updatePointerBy(0, Offset(-5f, 0f))
+                updatePointerBy(1, Offset(5f, 0f))
+                move()
+            }
+            up(0)
+            up(1)
+        }
+        assertEquals(Rect(100f, 100f, 200f, 160f), box.bounds, "the box went back when the pinch began")
+        assertTrue(camera.zoom > 1.2f, "and the view zoomed: ${camera.zoom}")
+    }
 }
