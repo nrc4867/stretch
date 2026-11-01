@@ -106,7 +106,7 @@ internal class DesktopDrawerWindows(private val owner: java.awt.Window) : Drawer
         val scale = LocalUiScale.current
         DialogWindow(onCloseRequest = onClose, state = state, title = title, modalityType = DialogModalityType.Modeless) {
             LaunchedEffect(raise) { if (raise > 0) window.toFront() }
-            TouchInput(window)
+            NativePointerInput(window)
             val titleBar = remember(window) { NativeTitleBar(window) }
             val binding = if (titleBar.supported) {
                 val insets = titleBar.installed()
