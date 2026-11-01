@@ -4,7 +4,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.interaction.FocusInteraction
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -21,18 +26,30 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.Stretch
 
-/** Hover and keyboard focus for one control. */
-internal class ControlState(val source: MutableInteractionSource, val hovered: Boolean, val focused: Boolean)
+/** Hover and focus for one control. [pressed] says it was clicked or tapped since it took focus. */
+internal class ControlState(val source: MutableInteractionSource, val hovered: Boolean, val focused: Boolean, val pressed: Boolean)
 
 @Composable
 internal fun rememberControlState(): ControlState {
     val source = remember { MutableInteractionSource() }
     val hovered by source.collectIsHoveredAsState()
     val focused by source.collectIsFocusedAsState()
-    return ControlState(source, hovered, focused)
+    var pressed by remember { mutableStateOf(false) }
+    LaunchedEffect(source) {
+        source.interactions.collect {
+            when (it) {
+                is PressInteraction.Press -> pressed = true
+                is FocusInteraction.Unfocus -> pressed = false
+            }
+        }
+    }
+    return ControlState(source, hovered, focused, pressed)
 }
 
-/** Whether the last input was a key press rather than a pointer press: focus rings show only then. */
+/**
+ * Whether the last input was a key that moves or acts on focus (Tab, arrows, Enter, Space, Esc) rather than a pointer
+ * press. Shortcuts and modifier keys alone do not count, so a screenshot shortcut never lights up a ring.
+ */
 internal expect val keyboardInput: State<Boolean>
 
 /**
@@ -41,7 +58,7 @@ internal expect val keyboardInput: State<Boolean>
  */
 @Composable
 internal fun Modifier.focusRing(state: ControlState, shape: Shape): Modifier {
-    if (!state.focused || !keyboardInput.value) return this
+    if (!state.focused || state.pressed || !keyboardInput.value) return this
     val color = Stretch.colors.focus
     val width = Stretch.theme.focusStroke
     return drawWithContent {

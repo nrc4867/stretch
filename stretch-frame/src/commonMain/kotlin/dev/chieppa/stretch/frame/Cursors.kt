@@ -7,3 +7,6 @@ internal expect val resizeSideways: PointerIcon
 
 /** The pointer over a handle that resizes up and down. */
 internal expect val resizeUpDown: PointerIcon
+
+/** The pointer over something that moves when dragged, like a dialog header. */
+internal expect val moveAround: PointerIcon

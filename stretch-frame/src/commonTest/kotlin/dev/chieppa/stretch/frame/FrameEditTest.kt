@@ -191,6 +191,19 @@ class FrameEditTest {
     }
 
     @Test
+    fun dialogsMoveByTheirHeader() = runComposeUiTest {
+        setStretchContent { StretchDialog("Export", onDismiss = {}) { RowText("Format") } }
+        val before = onNodeWithText("Format").fetchSemanticsNode().positionInRoot
+        onNodeWithText("Export").performTouchInput {
+            down(center)
+            repeat(10) { moveBy(Offset(-8f, 6f)) }
+            up()
+        }
+        val after = onNodeWithText("Format").fetchSemanticsNode().positionInRoot
+        assertTrue(after.x < before.x - 40 && after.y > before.y + 30, "Moved from $before to $after")
+    }
+
+    @Test
     fun menusFitTheirItems() = runComposeUiTest {
         setStretchContent {
             Box {

@@ -7,7 +7,14 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -94,13 +101,19 @@ private class AboveAnchor(private val gap: Int) : PopupPositionProvider {
     }
 }
 
-/** Centers a popup in the window, [top] pixels down, or in the middle when [top] is null. */
-private class InWindow(private val top: Int?) : PopupPositionProvider {
-    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset =
-        IntOffset(
-            ((windowSize.width - popupContentSize.width) / 2).coerceAtLeast(0),
-            top ?: ((windowSize.height - popupContentSize.height) / 2).coerceAtLeast(0),
+/**
+ * Centers a popup in the window, [top] pixels down, or in the middle when [top] is null, then moves it by [moved]
+ * while keeping it inside the window.
+ */
+private class InWindow(private val top: Int?, private val moved: IntOffset = IntOffset.Zero) : PopupPositionProvider {
+    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
+        val x = (windowSize.width - popupContentSize.width) / 2 + moved.x
+        val y = (top ?: ((windowSize.height - popupContentSize.height) / 2)) + moved.y
+        return IntOffset(
+            x.coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0)),
+            y.coerceIn(0, (windowSize.height - popupContentSize.height).coerceAtLeast(0)),
         )
+    }
 }
 
 /**
@@ -387,6 +400,7 @@ fun CommandPalette(
 
 /**
  * A modal panel for the few tasks that are not live edits: export, open, preferences. Never for "Are you sure?".
+ * Drag its header to move it off what it covers; it stays inside the window and opens centered again next time.
  * Esc closes it.
  */
 @Composable
@@ -399,15 +413,35 @@ fun StretchDialog(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = Stretch.colors
-    Popup(popupPositionProvider = InWindow(top = null), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
+    var moved by remember { mutableStateOf(IntOffset.Zero) }
+    Popup(popupPositionProvider = InWindow(top = null, moved), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
         val shape = Stretch.shapes.cardShape
+        var header by remember { mutableStateOf<LayoutCoordinates?>(null) }
         Column(
             Modifier
                 .width(width)
                 .floating(shape, Stretch.shadows.float)
                 .background(c.surfacePanel),
         ) {
-            DrawerHeader(title, icon) { IconButton(StretchIcons.Close, stringResource(Res.string.close), onDismiss, size = StretchSizes.seg) }
+            Box(
+                Modifier
+                    .onGloballyPositioned { header = it }
+                    .pointerHoverIcon(moveAround)
+                    .pointerInput(Unit) {
+                        var start = Offset.Zero
+                        var from = IntOffset.Zero
+                        detectDragGestures(
+                            onDragStart = { at -> header?.let { start = it.localToScreen(at) }; from = moved },
+                        ) { change, _ ->
+                            val now = header?.localToScreen(change.position) ?: return@detectDragGestures
+                            change.consume()
+                            val d = now - start
+                            moved = IntOffset(from.x + d.x.roundToInt(), from.y + d.y.roundToInt())
+                        }
+                    },
+            ) {
+                DrawerHeader(title, icon) { IconButton(StretchIcons.Close, stringResource(Res.string.close), onDismiss, size = StretchSizes.seg) }
+            }
             content()
             Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
             Row(
