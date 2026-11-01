@@ -78,7 +78,7 @@ class DrawerSpec(
  * the rails, split in two when both sides have a drawer open there. Under 1100dp wide, side drawers float over the
  * viewport instead. Drawers resize from their inner edge, the split between stacked drawers and the bottom panel's
  * top edge; rail buttons reorder by dragging. The layout is the app's state: every change comes back through
- * [onLayoutChange]. Pass a [keyCast] to show key presses over the viewport.
+ * [onLayoutChange]. Pass a [keyCast] to show key presses over the viewport and a [statusBar] for the window's foot.
  */
 @Composable
 fun StretchApp(
@@ -88,6 +88,7 @@ fun StretchApp(
     onResetLayout: () -> Unit,
     modifier: Modifier = Modifier,
     keyCast: KeyCastState? = null,
+    statusBar: (@Composable () -> Unit)? = null,
     topBar: @Composable () -> Unit,
     viewport: @Composable BoxScope.() -> Unit,
 ) {
@@ -194,6 +195,7 @@ fun StretchApp(
                 rail(Side.Right)
             }
         }
+        statusBar?.invoke()
     }
 }
 

@@ -120,6 +120,14 @@ object StretchIcons {
             stroke("M9 1.5v3h3")
         }
     }
+    val Fit: ImageVector by lazy {
+        icon("fit") {
+            stroke("M2.5 6V3.5a1 1 0 0 1 1-1H6")
+            stroke("M10 2.5h2.5a1 1 0 0 1 1 1V6")
+            stroke("M13.5 10v2.5a1 1 0 0 1-1 1H10")
+            stroke("M6 13.5H3.5a1 1 0 0 1-1-1V10")
+        }
+    }
     val Folder: ImageVector by lazy {
         icon("folder") {
             stroke("M1.5 4.5a1 1 0 0 1 1-1H6l1.5 1.5h6a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z")
@@ -167,6 +175,11 @@ object StretchIcons {
         icon("lock") {
             stroke("M5 7h6a1.5 1.5 0 0 1 1.5 1.5v3.5a1.5 1.5 0 0 1 -1.5 1.5h-6a1.5 1.5 0 0 1 -1.5 -1.5v-3.5a1.5 1.5 0 0 1 1.5 -1.5z")
             stroke("M5.5 7V5a2.5 2.5 0 0 1 5 0v2")
+        }
+    }
+    val Maximize: ImageVector by lazy {
+        icon("maximize") {
+            stroke("M4 3h8a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-8a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1z")
         }
     }
     val Minus: ImageVector by lazy {
@@ -233,6 +246,12 @@ object StretchIcons {
             stroke("M13.5 6.5H6a3.5 3.5 0 0 0 0 7h3")
         }
     }
+    val Restore: ImageVector by lazy {
+        icon("restore") {
+            stroke("M4 5.5h5.5a1 1 0 0 1 1 1v5.5a1 1 0 0 1 -1 1h-5.5a1 1 0 0 1 -1 -1v-5.5a1 1 0 0 1 1 -1z")
+            stroke("M5.5 3h6.5a1 1 0 0 1 1 1v6.5")
+        }
+    }
     val Rotate: ImageVector by lazy {
         icon("rotate") {
             stroke("M13 8a5 5 0 1 1-1.5-3.5")
@@ -262,6 +281,18 @@ object StretchIcons {
     val Smooth: ImageVector by lazy {
         icon("smooth") {
             stroke("M1.5 9.5c2.2-3.3 4.3-3.3 6.5 0s4.3 3.3 6.5 0")
+        }
+    }
+    val StepBack: ImageVector by lazy {
+        icon("step-back") {
+            stroke("M4 3v10")
+            stroke("M12.5 3.5L7 8l5.5 4.5z")
+        }
+    }
+    val StepForward: ImageVector by lazy {
+        icon("step-forward") {
+            stroke("M12 3v10")
+            stroke("M3.5 3.5L9 8l-3.5 4.5z")
         }
     }
     val Theme: ImageVector by lazy {

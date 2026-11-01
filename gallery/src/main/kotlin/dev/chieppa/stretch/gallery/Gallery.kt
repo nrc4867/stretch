@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -75,11 +76,16 @@ import dev.chieppa.stretch.ui.Tooltip
 import dev.chieppa.stretch.ui.ToolButton
 import kotlin.math.roundToInt
 
-private enum class Page(val label: String) { Components("Components"), Data("Data"), Frame("App frame") }
+private enum class Page(val label: String) { Components("Components"), Data("Data"), Tools("Tools"), Frame("App frame") }
+
+/** The window's top bar: the plain [TopBar] in tests, the title bar when the gallery owns its window. */
+typealias GalleryBar = @Composable (document: String, modes: @Composable () -> Unit, actions: @Composable RowScope.() -> Unit) -> Unit
+
+private val plainBar: GalleryBar = { document, modes, actions -> TopBar("Stretch", document, modes = modes, actions = actions) }
 
 /** Every component and the app frame in every theme. Labels here are examples, not app text. */
 @Composable
-fun Gallery() {
+fun Gallery(bar: GalleryBar = plainBar) {
     var theme by remember { mutableStateOf(StretchThemes.Ink) }
     var page by remember { mutableStateOf(Page.Components) }
     StretchTheme(theme) {
@@ -91,14 +97,18 @@ fun Gallery() {
         }
         when (page) {
             Page.Components -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
-                TopBar("Stretch", "Gallery", modes = switcher)
+                bar("Gallery", switcher) {}
                 ComponentsPage()
             }
             Page.Data -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
-                TopBar("Stretch", "Gallery", modes = switcher)
+                bar("Gallery", switcher) {}
                 DataPage()
             }
-            Page.Frame -> FrameDemo(switcher)
+            Page.Tools -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
+                bar("Gallery", switcher) {}
+                ToolsPage()
+            }
+            Page.Frame -> FrameDemo(switcher, bar)
         }
     }
 }

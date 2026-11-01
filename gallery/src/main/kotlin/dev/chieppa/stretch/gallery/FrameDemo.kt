@@ -18,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,21 +55,27 @@ import dev.chieppa.stretch.frame.RowIcon
 import dev.chieppa.stretch.frame.RowText
 import dev.chieppa.stretch.frame.SettingRow
 import dev.chieppa.stretch.frame.Side
+import dev.chieppa.stretch.frame.StatusBar
+import dev.chieppa.stretch.frame.StatusItem
 import dev.chieppa.stretch.frame.StretchApp
 import dev.chieppa.stretch.frame.ToastHost
 import dev.chieppa.stretch.frame.ToastState
 import dev.chieppa.stretch.frame.Toolbar
 import dev.chieppa.stretch.frame.TopBar
 import dev.chieppa.stretch.frame.TopBarActions
+import dev.chieppa.stretch.frame.ViewNavigator
 import dev.chieppa.stretch.frame.Viewport
 import dev.chieppa.stretch.frame.actionKeys
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.Grid
+import dev.chieppa.stretch.ui.PlaybackEffect
 import dev.chieppa.stretch.ui.Segmented
 import dev.chieppa.stretch.ui.Slider
 import dev.chieppa.stretch.ui.Swatch
+import dev.chieppa.stretch.ui.Timeline
+import dev.chieppa.stretch.ui.TimelineTrack
 import dev.chieppa.stretch.ui.Toggle
 import dev.chieppa.stretch.ui.ToolButton
 import dev.chieppa.stretch.ui.formatNumber
@@ -98,7 +106,7 @@ private data class InsertLayer(val name: String, val index: Int) : Command<DemoD
 private enum class Mode { Build, Pose }
 
 @Composable
-fun FrameDemo(switcher: @Composable () -> Unit) {
+fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar) {
     val history = remember { History(DemoDoc(listOf("Body", "Head", "Tail", "Fur edge"), 2.5f, true)) }
     val doc by history.document.collectAsState()
     val toasts = remember { ToastState() }
@@ -108,6 +116,7 @@ fun FrameDemo(switcher: @Composable () -> Unit) {
     var palette by remember { mutableStateOf(false) }
     var color by remember { mutableStateOf("Ochre") }
     var showKeys by remember { mutableStateOf(false) }
+    var zoom by remember { mutableFloatStateOf(1f) }
     var settings by remember { mutableStateOf(false) }
     val keyCast = remember { KeyCastState() }
     val defaults = FrameLayout(
@@ -195,7 +204,14 @@ fun FrameDemo(switcher: @Composable () -> Unit) {
             }
         },
         DrawerSpec("timeline", "Timeline", StretchIcons.Keyframe) {
-            DrawerSection(divider = false) { Tiles((1..12).map { n -> "$n" }, it) }
+            if (it == DrawerPosition.Bottom) {
+                var frame by remember { mutableIntStateOf(0) }
+                var playing by remember { mutableStateOf(false) }
+                PlaybackEffect(playing, 24, 36, frame) { f -> frame = f }
+                Timeline(36, frame, { f -> frame = f }, listOf(TimelineTrack("head", "Head turn", listOf(0, 12, 24)), TimelineTrack("tail", "Tail sway", listOf(0, 9, 18, 27))), playing, { p -> playing = p })
+            } else {
+                DrawerSection(divider = false) { Tiles((1..12).map { n -> "$n" }, it) }
+            }
         },
         DrawerSpec("help", "Help", StretchIcons.Help) {
             DrawerSection(divider = false) { RowText("Shortcuts"); RowText("Guides") }
@@ -218,8 +234,11 @@ fun FrameDemo(switcher: @Composable () -> Unit) {
         onResetLayout = { layouts = layouts.reset(mode.name) },
         modifier = Modifier.actionKeys(keymap, mode.name).focusRequester(focus).focusable(),
         keyCast = if (showKeys) keyCast else null,
+        statusBar = {
+            StatusBar(start = { StatusItem("${doc.layers.size} layers") }, end = { StatusItem("${(zoom * 100).toInt()}%", onClick = { zoom = 1f }) })
+        },
         topBar = {
-            TopBar("Stretch", "Frame demo · draft", modes = {
+            bar("Frame demo · draft", {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Segmented(Mode.entries, mode, { mode = it }, { it.name }, mode = true)
                     switcher()
@@ -241,6 +260,7 @@ fun FrameDemo(switcher: @Composable () -> Unit) {
                 ToolButton(StretchIcons.Mirror, "Mirror", tool == "mirror", { tool = "mirror" }, size = 34.dp)
             }
             Hud("${selected} · ${formatNumber(doc.width)} px", Modifier.align(Alignment.BottomStart).padding(12.dp))
+            ViewNavigator(zoom, { zoom = it }, { zoom = 1f }, Modifier.align(Alignment.TopEnd).padding(12.dp))
             Box(Modifier.align(Alignment.BottomCenter).padding(12.dp)) { ToastHost(toasts) }
         }
     }

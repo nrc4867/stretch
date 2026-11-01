@@ -34,6 +34,11 @@ class GalleryTest {
             pickTheme(theme.name)
             onNodeWithText("Strokes per day").assertExists()
         }
+        onNodeWithText("Tools").performClick()
+        for (theme in StretchThemes.all) {
+            pickTheme(theme.name)
+            onNodeWithText("TREE").assertExists()
+        }
         onNodeWithText("App frame").performClick()
         for (theme in StretchThemes.all) {
             pickTheme(theme.name)
