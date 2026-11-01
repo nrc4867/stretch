@@ -12,6 +12,7 @@ Needs JDK 25 for Gradle (`JAVA_HOME`); Gradle provisions the toolchain. Apps run
 ```
 ./gradlew check          # unit, contrast and component tests, generated-code checks
 ./gradlew :gallery:run   # every component in every theme
+./gradlew :gallery:run -Pdevtools=47811   # also serves screenshots of its windows: curl 127.0.0.1:47811/capture
 ```
 
 IntelliJ IDEA: open the folder; the Gallery and Check run configurations are included.
@@ -25,6 +26,7 @@ IntelliJ IDEA: open the folder; the Gallery and Check run configurations are inc
 | `stretch-ui` | Components: buttons, toggle, slider, chips, segmented, fields, swatch, key caps, callout, progress, spinner, skeleton, grid, field icons and errors, checkbox, radio, tabs, badge, empty state, scrollbars, tooltip, tree, dropzone, sortable lists and grids, stats, charts, table, color picker, shading ramp, curve editor, angle dial, timeline |
 | `stretch-frame` | The app frame: top bar, rails (reorderable, with a bottom group), resizable side and bottom drawers and their layout, menus, context menu, dropdown, popover, palette, dialog, toast, toolbar, viewport, view navigator, status bar, window title bar, action keys, key display |
 | `stretch-input` | Pointer and pen samples; Windows Ink pen input on desktop |
+| `stretch-devtools` | Development only: a 127.0.0.1 endpoint that screenshots the app's own windows (`-Pdevtools=<port>` on the gallery's run task) |
 | `stretch-test` | Command scenarios, a controllable Settled, Compose UI test helpers |
 | `gallery` | Every component in every theme, and an app frame demo |
 

@@ -11,6 +11,7 @@ kotlin {
 dependencies {
     implementation(project(":stretch-frame"))
     implementation(project(":stretch-core"))
+    implementation(project(":stretch-devtools"))
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)
     testImplementation(kotlin("test"))
@@ -30,5 +31,7 @@ compose.desktop {
             vendor.set(JvmVendorSpec.JETBRAINS)
         }.get().metadata.installationPath.asFile.absolutePath
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
+        // -Pdevtools=<port> serves screenshots of the gallery's windows on 127.0.0.1 (see DevTools).
+        providers.gradleProperty("devtools").orNull?.let { jvmArgs += "-Dstretch.devtools=$it" }
     }
 }
