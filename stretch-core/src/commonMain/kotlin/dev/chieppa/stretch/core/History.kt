@@ -14,8 +14,12 @@ class History<D>(initial: D, private val limit: Int = 500) {
     private val undoStack = ArrayDeque<Entry<D>>()
     private val redoStack = ArrayDeque<Entry<D>>()
     private var open: Transaction? = null
+    private val stepsState = MutableStateFlow(Steps<D>(emptyList(), emptyList()))
 
     val document: StateFlow<D> = state.asStateFlow()
+
+    /** The undo steps, oldest first, and the redo steps, next first: what a history panel lists. */
+    val steps: StateFlow<Steps<D>> = stepsState.asStateFlow()
     val log = SessionLog<D>()
 
     val canUndo: Boolean get() = undoStack.isNotEmpty()
@@ -27,6 +31,7 @@ class History<D>(initial: D, private val limit: Int = 500) {
         state.value = applied.document
         push(Entry(command, applied.undo))
         log.add(LogEntry.Executed(command))
+        publish()
     }
 
     fun undo(): Boolean {
@@ -35,6 +40,7 @@ class History<D>(initial: D, private val limit: Int = 500) {
         state.value = entry.undo.apply(state.value).document
         redoStack.addLast(entry)
         log.add(LogEntry.Undo)
+        publish()
         return true
     }
 
@@ -45,7 +51,23 @@ class History<D>(initial: D, private val limit: Int = 500) {
         state.value = applied.document
         undoStack.addLast(Entry(entry.command, applied.undo))
         log.add(LogEntry.Redo)
+        publish()
         return true
+    }
+
+    /**
+     * Undoes or redoes until [done] steps are applied: 0 is the document as it started, [Steps.done]'s size is now.
+     * Each step goes through undo or redo, so the session log records the jump step by step.
+     */
+    fun jumpTo(done: Int) {
+        checkNoTransaction()
+        val target = done.coerceIn(0, undoStack.size + redoStack.size)
+        while (undoStack.size > target && undo()) Unit
+        while (undoStack.size < target && redo()) Unit
+    }
+
+    private fun publish() {
+        stepsState.value = Steps(undoStack.map { it.command }, redoStack.reversed().map { it.command })
     }
 
     /**
@@ -83,6 +105,7 @@ class History<D>(initial: D, private val limit: Int = 500) {
             val command = command ?: return
             push(Entry(command, checkNotNull(current).undo))
             log.add(LogEntry.Executed(command))
+            publish()
         }
 
         fun cancel() {
@@ -97,3 +120,6 @@ class History<D>(initial: D, private val limit: Int = 500) {
         }
     }
 }
+
+/** A [History]'s steps: [done] can be undone, oldest first; [undone] can be redone, next first. */
+data class Steps<D>(val done: List<Command<D>>, val undone: List<Command<D>>)

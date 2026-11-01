@@ -6,6 +6,12 @@
     <string name="more_actions">More actions</string>
     <string name="shortcut_none">None</string>
     <string name="shortcut_prompt">Press keys</string>
+    <string name="history_start">Original</string>
+    <string name="history_redo_step">Undone, can redo</string>
+    <string name="keymap_search">Search shortcuts</string>
+    <string name="keymap_reset">Reset to default</string>
+    <string name="keymap_shortcut">%1$s shortcut</string>
+    <string name="keymap_conflict">Also the shortcut for %1$s</string>
     <string name="close">Close</string>
     <string name="drawer_menu">Drawer menu</string>
     <string name="dock_left">Dock left</string>

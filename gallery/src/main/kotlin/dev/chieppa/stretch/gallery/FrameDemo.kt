@@ -41,6 +41,8 @@ import dev.chieppa.stretch.frame.DrawerPlacement
 import dev.chieppa.stretch.frame.DrawerPosition
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.DrawerSpec
+import dev.chieppa.stretch.frame.HistoryPanel
+import dev.chieppa.stretch.frame.KeymapEditor
 import dev.chieppa.stretch.frame.FrameLayout
 import dev.chieppa.stretch.frame.Hud
 import dev.chieppa.stretch.frame.KeyCastState
@@ -94,6 +96,15 @@ private data class RemoveLayer(val name: String) : Command<DemoDoc> {
     }
 }
 
+/** How the history panel names each kind of step. */
+private fun stepLabel(command: Command<DemoDoc>): String = when (command) {
+    is SetWidth -> "Width ${formatNumber(command.width)} px"
+    is SetTaper -> if (command.taper) "Taper on" else "Taper off"
+    is RemoveLayer -> "Delete ${command.name}"
+    is InsertLayer -> "Restore ${command.name}"
+    else -> "Change"
+}
+
 private data class InsertLayer(val name: String, val index: Int) : Command<DemoDoc> {
     override fun apply(document: DemoDoc) =
         Applied(document.copy(layers = document.layers.toMutableList().apply { add(index.coerceIn(0, size), name) }), RemoveLayer(name))
@@ -122,6 +133,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar) {
             DrawerPlacement("brush", Side.Right, open = true),
             DrawerPlacement("colors", Side.Right, open = true),
             DrawerPlacement("help", Side.Left, bottom = true),
+            DrawerPlacement("history", Side.Left),
             DrawerPlacement("timeline", Side.Right, bottom = true, open = true),
         ),
     )
@@ -207,8 +219,11 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar) {
                 DrawerSection(divider = false) { Tiles((1..12).map { n -> "$n" }, it) }
             }
         },
-        DrawerSpec("help", "Help", StretchIcons.Help) {
-            DrawerSection(divider = false) { RowText("Shortcuts"); RowText("Guides") }
+        DrawerSpec("help", "Shortcuts", StretchIcons.Help) {
+            KeymapEditor(keymap, registry.all.toList())
+        },
+        DrawerSpec("history", "History", StretchIcons.Undo) {
+            HistoryPanel(history, ::stepLabel)
         },
         DrawerSpec("colors", "Colors", StretchIcons.Theme) {
             DrawerSection(divider = false) {

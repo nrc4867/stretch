@@ -24,7 +24,7 @@ IntelliJ IDEA: open the folder; the Gallery and Check run configurations are inc
 | `stretch-core` | Commands, undo and gestures, session log, actions and keymap, the Settled interface |
 | `stretch-theme` | Tokens, the four themes, fonts, icons |
 | `stretch-ui` | Components: buttons, toggle, slider, chips, segmented, fields, swatch, key caps, callout, progress, spinner, skeleton, grid, field icons and errors, checkbox, radio, tabs, badge, empty state, scrollbars, tooltip, tree, dropzone, sortable lists and grids, stats, charts, table, color picker, shading ramp, curve editor, angle dial, timeline, range slider, vector field, key capture field |
-| `stretch-frame` | The app frame: top bar, rails (reorderable, with a bottom group), resizable side and bottom drawers and their layout, menus, context menu, dropdown, popover, palette, dialog, toast, toolbar, viewport, view navigator, status bar, window title bar, action keys, key display, shortcut field |
+| `stretch-frame` | The app frame: top bar, rails (reorderable, with a bottom group), resizable side and bottom drawers and their layout, menus, context menu, dropdown, popover, palette, dialog, toast, toolbar, viewport, view navigator, status bar, window title bar, action keys, key display, shortcut field, and the opt-in keymap editor and history panel |
 | `stretch-input` | Pointer and pen samples; Windows Ink pen input on desktop |
 | `stretch-devtools` | Development only: a 127.0.0.1 endpoint that screenshots the app's own windows (`-Pdevtools=<port>` on the gallery's run task) |
 | `stretch-gradle-plugin` | The `dev.chieppa.stretch.app` plugin: app name, id and icon for launchers, installers and running windows |

@@ -18,6 +18,26 @@ private data class Rename(val name: String) : Command<Doc> {
 
 class HistoryTest {
     @Test
+    fun stepsListWhatCanBeUndoneAndRedoneAndJumpMovesThroughThem() {
+        val history = History(Doc())
+        history.execute(SetSize(1))
+        history.execute(SetSize(2))
+        history.execute(Rename("tail"))
+        assertEquals(listOf(SetSize(1), SetSize(2), Rename("tail")), history.steps.value.done)
+
+        history.jumpTo(1)
+        assertEquals(Doc(1, ""), history.document.value)
+        assertEquals(listOf(SetSize(1)), history.steps.value.done)
+        assertEquals(listOf(SetSize(2), Rename("tail")), history.steps.value.undone, "next redo first")
+
+        history.jumpTo(3)
+        assertEquals(Doc(2, "tail"), history.document.value)
+        history.jumpTo(0)
+        assertEquals(Doc(), history.document.value)
+        assertEquals(Doc(), history.log.replay(Doc()), "a jump is logged as undos")
+    }
+
+    @Test
     fun executeUndoRedo() {
         val history = History(Doc())
         history.execute(SetSize(3))
