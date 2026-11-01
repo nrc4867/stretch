@@ -48,7 +48,7 @@ fun Button(
     }
     Row(
         modifier = modifier
-            .focusRing(state, shape)
+            .focusRing(state, shape, fill)
             .height(StretchSizes.ctl)
             .clip(shape)
             .background(fill)
@@ -94,7 +94,7 @@ fun IconButton(
     }
     Box(
         modifier = modifier
-            .focusRing(state, shape)
+            .focusRing(state, shape, fill)
             .size(size)
             .clip(shape)
             .background(fill)
@@ -129,7 +129,7 @@ fun ToolButton(
     }
     val ink = if (selected) c.onInk else c.inkControl
     val base = modifier
-        .focusRing(state, shape)
+        .focusRing(state, shape, fill)
         .height(size)
         .clip(shape)
         .background(fill)

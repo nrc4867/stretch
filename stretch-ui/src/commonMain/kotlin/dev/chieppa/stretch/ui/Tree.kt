@@ -172,6 +172,7 @@ fun <T> Tree(
     val select by rememberUpdatedState(onSelectionChange)
     val move by rememberUpdatedState(onMove)
     var focusKey by remember { mutableStateOf<Any?>(null) }
+    var treeFocused by remember { mutableStateOf(false) }
     var anchor by remember { mutableStateOf<Any?>(null) }
     var renaming by remember { mutableStateOf<Any?>(null) }
     var dragging by remember { mutableStateOf<Any?>(null) }
@@ -202,7 +203,10 @@ fun <T> Tree(
     Box(
         modifier
             .focusRequester(treeFocus)
-            .onFocusChanged { if (it.hasFocus && focusKey == null) focusKey = current.firstOrNull()?.let { r -> key(r.node.item) } }
+            .onFocusChanged {
+                treeFocused = it.hasFocus
+                if (it.hasFocus && focusKey == null) focusKey = current.firstOrNull()?.let { r -> key(r.node.item) }
+            }
             .focusable()
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown || renaming != null) return@onKeyEvent false
@@ -248,7 +252,7 @@ fun <T> Tree(
                     val source = remember { MutableInteractionSource() }
                     val hovered by source.collectIsHoveredAsState()
                     val selected = k in selection
-                    val focused = focusKey == k && keyboardInput.value
+                    val focused = focusKey == k && treeFocused
                     val ink = if (selected) c.onInk else c.ink
                     val parentRow = row.node.children.isNotEmpty()
                     Row(

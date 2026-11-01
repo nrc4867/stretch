@@ -73,7 +73,7 @@ fun OptionChip(
     }
     Row(
         modifier = modifier
-            .focusRing(state, shape)
+            .focusRing(state, shape, fill)
             .height(StretchSizes.seg)
             .clip(shape)
             .background(fill)

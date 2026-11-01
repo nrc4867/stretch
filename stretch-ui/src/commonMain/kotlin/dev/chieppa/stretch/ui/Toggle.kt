@@ -34,7 +34,7 @@ fun Toggle(
     val shape = Stretch.shapes.pillShape
     Box(
         modifier = modifier
-            .focusRing(state, shape)
+            .focusRing(state, shape, if (checked) c.toggleOn else c.toggleOff)
             .size(width = 34.dp, height = StretchSizes.chip)
             .clip(shape)
             .background(if (checked) c.toggleOn else c.toggleOff)

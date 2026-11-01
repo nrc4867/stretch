@@ -59,7 +59,7 @@ fun <T> Segmented(
             }
             Box(
                 modifier = (if (fill) Modifier.weight(1f) else Modifier)
-                    .focusRing(state, shape)
+                    .focusRing(state, shape, bg)
                     .height(StretchSizes.seg)
                     .clip(shape)
                     .background(bg)

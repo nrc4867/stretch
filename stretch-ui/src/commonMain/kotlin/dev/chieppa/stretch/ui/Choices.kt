@@ -39,9 +39,12 @@ fun Checkbox(checked: Boolean?, onCheckedChange: (Boolean) -> Unit, label: Strin
     val state = rememberControlState()
     val shape = RoundedCornerShape(4.dp)
     val on = checked != false
+    val markInk = listOf(c.inkStrong, c.surfaceFloat).maxBy { contrast(it, c.toggleOn) }
     Row(
         modifier
+            .focusRing(state, Stretch.shapes.rowShape)
             .heightIn(min = 28.dp)
+            .padding(horizontal = 8.dp)
             .hoverable(state.source)
             .triStateToggleable(
                 state = when (checked) {
@@ -60,14 +63,13 @@ fun Checkbox(checked: Boolean?, onCheckedChange: (Boolean) -> Unit, label: Strin
         Box(
             Modifier
                 .size(16.dp)
-                .focusRing(state, shape)
                 .clip(shape)
                 .background(if (on) c.toggleOn else if (state.hovered) c.surfaceControlHi else c.surfaceFloat)
                 .border(Stretch.stroke, if (on) c.toggleOnEdge else c.toggleOffEdge, shape),
         ) {
             if (checked != false) {
                 Canvas(Modifier.size(16.dp)) {
-                    val ink = c.onInk
+                    val ink = markInk
                     val w = 1.75.dp.toPx()
                     if (checked == true) {
                         val path = Path().apply {
@@ -93,7 +95,9 @@ fun Radio(selected: Boolean, onClick: () -> Unit, label: String, modifier: Modif
     val state = rememberControlState()
     Row(
         modifier
+            .focusRing(state, Stretch.shapes.rowShape)
             .heightIn(min = 28.dp)
+            .padding(horizontal = 8.dp)
             .hoverable(state.source)
             .selectable(selected, state.source, null, role = Role.RadioButton, onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -102,7 +106,6 @@ fun Radio(selected: Boolean, onClick: () -> Unit, label: String, modifier: Modif
         Box(
             Modifier
                 .size(16.dp)
-                .focusRing(state, CircleShape)
                 .clip(CircleShape)
                 .background(if (state.hovered && !selected) c.surfaceControlHi else c.surfaceFloat)
                 .border(Stretch.stroke, if (selected) c.toggleOnEdge else c.toggleOffEdge, CircleShape),
