@@ -35,12 +35,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.generated.Res
 import dev.chieppa.stretch.frame.generated.close
@@ -343,11 +346,22 @@ private fun SplitHandle(layout: () -> FrameLayout, onResize: (start: FrameLayout
 }
 
 /**
- * The slot the app renders into: the well color with a grid. Children align to its corners for the toolbar, view
- * tools, readouts and a bottom bar. A native GPU surface can sit in [content] instead of drawn content.
+ * The slot the app renders into: the well color with a grid. Floating UI goes in its corners, 12dp in:
+ * [topStart] for the toolbar, [topEnd] for view tools like the [ViewNavigator], [bottomStart] and [bottomEnd] for
+ * readouts. When a viewport is too narrow for a pair side by side, the end one moves under (or above) the start one
+ * instead of overlapping it. [content] draws the scene and anything else, such as toasts; a native GPU surface can
+ * sit there instead of drawn content.
  */
 @Composable
-fun Viewport(modifier: Modifier = Modifier, grid: Boolean = true, content: @Composable BoxScope.() -> Unit) {
+fun Viewport(
+    modifier: Modifier = Modifier,
+    grid: Boolean = true,
+    topStart: (@Composable () -> Unit)? = null,
+    topEnd: (@Composable () -> Unit)? = null,
+    bottomStart: (@Composable () -> Unit)? = null,
+    bottomEnd: (@Composable () -> Unit)? = null,
+    content: @Composable BoxScope.() -> Unit,
+) {
     val c = Stretch.colors
     Box(modifier.fillMaxSize().background(c.surfaceWell)) {
         if (grid) {
@@ -366,5 +380,35 @@ fun Viewport(modifier: Modifier = Modifier, grid: Boolean = true, content: @Comp
             }
         }
         content()
+        ViewportCorners(topStart, topEnd, bottomStart, bottomEnd)
+    }
+}
+
+/** Places the viewport's corner UI, moving an end corner off its start corner when the two would overlap. */
+@Composable
+private fun ViewportCorners(
+    topStart: (@Composable () -> Unit)?,
+    topEnd: (@Composable () -> Unit)?,
+    bottomStart: (@Composable () -> Unit)?,
+    bottomEnd: (@Composable () -> Unit)?,
+) {
+    val none: @Composable () -> Unit = {}
+    Layout(
+        contents = listOf(topStart ?: none, topEnd ?: none, bottomStart ?: none, bottomEnd ?: none),
+        modifier = Modifier.fillMaxSize(),
+    ) { slots, constraints ->
+        val inset = 12.dp.roundToPx()
+        val gap = 8.dp.roundToPx()
+        val room = Constraints(maxWidth = (constraints.maxWidth - 2 * inset).coerceAtLeast(0), maxHeight = (constraints.maxHeight - 2 * inset).coerceAtLeast(0))
+        val (ts, te, bs, be) = slots.map { it.firstOrNull()?.measure(room) }
+        fun fit(start: Placeable?, end: Placeable) = start == null || start.width + gap + end.width <= room.maxWidth
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            val right = constraints.maxWidth - inset
+            val bottom = constraints.maxHeight - inset
+            ts?.place(inset, inset)
+            te?.place(right - te.width, if (fit(ts, te)) inset else inset + ts!!.height + gap)
+            bs?.place(inset, bottom - bs.height)
+            be?.place(right - be.width, if (fit(bs, be)) bottom - be.height else bottom - bs!!.height - gap - be.height)
+        }
     }
 }

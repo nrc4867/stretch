@@ -12,6 +12,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -36,6 +37,29 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class FrameUiTest {
+    @Test
+    fun viewportCornersStackInsteadOfOverlapping() = runComposeUiTest {
+        var width by mutableStateOf(800.dp)
+        setStretchContent {
+            Box(Modifier.size(width, 400.dp)) {
+                Viewport(
+                    topStart = { Box(Modifier.size(200.dp, 40.dp).testTag("tools")) },
+                    topEnd = { Box(Modifier.size(200.dp, 40.dp).testTag("view")) },
+                    bottomStart = { Box(Modifier.size(200.dp, 20.dp).testTag("readout")) },
+                    bottomEnd = { Box(Modifier.size(200.dp, 20.dp).testTag("status")) },
+                ) {}
+            }
+        }
+        fun top(tag: String) = onNodeWithTag(tag).getUnclippedBoundsInRoot().top
+        assertEquals(top("tools"), top("view"), "side by side when there is room")
+        assertEquals(top("readout"), top("status"))
+
+        width = 380.dp
+        waitForIdle()
+        assertEquals(top("tools") + 48.dp, top("view"), "under the toolbar, 8dp apart")
+        assertEquals(top("readout") - 28.dp, top("status"), "above the readout, 8dp apart")
+    }
+
     private val drawers = listOf(
         DrawerSpec("layers", "Layers", StretchIcons.Layers) { RowText("Body") },
         DrawerSpec("library", "Library", StretchIcons.Grid) { RowText("Shapes") },

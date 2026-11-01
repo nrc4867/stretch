@@ -251,14 +251,17 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar) {
             }
         },
     ) {
-        Viewport {
-            Toolbar(Modifier.align(Alignment.TopStart).padding(12.dp)) {
-                ToolButton(StretchIcons.Pen, "Draw", tool == "draw", { tool = "draw" }, size = 34.dp)
-                ToolButton(StretchIcons.Eraser, "Erase", tool == "erase", { tool = "erase" }, size = 34.dp)
-                ToolButton(StretchIcons.Mirror, "Mirror", tool == "mirror", { tool = "mirror" }, size = 34.dp)
-            }
-            Hud("${selected} · ${formatNumber(doc.width)} px", Modifier.align(Alignment.BottomStart).padding(12.dp))
-            ViewNavigator(zoom, { zoom = it }, { zoom = 1f }, Modifier.align(Alignment.TopEnd).padding(12.dp))
+        Viewport(
+            topStart = {
+                Toolbar {
+                    ToolButton(StretchIcons.Pen, "Draw", tool == "draw", { tool = "draw" }, size = 34.dp)
+                    ToolButton(StretchIcons.Eraser, "Erase", tool == "erase", { tool = "erase" }, size = 34.dp)
+                    ToolButton(StretchIcons.Mirror, "Mirror", tool == "mirror", { tool = "mirror" }, size = 34.dp)
+                }
+            },
+            topEnd = { ViewNavigator(zoom, { zoom = it }, { zoom = 1f }) },
+            bottomStart = { Hud("${selected} · ${formatNumber(doc.width)} px") },
+        ) {
             Box(Modifier.align(Alignment.BottomCenter).padding(12.dp)) { ToastHost(toasts) }
         }
     }
