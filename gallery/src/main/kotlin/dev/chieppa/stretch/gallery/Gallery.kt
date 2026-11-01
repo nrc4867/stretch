@@ -69,6 +69,10 @@ import dev.chieppa.stretch.ui.OptionChip
 import dev.chieppa.stretch.ui.ProgressBar
 import dev.chieppa.stretch.ui.Segmented
 import dev.chieppa.stretch.ui.Slider
+import dev.chieppa.stretch.ui.RangeSlider
+import dev.chieppa.stretch.ui.VectorField
+import dev.chieppa.stretch.frame.ShortcutField
+import dev.chieppa.stretch.core.KeyChord
 import dev.chieppa.stretch.ui.Swatch
 import dev.chieppa.stretch.ui.TextField
 import dev.chieppa.stretch.ui.Toggle
@@ -181,6 +185,9 @@ private fun SettingsDemo() {
     var spread by remember { mutableFloatStateOf(18f) }
     var blend by remember { mutableStateOf("Normal") }
     var search by remember { mutableStateOf("") }
+    var taper by remember { mutableStateOf(0.2f..0.7f) }
+    var position by remember { mutableStateOf(listOf(0f, 12.5f, -4f)) }
+    var shortcut by remember { mutableStateOf<KeyChord?>(KeyChord.parse("Ctrl Shift E")) }
     Column(Modifier.width(340.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         SettingRow("Outline") { Spacer(Modifier.weight(1f)); Toggle(outline, { outline = it }, "Outline") }
         SettingRow("Snap") { Spacer(Modifier.weight(1f)); Toggle(snap, { snap = it }, "Snap") }
@@ -191,6 +198,10 @@ private fun SettingsDemo() {
         SettingRow("Opacity") {
             Slider(opacity, { opacity = it }, "Opacity", Modifier.weight(1f))
             Readout("${(opacity * 100).roundToInt()}%")
+        }
+        SettingRow("Taper") {
+            RangeSlider(taper, { taper = it }, "Taper start", "Taper end", Modifier.weight(1f))
+            Readout("${(taper.start * 100).roundToInt()}–${(taper.endInclusive * 100).roundToInt()}%")
         }
         SettingRow("Spread") { Spacer(Modifier.weight(1f)); NumberField(spread, { spread = it }, "Spread", unit = "°", range = 0f..90f) }
         SettingRow("Blend") { Dropdown(listOf("Normal", "Multiply", "Screen"), blend, { blend = it }, { it }, "Blend", Modifier.weight(1f)) }
@@ -204,6 +215,10 @@ private fun SettingsDemo() {
             Spacer(Modifier.weight(1f))
             NumberField(spread, { spread = it }, "Line weight", unit = "px", width = 104.dp, leading = { FieldIcon(StretchIcons.Pen) })
         }
+        SettingRow("Position") {
+            VectorField(position, { axis, v -> position = position.toMutableList().also { it[axis] = v } }, "Position", fieldWidth = 76.dp)
+        }
+        SettingRow("Shortcut") { ShortcutField(shortcut, { shortcut = it }, "Export shortcut", Modifier.weight(1f)) }
     }
 }
 
