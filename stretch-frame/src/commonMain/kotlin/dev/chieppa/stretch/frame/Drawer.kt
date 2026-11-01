@@ -52,13 +52,21 @@ import dev.chieppa.stretch.ui.ScrollColumn
 
 enum class DrawerStyle { Docked, Card }
 
-/** A drawer's 44px header: icon, title, then small icon buttons for its actions, menu and close. */
+/**
+ * A drawer's 44px header: icon, title, then small icon buttons for its actions, menu and close. At the top of a
+ * popped-out drawer's window it is the title bar: its empty space drags the window and its buttons stay buttons.
+ */
 @Composable
 fun DrawerHeader(title: String, icon: ImageVector?, count: String? = null, actions: @Composable RowScope.() -> Unit = {}) {
     val c = Stretch.colors
+    val bar = LocalTitleBar.current
     Column {
         Row(
-            Modifier.fillMaxWidth().height(StretchSizes.header).padding(start = 14.dp, end = 6.dp),
+            Modifier
+                .fillMaxWidth()
+                .height(StretchSizes.header)
+                .then(if (bar != null) Modifier.titleBarHitTest(bar.regions, bar.onHit) else Modifier)
+                .padding(start = 14.dp + (bar?.start ?: 0.dp), end = 6.dp + (bar?.end ?: 0.dp)),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -71,7 +79,15 @@ fun DrawerHeader(title: String, icon: ImageVector?, count: String? = null, actio
                 overflow = TextOverflow.Ellipsis,
             )
             if (count != null) Chip(count, mono = true)
-            actions()
+            if (bar != null) {
+                Row(
+                    Modifier.titleBarControl(bar.regions, "actions"),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) { actions() }
+            } else {
+                actions()
+            }
         }
         Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
     }

@@ -2,13 +2,21 @@ package dev.chieppa.stretch.frame
 
 enum class Side { Left, Right }
 
-/** Where a drawer is showing, so its contents can lay out for a tall column or a wide strip. */
-enum class DrawerPosition { Side, Bottom }
+/**
+ * Where a drawer is showing, so its contents can lay out for a tall column, a wide strip or a window of its own, which
+ * the person sizes freely.
+ */
+enum class DrawerPosition { Side, Bottom, Window }
+
+/** A popped-out drawer's window on screen, in dp. */
+data class WindowBounds(val x: Float, val y: Float, val width: Float, val height: Float)
 
 /**
  * Where one drawer sits: its side, its order on that side, its width in dp and whether it is open. [bottom] puts its
  * rail button in the group at the foot of the rail and opens it in the bottom panel instead of the side column.
- * [height] is its share of the side column when drawers stack.
+ * [height] is its share of the side column when drawers stack. A [detached] drawer shows in a window of its own,
+ * placed at [window]; its rail button stays where it was, so it docks back there. [window] is kept after docking, so
+ * popping out again reopens it in the same place.
  */
 data class DrawerPlacement(
     val id: String,
@@ -17,8 +25,15 @@ data class DrawerPlacement(
     val open: Boolean = false,
     val bottom: Boolean = false,
     val height: Float = 1f,
+    val detached: Boolean = false,
+    val window: WindowBounds? = null,
 ) {
-    val position: DrawerPosition get() = if (bottom) DrawerPosition.Bottom else DrawerPosition.Side
+    val position: DrawerPosition
+        get() = when {
+            detached -> DrawerPosition.Window
+            bottom -> DrawerPosition.Bottom
+            else -> DrawerPosition.Side
+        }
 }
 
 /**
@@ -34,6 +49,7 @@ data class FrameLayout(
 ) {
     init {
         require(drawers.map { it.id }.toSet().size == drawers.size) { "Drawer ids must be unique" }
+        require(drawers.none { it.detached && it.open }) { "A popped-out drawer is not open in the frame" }
         require(Side.entries.all { side -> drawers.count { it.side == side && it.bottom && it.open } <= 1 }) {
             "Only one bottom drawer per side can be open"
         }
@@ -50,16 +66,22 @@ data class FrameLayout(
     /** The drawer open in [side]'s half of the bottom panel, if any. */
     fun openBottom(side: Side): DrawerPlacement? = group(side, bottom = true).firstOrNull { it.open }
 
+    /** Drawers showing in windows of their own. */
+    val detached: List<DrawerPlacement> get() = drawers.filter { it.detached }
+
     operator fun get(id: String): DrawerPlacement? = drawers.firstOrNull { it.id == id }
 
     fun toggle(id: String): FrameLayout = if (get(id)?.open == true) close(id) else open(id)
 
-    /** Opens the drawer; a bottom drawer replaces the one open on its side of the bottom panel. */
+    /**
+     * Opens the drawer; a bottom drawer replaces the one open on its side of the bottom panel. A popped-out drawer
+     * docks back to open.
+     */
     fun open(id: String): FrameLayout {
         val drawer = get(id) ?: return this
         return withDrawers(drawers.map {
             when {
-                it.id == id -> it.copy(open = true)
+                it.id == id -> it.copy(open = true, detached = false)
                 drawer.bottom && it.bottom && it.side == drawer.side -> it.copy(open = false)
                 else -> it
             }
@@ -67,6 +89,15 @@ data class FrameLayout(
     }
 
     fun close(id: String): FrameLayout = update(id) { it.copy(open = false) }
+
+    /** Takes the drawer out of the frame into a window of its own. Its rail button stays, marking where it docks. */
+    fun popOut(id: String): FrameLayout = update(id) { it.copy(open = false, detached = true) }
+
+    /** Docks a popped-out drawer back where its rail button is, open. */
+    fun dockBack(id: String): FrameLayout = if (get(id)?.detached == true) open(id) else this
+
+    /** Remembers where a popped-out drawer's window is. */
+    fun moveWindow(id: String, bounds: WindowBounds): FrameLayout = update(id) { it.copy(window = bounds) }
 
     fun resize(id: String, width: Float): FrameLayout = update(id) { it.copy(width = width.coerceIn(MIN_WIDTH, MAX_WIDTH)) }
 
@@ -78,7 +109,7 @@ data class FrameLayout(
 
     /**
      * Moves the drawer to [index] in the rail group given by [side] and [bottom], keeping it open or closed. An open
-     * drawer moved into a bottom group replaces the one open there.
+     * drawer moved into a bottom group replaces the one open there. A popped-out drawer docks there, open.
      */
     fun move(id: String, side: Side, bottom: Boolean, index: Int): FrameLayout {
         val drawer = get(id) ?: return this
@@ -86,9 +117,9 @@ data class FrameLayout(
         val group = rest.filter { it.side == side && it.bottom == bottom }
         val at = index.coerceIn(0, group.size)
         val position = if (at < group.size) rest.indexOf(group[at]) else (rest.indexOfLast { it.side == side && it.bottom == bottom } + 1).takeIf { it > 0 } ?: rest.size
-        val moved = drawer.copy(side = side, bottom = bottom)
+        val moved = drawer.copy(side = side, bottom = bottom, detached = false)
         val placed = withDrawers(rest.toMutableList().apply { add(position, moved.copy(open = false)) })
-        return if (drawer.open) placed.open(id) else placed
+        return if (drawer.open || drawer.detached) placed.open(id) else placed
     }
 
     /**

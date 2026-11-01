@@ -39,6 +39,28 @@ class FrameLayoutTest {
     }
 
     @Test
+    fun poppedOutDrawersLeaveTheFrameAndDockBackOpen() {
+        val out = layout.popOut("brush")
+        assertTrue(out["brush"]!!.detached)
+        assertEquals(DrawerPosition.Window, out["brush"]!!.position)
+        assertEquals(emptyList(), out.openOn(Side.Right))
+        assertEquals(listOf("brush"), out.detached.map { it.id })
+
+        val bounds = WindowBounds(40f, 60f, 320f, 500f)
+        val back = out.moveWindow("brush", bounds).dockBack("brush")
+        assertEquals(listOf("brush"), back.openOn(Side.Right).map { it.id })
+        assertEquals(bounds, back["brush"]!!.window, "the window's place is kept for next time")
+        assertEquals(back, back.dockBack("brush"), "docking a docked drawer changes nothing")
+    }
+
+    @Test
+    fun dockingAPoppedOutDrawerElsewhereOpensItThere() {
+        val moved = layout.popOut("brush").dock("brush", Side.Left)
+        assertEquals(listOf("layers", "brush"), moved.openOn(Side.Left).map { it.id })
+        assertTrue(moved.detached.isEmpty())
+    }
+
+    @Test
     fun dockingMovesToTheEndOfTheOtherSide() {
         val moved = layout.dock("layers", Side.Right)
         assertEquals(listOf("brush", "layers"), moved.on(Side.Right).map { it.id })

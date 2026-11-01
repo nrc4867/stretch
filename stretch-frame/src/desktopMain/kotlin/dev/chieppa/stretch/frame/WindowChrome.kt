@@ -7,11 +7,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,8 +17,6 @@ import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
-import dev.chieppa.stretch.theme.Stretch
-import dev.chieppa.stretch.theme.StretchSizes
 import dev.chieppa.stretch.ui.focusHome
 
 private val LocalNativeTitleBar = staticCompositionLocalOf<NativeTitleBar?> { null }
@@ -31,7 +25,8 @@ private val LocalNativeTitleBar = staticCompositionLocalOf<NativeTitleBar?> { nu
  * A system window whose title bar the app draws: put a [WindowTopBar] at the top of [content]. The OS still owns the
  * frame, so maximize, snapping, resizing, the shadow, rounded corners and the window buttons behave like every other
  * window. Needs the JetBrains Runtime on Windows or macOS; elsewhere the system title bar stays above the top bar.
- * Clicking empty space takes focus off fields and buttons.
+ * Drawers in a [StretchApp] inside it can pop out into windows of their own. Clicking empty space takes focus off
+ * fields and buttons.
  */
 @Composable
 fun StretchWindow(
@@ -43,7 +38,8 @@ fun StretchWindow(
 ) {
     Window(onCloseRequest = onCloseRequest, state = state, title = title, icon = icon) {
         val titleBar = remember(window) { NativeTitleBar(window) }
-        CompositionLocalProvider(LocalNativeTitleBar provides titleBar) {
+        val drawerWindows = remember(window) { DesktopDrawerWindows(window) }
+        CompositionLocalProvider(LocalNativeTitleBar provides titleBar, LocalDrawerWindows provides drawerWindows) {
             Box(Modifier.fillMaxSize().focusHome()) { content() }
         }
     }
@@ -66,13 +62,7 @@ fun WindowTopBar(
         TopBar(appName, document, modifier, modes, actions)
         return
     }
-    val theme = Stretch.theme
-    var insets by remember { mutableStateOf(TitleBarInsets(0f, 0f)) }
-    DisposableEffect(titleBar) { onDispose { titleBar.remove() } }
-    DisposableEffect(titleBar, theme) {
-        insets = titleBar.install(StretchSizes.header.value, theme.isDark, theme.colors)
-        onDispose {}
-    }
+    val insets = titleBar.installed()
     val regions = remember { TitleBarRegions() }
     TopBarLayout(
         appName,

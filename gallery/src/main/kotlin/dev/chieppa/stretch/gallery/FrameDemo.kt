@@ -277,7 +277,7 @@ private fun Tiles(names: List<String>, position: DrawerPosition) {
         ) { BasicText(name, style = Stretch.type.bodySm.merge(TextStyle(color = c.ink))) }
     }
     when (position) {
-        DrawerPosition.Side -> Grid(minCell = 56.dp, gap = 6.dp) { names.forEach { tile(it) } }
+        DrawerPosition.Side, DrawerPosition.Window -> Grid(minCell = 56.dp, gap = 6.dp) { names.forEach { tile(it) } }
         DrawerPosition.Bottom -> Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             names.forEach { tile(it) }
         }

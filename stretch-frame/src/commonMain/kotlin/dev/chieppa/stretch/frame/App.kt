@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,9 +44,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.generated.Res
 import dev.chieppa.stretch.frame.generated.close
+import dev.chieppa.stretch.frame.generated.dock
 import dev.chieppa.stretch.frame.generated.dock_left
 import dev.chieppa.stretch.frame.generated.dock_right
 import dev.chieppa.stretch.frame.generated.drawer_menu
+import dev.chieppa.stretch.frame.generated.pop_out
 import dev.chieppa.stretch.frame.generated.rail_bottom
 import dev.chieppa.stretch.frame.generated.rail_top
 import dev.chieppa.stretch.frame.generated.reset_layout
@@ -55,6 +59,7 @@ import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
 import dev.chieppa.stretch.ui.IconButton
+import dev.chieppa.stretch.ui.Tooltip
 import dev.chieppa.stretch.ui.focusHome
 import org.jetbrains.compose.resources.stringResource
 
@@ -80,7 +85,9 @@ class DrawerSpec(
  * for their widths they are shown narrower, down to [FrameLayout.MIN_WIDTH], so the viewport keeps
  * [FrameLayout.MIN_VIEWPORT] as long as it can. Drawers resize from their
  * inner edge, the split between stacked drawers and the bottom panel's
- * top edge; rail buttons reorder by dragging. The layout is the app's state: every change comes back through
+ * top edge; rail buttons reorder by dragging. Where the platform has a [LocalDrawerWindows] host, a drawer's menu
+ * pops it out into a window of its own; its rail button stays lit and brings the window to the front, and docking
+ * or closing the window puts it back. The layout is the app's state: every change comes back through
  * [onLayoutChange]. Pass a [keyCast] to show key presses over the viewport and a [statusBar] for the window's foot.
  */
 @Composable
@@ -99,13 +106,17 @@ fun StretchApp(
     val specs = drawers.associateBy { it.id }
     val current by rememberUpdatedState(layout)
     val change by rememberUpdatedState(onLayoutChange)
+    val windows = LocalDrawerWindows.current
+    val raises = remember { mutableStateMapOf<String, Int>() }
 
     @Composable
     fun rail(side: Side) = Rail(
         side = side,
         items = layout.on(side).mapNotNull { placement -> specs[placement.id]?.let { RailItem(it.id, it.icon, it.title, placement.bottom, it.badge) } },
-        open = layout.on(side).filter { it.open }.map { it.id }.toSet(),
-        onToggle = { change(current.toggle(it)) },
+        open = layout.on(side).filter { it.open || it.detached }.map { it.id }.toSet(),
+        onToggle = { id ->
+            if (current[id]?.detached == true) raises[id] = (raises[id] ?: 0) + 1 else change(current.toggle(id))
+        },
         onMove = { id, drop -> change(current.move(id, side, drop.bottom, drop.index)) },
     )
 
@@ -120,8 +131,20 @@ fun StretchApp(
             modifier = modifier,
             actions = {
                 spec.actions(this)
-                DrawerMenuButton(placement, { change(it(current)) }, onResetLayout)
-                IconButton(StretchIcons.Minus, stringResource(Res.string.close), { change(current.close(placement.id)) }, size = StretchSizes.seg)
+                DrawerMenuButton(placement, canPopOut = windows != null, { change(it(current)) }, onResetLayout)
+                if (placement.detached) {
+                    val dock = stringResource(Res.string.dock)
+                    Tooltip(dock) {
+                        IconButton(
+                            if (placement.side == Side.Left) StretchIcons.DockLeft else StretchIcons.DockRight,
+                            dock,
+                            { change(current.dockBack(placement.id)) },
+                            size = StretchSizes.seg,
+                        )
+                    }
+                } else {
+                    IconButton(StretchIcons.Minus, stringResource(Res.string.close), { change(current.close(placement.id)) }, size = StretchSizes.seg)
+                }
             },
             content = { spec.content(this, placement.position) },
         )
@@ -197,14 +220,35 @@ fun StretchApp(
         }
         statusBar?.invoke()
     }
+
+    if (windows != null) {
+        for (placement in layout.detached) {
+            val spec = specs[placement.id] ?: continue
+            key(placement.id) {
+                windows.DrawerWindow(
+                    title = spec.title,
+                    bounds = placement.window,
+                    side = placement.side,
+                    defaultWidth = placement.width,
+                    raise = raises[placement.id] ?: 0,
+                    onBoundsChange = { change(current.moveWindow(placement.id, it)) },
+                    onClose = { change(current.dockBack(placement.id)) },
+                ) { drawer(placement, DrawerStyle.Docked, Modifier.fillMaxSize()) }
+            }
+        }
+    }
 }
 
 @Composable
-private fun DrawerMenuButton(placement: DrawerPlacement, change: ((FrameLayout) -> FrameLayout) -> Unit, onReset: () -> Unit) {
+private fun DrawerMenuButton(placement: DrawerPlacement, canPopOut: Boolean, change: ((FrameLayout) -> FrameLayout) -> Unit, onReset: () -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(StretchIcons.More, stringResource(Res.string.drawer_menu), { open = true }, size = StretchSizes.seg)
         Menu(open, { open = false }) {
+            if (canPopOut && !placement.detached) {
+                MenuItem(stringResource(Res.string.pop_out), { change { it.popOut(placement.id) }; open = false })
+                MenuDivider()
+            }
             MenuItem(stringResource(Res.string.dock_left), { change { it.dock(placement.id, Side.Left) }; open = false }, icon = StretchIcons.DockLeft)
             MenuItem(stringResource(Res.string.dock_right), { change { it.dock(placement.id, Side.Right) }; open = false }, icon = StretchIcons.DockRight)
             val toBottom = !placement.bottom

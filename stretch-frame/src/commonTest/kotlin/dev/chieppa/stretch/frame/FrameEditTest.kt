@@ -3,6 +3,8 @@ package dev.chieppa.stretch.frame
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,7 +43,15 @@ class FrameEditTest {
     private val drawers = listOf(
         DrawerSpec("layers", "Layers", StretchIcons.Layers) { RowText("Body") },
         DrawerSpec("library", "Library", StretchIcons.Grid) { RowText("Shapes") },
-        DrawerSpec("help", "Help", StretchIcons.Help) { RowText(if (it == DrawerPosition.Bottom) "Guides, wide" else "Guides, tall") },
+        DrawerSpec("help", "Help", StretchIcons.Help) {
+            RowText(
+                when (it) {
+                    DrawerPosition.Bottom -> "Guides, wide"
+                    DrawerPosition.Side -> "Guides, tall"
+                    DrawerPosition.Window -> "Guides, window"
+                },
+            )
+        },
         DrawerSpec("timeline", "Timeline", StretchIcons.Keyframe) { RowText("Frames") },
     )
 
@@ -119,6 +129,61 @@ class FrameEditTest {
         assertTrue(layout.bottomHeight > FrameLayout.DEFAULT_BOTTOM_HEIGHT + 30f, "Height ${layout.bottomHeight}")
         layout = layout.move("help", Side.Left, false, 0)
         onNodeWithText("Guides, tall").assertExists()
+    }
+
+    /** Draws popped-out drawers inline, recording what the frame asks of their windows. */
+    private class InlineWindows : DrawerWindowHost {
+        val raises = mutableMapOf<String, Int>()
+
+        @Composable
+        override fun DrawerWindow(
+            title: String,
+            bounds: WindowBounds?,
+            side: Side,
+            defaultWidth: Float,
+            raise: Int,
+            onBoundsChange: (WindowBounds) -> Unit,
+            onClose: () -> Unit,
+            content: @Composable () -> Unit,
+        ) {
+            raises[title] = raise
+            Box(Modifier.size(300.dp, 200.dp).testTag("window $title")) { content() }
+        }
+    }
+
+    @Test
+    fun drawersPopOutIntoAWindowAndDockBack() = runComposeUiTest {
+        var layout by mutableStateOf(FrameLayout(listOf(DrawerPlacement("help", Side.Left, open = true))))
+        val windows = InlineWindows()
+        setStretchContent {
+            CompositionLocalProvider(LocalDrawerWindows provides windows) {
+                StretchApp(layout, { layout = it }, drawers, onResetLayout = {}, topBar = { TopBar("App", "Untitled") }) { Viewport {} }
+            }
+        }
+        onNodeWithContentDescription("Drawer menu").performClick()
+        onNodeWithText("Pop out").performClick()
+        assertTrue(layout["help"]!!.detached)
+        onNodeWithTag("window Help").assertExists()
+        onNodeWithText("Guides, window").assertExists()
+
+        onNodeWithContentDescription("Help").performClick()
+        waitForIdle()
+        assertTrue(layout["help"]!!.detached, "the rail button raises the window instead of toggling")
+        assertEquals(1, windows.raises["Help"])
+
+        onNodeWithContentDescription("Dock").performClick()
+        assertEquals(listOf("help"), layout.openOn(Side.Left).map { it.id })
+        onNodeWithTag("window Help").assertDoesNotExist()
+    }
+
+    @Test
+    fun withoutAWindowHostDrawersCannotPopOut() = runComposeUiTest {
+        val layout = FrameLayout(listOf(DrawerPlacement("help", Side.Left, open = true)))
+        setStretchContent {
+            StretchApp(layout, {}, drawers, onResetLayout = {}, topBar = { TopBar("App", "Untitled") }) { Viewport {} }
+        }
+        onNodeWithContentDescription("Drawer menu").performClick()
+        onNodeWithText("Pop out").assertDoesNotExist()
     }
 
     @Test
