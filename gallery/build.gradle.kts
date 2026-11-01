@@ -19,6 +19,8 @@ kotlin {
 dependencies {
     implementation(project(":stretch-frame"))
     implementation(project(":stretch-gpu"))
+    // Quiets wgpu4k's SLF4J logging; an app that wants the log adds its own SLF4J backend instead.
+    runtimeOnly(libs.slf4j.nop)
     implementation(project(":stretch-document"))
     implementation(project(":stretch-core"))
     implementation(project(":stretch-devtools"))

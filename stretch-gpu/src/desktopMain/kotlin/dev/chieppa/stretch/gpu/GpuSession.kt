@@ -93,7 +93,8 @@ internal class GpuSession private constructor(
                 PREFERRED_FORMATS.firstOrNull { it in supported } ?: supported.first()
             }
             val info = adapter.info
-            val name = info.description.ifBlank { info.device }
+            // wgpu puts the driver version in the description, so the device name comes first.
+            val name = listOf(info.device, info.description, info.vendor).firstOrNull { it.isNotBlank() } ?: "Unknown GPU"
             GpuSession(wgpu, surface, adapter, device, format, "$name (${options.backend ?: "automatic backend"})", options)
         }
     }
