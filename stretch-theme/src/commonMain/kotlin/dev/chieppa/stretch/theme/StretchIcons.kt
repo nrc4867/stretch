@@ -4,6 +4,16 @@ package dev.chieppa.stretch.theme
 import androidx.compose.ui.graphics.vector.ImageVector
 
 object StretchIcons {
+    val ArrowDown: ImageVector by lazy {
+        icon("arrow-down") {
+            stroke("M8 3.5v9M4.5 9L8 12.5 11.5 9")
+        }
+    }
+    val ArrowUp: ImageVector by lazy {
+        icon("arrow-up") {
+            stroke("M8 12.5v-9M4.5 7L8 3.5 11.5 7")
+        }
+    }
     val Camera: ImageVector by lazy {
         icon("camera") {
             stroke("M3.5 4.5h9a2 2 0 0 1 2 2v5a2 2 0 0 1 -2 2h-9a2 2 0 0 1 -2 -2v-5a2 2 0 0 1 2 -2z")
@@ -84,6 +94,12 @@ object StretchIcons {
             stroke("M6 8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z")
         }
     }
+    val File: ImageVector by lazy {
+        icon("file") {
+            stroke("M4 1.5h5l3 3v10H4z")
+            stroke("M9 1.5v3h3")
+        }
+    }
     val Folder: ImageVector by lazy {
         icon("folder") {
             stroke("M1.5 4.5a1 1 0 0 1 1-1H6l1.5 1.5h6a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z")
@@ -100,6 +116,12 @@ object StretchIcons {
             stroke("M1.5 8a6.5 6.5 0 1 0 13 0a6.5 6.5 0 1 0 -13 0z")
             stroke("M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4")
             fill("M7.3 11.6a0.7 0.7 0 1 0 1.4 0a0.7 0.7 0 1 0 -1.4 0z")
+        }
+    }
+    val Import: ImageVector by lazy {
+        icon("import") {
+            stroke("M8 2.5V10M5 7l3 3 3-3")
+            stroke("M2.5 9.5v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3")
         }
     }
     val Info: ImageVector by lazy {

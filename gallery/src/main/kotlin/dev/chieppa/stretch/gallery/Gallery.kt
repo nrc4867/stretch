@@ -66,7 +66,7 @@ import dev.chieppa.stretch.ui.Toggle
 import dev.chieppa.stretch.ui.ToolButton
 import kotlin.math.roundToInt
 
-private enum class Page(val label: String) { Components("Components"), Frame("App frame") }
+private enum class Page(val label: String) { Components("Components"), Data("Data"), Frame("App frame") }
 
 /** Every component and the app frame in every theme. Labels here are examples, not app text. */
 @Composable
@@ -77,13 +77,17 @@ fun Gallery() {
         val switcher: @Composable () -> Unit = {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Segmented(Page.entries, page, { page = it }, { it.label }, mode = true)
-                Segmented(StretchThemes.all, theme, { theme = it }, { it.name })
+                Dropdown(StretchThemes.all, theme, { theme = it }, { it.name }, "Theme", Modifier.width(180.dp))
             }
         }
         when (page) {
             Page.Components -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
                 TopBar("Stretch", "Gallery", modes = switcher)
                 ComponentsPage()
+            }
+            Page.Data -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
+                TopBar("Stretch", "Gallery", modes = switcher)
+                DataPage()
             }
             Page.Frame -> FrameDemo(switcher)
         }
@@ -108,7 +112,7 @@ private fun ComponentsPage() {
 }
 
 @Composable
-private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
+internal fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
     val c = Stretch.colors
     val shape = Stretch.shapes.cardShape
     Column(
