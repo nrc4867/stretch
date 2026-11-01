@@ -206,6 +206,36 @@ class FrameEditTest {
     }
 
     @Test
+    fun topBarActionsFoldIntoAMoreMenuWhenTheBarIsNarrow() = runComposeUiTest {
+        var width by mutableStateOf(900.dp)
+        var palettes = 0
+        var open by mutableStateOf(false)
+        setStretchContent {
+            Box(Modifier.size(width, 300.dp)) {
+                TopBar("App", "A long document name", modes = { Box(Modifier.size(200.dp, 30.dp).testTag("modes")) }) {
+                    TopBarActions(onUndo = {}, onRedo = {}, onCommands = { palettes++ }, onSettings = { open = true }) {
+                        Popover(open, { open = false }, title = "Preferences") { RowText("Show keys") }
+                    }
+                }
+            }
+        }
+        onNodeWithContentDescription("More actions").assertDoesNotExist()
+        onNodeWithContentDescription("Undo").assertExists()
+
+        width = 360.dp
+        waitForIdle()
+        onNodeWithTag("modes").assertExists()
+        onNodeWithContentDescription("Undo").assertExists()
+        onNodeWithContentDescription("More actions").performClick()
+        onNodeWithText("Commands").performClick()
+        assertEquals(1, palettes, "the last actions fold first and still work from the menu")
+        onNodeWithContentDescription("More actions").performClick()
+        onNodeWithText("Settings").performClick()
+        val more = onNodeWithContentDescription("More actions").getUnclippedBoundsInRoot()
+        assertTrue(onNodeWithText("Preferences").getUnclippedBoundsInRoot().top > more.bottom, "a folded action's popup opens under More")
+    }
+
+    @Test
     fun railDropsLandInTheNearestSlot() {
         assertEquals(RailDrop(false, 0), railDrop(0f, 600f, 3, 1, 44f, 8f))
         assertEquals(RailDrop(false, 2), railDrop(98f, 600f, 3, 1, 44f, 8f))

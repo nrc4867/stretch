@@ -14,6 +14,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import dev.chieppa.stretch.frame.generated.more_actions
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -33,7 +44,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The 44px bar across the top of the window: app name, document name and state, the mode switch, then window-level
- * actions. Nothing else goes here.
+ * actions. Nothing else goes here. When the window narrows, the document name shortens first, then actions from
+ * [TopBarActions] fold into a More menu; the app name, the mode switch and that menu always stay.
  */
 @Composable
 fun TopBar(
@@ -61,46 +73,135 @@ internal fun TopBarLayout(
 ) {
     val c = Stretch.colors
     Column(modifier.fillMaxWidth()) {
-        Row(
-            Modifier
+        Layout(
+            contents = listOf(
+                { BasicText(appName, style = Stretch.type.heading.merge(TextStyle(color = c.inkStrong)), maxLines = 1) },
+                { BasicText(document, style = Stretch.type.body.merge(TextStyle(color = c.inkSubtle)), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                modes,
+                { Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) { actions() } },
+            ),
+            modifier = Modifier
                 .fillMaxWidth()
                 .height(StretchSizes.header)
                 .background(c.surfaceRail)
                 .then(barModifier)
                 .padding(start = start + 16.dp, end = end + 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            BasicText(appName, style = Stretch.type.heading.merge(TextStyle(color = c.inkStrong)))
-            BasicText(document, style = Stretch.type.body.merge(TextStyle(color = c.inkSubtle)), maxLines = 1)
-            modes()
-            Spacer(Modifier.weight(1f))
-            Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) { actions() }
+        ) { (appSlot, documentSlot, modesSlot, actionsSlot), constraints ->
+            val gap = 12.dp.roundToPx()
+            val width = constraints.maxWidth
+            val height = constraints.maxHeight
+            fun loose(max: Int) = Constraints(maxWidth = max.coerceAtLeast(0), maxHeight = height)
+            val app = appSlot.first().measure(loose(width))
+            val modesWanted = modesSlot.sumOf { it.maxIntrinsicWidth(height) }
+            val afterApp = width - app.width - gap
+            val actions = actionsSlot.first().measure(loose(maxOf(afterApp - modesWanted - gap, StretchSizes.icon.roundToPx())))
+            val modes = modesSlot.map { it.measure(loose(afterApp - actions.width - gap)) }
+            val modesWidth = modes.sumOf { it.width }
+            val documentRoom = afterApp - modesWidth - (if (modesWidth > 0) gap else 0) - actions.width - gap
+            val document = documentSlot.first().measure(loose(documentRoom))
+            layout(width, height) {
+                fun Placeable.centered(x: Int) = place(x, (height - this.height) / 2)
+                var x = 0
+                app.centered(x)
+                x += app.width + gap
+                if (documentRoom >= MIN_DOCUMENT.roundToPx()) {
+                    document.centered(x)
+                    x += document.width + gap
+                }
+                modes.forEach { it.centered(x); x += it.width }
+                actions.centered(width - actions.width)
+            }
         }
         Spacer(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
     }
 }
 
+/** Narrower than this the document name hides rather than showing a sliver. */
+private val MIN_DOCUMENT = 48.dp
+
 /**
- * The standard top bar actions: undo, redo, the command palette and settings. Pass null to leave one out. Put what
- * settings opens, such as a [Popover], in [settingsPopup], so it anchors under the settings button.
+ * One window-level action for [TopBarActions]: shown as an icon button with a tooltip, or as a menu item once it
+ * folds into the More menu. [popup], such as a [Popover], opens from wherever the action is showing.
+ */
+class BarAction(
+    val icon: ImageVector,
+    val label: String,
+    val onClick: () -> Unit,
+    val keys: List<String> = emptyList(),
+    val popup: @Composable () -> Unit = {},
+)
+
+/**
+ * The standard top bar actions: undo, redo, the command palette and settings, then the app's [more]. Pass null to
+ * leave one out. Put what settings opens, such as a [Popover], in [settingsPopup], so it anchors under the settings
+ * button. Actions that do not fit fold, last first, into a More menu at the end.
  */
 @Composable
-fun RowScope.TopBarActions(
+fun TopBarActions(
     onUndo: (() -> Unit)?,
     onRedo: (() -> Unit)?,
     onCommands: (() -> Unit)?,
     onSettings: (() -> Unit)? = null,
+    more: List<BarAction> = emptyList(),
     settingsPopup: @Composable () -> Unit = {},
 ) {
-    onUndo?.let { Tooltip(stringResource(Res.string.undo), listOf("Ctrl", "Z")) { IconButton(StretchIcons.Undo, stringResource(Res.string.undo), it) } }
-    onRedo?.let { Tooltip(stringResource(Res.string.redo), listOf("Ctrl", "Shift", "Z")) { IconButton(StretchIcons.Redo, stringResource(Res.string.redo), it) } }
-    onCommands?.let { Tooltip(stringResource(Res.string.commands), listOf("Ctrl", "K")) { IconButton(StretchIcons.Command, stringResource(Res.string.commands), it) } }
-    onSettings?.let {
-        Box {
-            Tooltip(stringResource(Res.string.settings)) { IconButton(StretchIcons.Settings, stringResource(Res.string.settings), it) }
-            settingsPopup()
+    val undo = stringResource(Res.string.undo)
+    val redo = stringResource(Res.string.redo)
+    val commands = stringResource(Res.string.commands)
+    val settings = stringResource(Res.string.settings)
+    val actions = listOfNotNull(
+        onUndo?.let { BarAction(StretchIcons.Undo, undo, it, listOf("Ctrl", "Z")) },
+        onRedo?.let { BarAction(StretchIcons.Redo, redo, it, listOf("Ctrl", "Shift", "Z")) },
+        onCommands?.let { BarAction(StretchIcons.Command, commands, it, listOf("Ctrl", "K")) },
+        onSettings?.let { BarAction(StretchIcons.Settings, settings, it, popup = settingsPopup) },
+    ) + more
+    OverflowActions(actions)
+}
+
+/** As many of [actions] as fit as icon buttons; the rest in a More menu after them. */
+@Composable
+private fun OverflowActions(actions: List<BarAction>) {
+    val moreLabel = stringResource(Res.string.more_actions)
+    SubcomposeLayout { constraints ->
+        val slot = StretchSizes.icon.roundToPx()
+        val gap = 2.dp.roundToPx()
+        fun widthOf(buttons: Int) = (buttons * (slot + gap) - gap).coerceAtLeast(0)
+        val shown = if (widthOf(actions.size) <= constraints.maxWidth) {
+            actions.size
+        } else {
+            (actions.size - 1 downTo 0).first { widthOf(it + 1) <= constraints.maxWidth || it == 0 }
         }
+        val folded = actions.drop(shown)
+        val loose = Constraints(maxHeight = constraints.maxHeight)
+        val buttons = actions.take(shown).mapIndexed { i, action ->
+            subcompose(i) {
+                Box {
+                    Tooltip(action.label, action.keys.ifEmpty { null }) { IconButton(action.icon, action.label, action.onClick) }
+                    action.popup()
+                }
+            }.first().measure(loose)
+        }
+        val more = if (folded.isEmpty()) null else subcompose("more") { MoreMenu(moreLabel, folded) }.first().measure(loose)
+        val width = widthOf(buttons.size + if (more != null) 1 else 0)
+        layout(width, constraints.maxHeight) {
+            var x = 0
+            (buttons + listOfNotNull(more)).forEach { it.place(x, (constraints.maxHeight - it.height) / 2); x += it.width + gap }
+        }
+    }
+}
+
+/** The More button and its menu. A folded action's popup opens from here. */
+@Composable
+private fun MoreMenu(label: String, actions: List<BarAction>) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        Tooltip(label) { IconButton(StretchIcons.More, label, { open = true }) }
+        Menu(open, { open = false }) {
+            actions.forEach { action ->
+                MenuItem(action.label, { open = false; action.onClick() }, icon = action.icon, keys = action.keys.joinToString(" ").ifEmpty { null })
+            }
+        }
+        actions.forEach { it.popup() }
     }
 }
 
