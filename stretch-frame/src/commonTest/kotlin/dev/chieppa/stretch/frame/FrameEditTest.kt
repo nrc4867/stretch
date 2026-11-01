@@ -17,6 +17,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -184,6 +185,24 @@ class FrameEditTest {
         }
         onNodeWithContentDescription("Drawer menu").performClick()
         onNodeWithText("Pop out").assertDoesNotExist()
+    }
+
+    @Test
+    fun theSettingsPopoverOpensUnderItsButtonNotOverTheBar() = runComposeUiTest {
+        var open by mutableStateOf(false)
+        setStretchContent {
+            Box(Modifier.size(600.dp, 400.dp)) {
+                TopBar("App", "Untitled") {
+                    TopBarActions(onUndo = null, onRedo = null, onCommands = null, onSettings = { open = true }) {
+                        Popover(open, { open = false }, title = "Preferences") { RowText("Show keys") }
+                    }
+                }
+            }
+        }
+        onNodeWithContentDescription("Settings").performClick()
+        val button = onNodeWithContentDescription("Settings").getUnclippedBoundsInRoot()
+        val title = onNodeWithText("Preferences").getUnclippedBoundsInRoot()
+        assertTrue(title.top > button.bottom, "popover at ${title.top}, button ends at ${button.bottom}")
     }
 
     @Test

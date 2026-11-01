@@ -81,18 +81,27 @@ internal fun TopBarLayout(
     }
 }
 
-/** The standard top bar actions: undo, redo, the command palette and settings. Pass null to leave one out. */
+/**
+ * The standard top bar actions: undo, redo, the command palette and settings. Pass null to leave one out. Put what
+ * settings opens, such as a [Popover], in [settingsPopup], so it anchors under the settings button.
+ */
 @Composable
 fun RowScope.TopBarActions(
     onUndo: (() -> Unit)?,
     onRedo: (() -> Unit)?,
     onCommands: (() -> Unit)?,
     onSettings: (() -> Unit)? = null,
+    settingsPopup: @Composable () -> Unit = {},
 ) {
     onUndo?.let { Tooltip(stringResource(Res.string.undo), listOf("Ctrl", "Z")) { IconButton(StretchIcons.Undo, stringResource(Res.string.undo), it) } }
     onRedo?.let { Tooltip(stringResource(Res.string.redo), listOf("Ctrl", "Shift", "Z")) { IconButton(StretchIcons.Redo, stringResource(Res.string.redo), it) } }
     onCommands?.let { Tooltip(stringResource(Res.string.commands), listOf("Ctrl", "K")) { IconButton(StretchIcons.Command, stringResource(Res.string.commands), it) } }
-    onSettings?.let { Tooltip(stringResource(Res.string.settings)) { IconButton(StretchIcons.Settings, stringResource(Res.string.settings), it) } }
+    onSettings?.let {
+        Box {
+            Tooltip(stringResource(Res.string.settings)) { IconButton(StretchIcons.Settings, stringResource(Res.string.settings), it) }
+            settingsPopup()
+        }
+    }
 }
 
 /** The floating bar at the top-left of the viewport: tools, then the armed tool's options. */

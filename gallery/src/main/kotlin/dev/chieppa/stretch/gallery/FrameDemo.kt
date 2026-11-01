@@ -238,8 +238,12 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar) {
                     switcher()
                 }
             }) {
-                TopBarActions(onUndo = { history.undo() }, onRedo = { history.redo() }, onCommands = { palette = true }, onSettings = { settings = true })
-                Box {
+                TopBarActions(
+                    onUndo = { history.undo() },
+                    onRedo = { history.redo() },
+                    onCommands = { palette = true },
+                    onSettings = { settings = true },
+                ) {
                     Popover(settings, { settings = false }, title = "Settings") {
                         SettingRow("Show key presses") { Spacer(Modifier.weight(1f)); Toggle(showKeys, { showKeys = it }, "Show key presses") }
                     }
