@@ -34,4 +34,7 @@ plugins {
 include(":stretch-core")
 include(":stretch-theme")
 include(":stretch-ui")
+include(":stretch-frame")
+include(":stretch-input")
+include(":stretch-test")
 include(":gallery")

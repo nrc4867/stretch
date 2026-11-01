@@ -9,10 +9,16 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":stretch-ui"))
+    implementation(project(":stretch-frame"))
     implementation(project(":stretch-core"))
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)
+    testImplementation(kotlin("test"))
+    testImplementation(libs.compose.ui.test)
+}
+
+tasks.withType<Test>().configureEach {
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
 
 compose.desktop {

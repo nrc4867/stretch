@@ -1,0 +1,425 @@
+package dev.chieppa.stretch.frame
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
+import dev.chieppa.stretch.core.Action
+import dev.chieppa.stretch.core.Keymap
+import dev.chieppa.stretch.frame.generated.Res
+import dev.chieppa.stretch.frame.generated.close
+import dev.chieppa.stretch.frame.generated.no_matches
+import dev.chieppa.stretch.frame.generated.search_commands
+import dev.chieppa.stretch.theme.Icon
+import dev.chieppa.stretch.theme.Stretch
+import dev.chieppa.stretch.theme.StretchIcons
+import dev.chieppa.stretch.theme.StretchSizes
+import dev.chieppa.stretch.ui.Button
+import dev.chieppa.stretch.ui.ButtonKind
+import dev.chieppa.stretch.ui.IconButton
+import dev.chieppa.stretch.ui.Kbd
+import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.stringResource
+
+/** Places a popup under its anchor, flipping above or shifting left when it would leave the window. */
+private class BelowAnchor(private val gap: Int) : PopupPositionProvider {
+    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
+        val x = anchorBounds.left.coerceAtMost(windowSize.width - popupContentSize.width).coerceAtLeast(0)
+        val below = anchorBounds.bottom + gap
+        val y = if (below + popupContentSize.height <= windowSize.height) below else (anchorBounds.top - gap - popupContentSize.height).coerceAtLeast(0)
+        return IntOffset(x, y)
+    }
+}
+
+/** Centers a popup over its anchor, above it when there is room. */
+private class AboveAnchor(private val gap: Int) : PopupPositionProvider {
+    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
+        val x = (anchorBounds.center.x - popupContentSize.width / 2).coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0))
+        val above = anchorBounds.top - gap - popupContentSize.height
+        val y = if (above >= 0) above else anchorBounds.bottom + gap
+        return IntOffset(x, y)
+    }
+}
+
+/** Centers a popup in the window, [top] pixels down, or in the middle when [top] is null. */
+private class InWindow(private val top: Int?) : PopupPositionProvider {
+    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset =
+        IntOffset(
+            ((windowSize.width - popupContentSize.width) / 2).coerceAtLeast(0),
+            top ?: ((windowSize.height - popupContentSize.height) / 2).coerceAtLeast(0),
+        )
+}
+
+/**
+ * The tooltip: the one place for a full sentence. Names the action and its key, shown after a short hover.
+ * Long-press with a pen arrives with the input layer.
+ */
+@Composable
+fun Tooltip(text: String, keys: List<String>? = null, content: @Composable () -> Unit) {
+    val source = remember { MutableInteractionSource() }
+    val hovered by source.collectIsHoveredAsState()
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(hovered) {
+        if (hovered) {
+            delay(500)
+            visible = true
+        } else {
+            visible = false
+        }
+    }
+    Box(Modifier.hoverable(source)) {
+        content()
+        if (visible) {
+            val c = Stretch.colors
+            Popup(popupPositionProvider = AboveAnchor(6), properties = PopupProperties(focusable = false)) {
+                Row(
+                    Modifier
+                        .clip(Stretch.shapes.ctlShape)
+                        .background(c.inkStrong)
+                        .padding(horizontal = 8.dp, vertical = 5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    BasicText(text, style = Stretch.type.bodySm.merge(TextStyle(color = c.surfacePanel)))
+                    if (keys != null) Kbd(keys)
+                }
+            }
+        }
+    }
+}
+
+/** A dropdown or context menu under its anchor. Put [MenuItem], [MenuDivider] and [MenuLabel] inside. */
+@Composable
+fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    if (!expanded) return
+    Popup(popupPositionProvider = BelowAnchor(4), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
+        Column(
+            Modifier
+                .widthIn(min = 200.dp)
+                .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
+                .padding(4.dp),
+            content = content,
+        )
+    }
+}
+
+/** One command in a menu: icon, label and the key on the right. [checked] makes it a check item. */
+@Composable
+fun MenuItem(
+    text: String,
+    onClick: () -> Unit,
+    icon: ImageVector? = null,
+    keys: String? = null,
+    checked: Boolean? = null,
+    highlighted: Boolean = false,
+) {
+    val c = Stretch.colors
+    val source = remember { MutableInteractionSource() }
+    val hovered by source.collectIsHoveredAsState()
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(StretchSizes.icon)
+            .clip(Stretch.shapes.segShape)
+            .background(if (hovered || highlighted) c.surfaceControlHi else Color.Transparent)
+            .hoverable(source)
+            .clickable(source, indication = null, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        when {
+            checked != null -> Box(Modifier.size(16.dp)) { if (checked) Icon(StretchIcons.Check, c.inkControl) }
+            icon != null -> Icon(icon, c.inkControl)
+        }
+        BasicText(text, Modifier.weight(1f), style = Stretch.type.body.merge(TextStyle(color = if (hovered) c.inkStrong else c.ink)), maxLines = 1)
+        if (keys != null) BasicText(keys, style = Stretch.type.valueSm.merge(TextStyle(color = c.inkSubtle)))
+    }
+}
+
+/** A menu item for a registered action: its label, icon key and keys come from the registry and keymap. */
+@Composable
+fun ActionMenuItem(action: Action, keymap: Keymap, icons: (String) -> ImageVector? = { null }, onDone: () -> Unit = {}) {
+    MenuItem(
+        text = LocalActionText.current(action.textKey),
+        onClick = {
+            onDone()
+            action.run()
+        },
+        icon = action.icon?.let(icons),
+        keys = keymap.keysFor(action.id).firstOrNull()?.toString(),
+    )
+}
+
+@Composable
+fun MenuDivider() {
+    Box(Modifier.padding(horizontal = 6.dp, vertical = 4.dp).fillMaxWidth().height(Stretch.stroke).background(Stretch.colors.linePanel))
+}
+
+@Composable
+fun MenuLabel(text: String) {
+    BasicText(
+        text.uppercase(),
+        Modifier.padding(start = 8.dp, top = 6.dp, bottom = 2.dp),
+        style = Stretch.type.eyebrow.merge(TextStyle(color = Stretch.colors.inkMuted)),
+    )
+}
+
+/** A field that opens a menu of options. */
+@Composable
+fun <T> Dropdown(
+    options: List<T>,
+    selected: T,
+    onSelect: (T) -> Unit,
+    label: (T) -> String,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+) {
+    val c = Stretch.colors
+    var open by remember { mutableStateOf(false) }
+    val shape = Stretch.shapes.ctlShape
+    Box(modifier) {
+        Row(
+            Modifier
+                .height(StretchSizes.ctl)
+                .clip(shape)
+                .background(c.surfaceFloat)
+                .border(Stretch.stroke, c.lineControl, shape)
+                .clickable(role = Role.DropdownList) { open = true }
+                .semantics { this.contentDescription = contentDescription }
+                .padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicText(label(selected), Modifier.weight(1f), style = Stretch.type.body.merge(TextStyle(color = c.inkStrong)), maxLines = 1)
+            Icon(StretchIcons.ChevronDown, c.inkMuted)
+        }
+        Menu(open, { open = false }) {
+            for (option in options) {
+                MenuItem(label(option), { onSelect(option); open = false }, checked = option == selected)
+            }
+        }
+    }
+}
+
+/**
+ * The command palette: search every available action and run it. Up and Down move, Enter runs, Esc closes.
+ * The list is exactly the registry's available actions, so a command missing here is missing everywhere.
+ */
+@Composable
+fun CommandPalette(
+    visible: Boolean,
+    actions: List<Action>,
+    keymap: Keymap,
+    onDismiss: () -> Unit,
+    icons: (String) -> ImageVector? = { null },
+) {
+    if (!visible) return
+    val c = Stretch.colors
+    val text = LocalActionText.current
+    var query by remember { mutableStateOf("") }
+    var index by remember { mutableIntStateOf(0) }
+    val matches = searchLabels(query, actions) { text(it.textKey) }
+    val focus = remember { FocusRequester() }
+    fun run(action: Action) {
+        onDismiss()
+        action.run()
+    }
+    Popup(popupPositionProvider = InWindow(top = 96), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
+        LaunchedEffect(Unit) { focus.requestFocus() }
+        Column(
+            Modifier
+                .width(520.dp)
+                .floating(Stretch.shapes.cardShape, Stretch.shadows.float)
+                .onPreviewKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    when (event.key) {
+                        Key.DirectionDown -> index = (index + 1).coerceAtMost(matches.lastIndex.coerceAtLeast(0))
+                        Key.DirectionUp -> index = (index - 1).coerceAtLeast(0)
+                        Key.Enter -> matches.getOrNull(index)?.let(::run)
+                        Key.Escape -> onDismiss()
+                        else -> return@onPreviewKeyEvent false
+                    }
+                    true
+                },
+        ) {
+            Row(
+                Modifier.fillMaxWidth().height(StretchSizes.header).padding(horizontal = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(StretchIcons.Search, c.inkMuted)
+                val placeholder = stringResource(Res.string.search_commands)
+                BasicTextField(
+                    value = query,
+                    onValueChange = {
+                        query = it
+                        index = 0
+                    },
+                    modifier = Modifier.weight(1f).focusRequester(focus).semantics { contentDescription = placeholder },
+                    singleLine = true,
+                    textStyle = Stretch.type.body.merge(TextStyle(color = c.inkStrong, fontSize = Stretch.type.drawerTitle.fontSize)),
+                    cursorBrush = SolidColor(c.inkStrong),
+                    decorationBox = { inner ->
+                        Box {
+                            if (query.isEmpty()) BasicText(placeholder, style = Stretch.type.body.merge(TextStyle(color = c.inkSubtle, fontSize = Stretch.type.drawerTitle.fontSize)))
+                            inner()
+                        }
+                    },
+                )
+            }
+            Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+            Column(Modifier.padding(6.dp).heightIn(max = 360.dp)) {
+                if (matches.isEmpty()) {
+                    BasicText(stringResource(Res.string.no_matches), Modifier.padding(8.dp), style = Stretch.type.body.merge(TextStyle(color = c.inkSubtle)))
+                }
+                matches.take(12).forEachIndexed { i, action ->
+                    MenuItem(
+                        text = text(action.textKey),
+                        onClick = { run(action) },
+                        icon = action.icon?.let(icons),
+                        keys = keymap.keysFor(action.id).firstOrNull()?.toString(),
+                        highlighted = i == index,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * A modal panel for the few tasks that are not live edits: export, open, preferences. Never for "Are you sure?".
+ * Esc closes it.
+ */
+@Composable
+fun StretchDialog(
+    title: String,
+    onDismiss: () -> Unit,
+    icon: ImageVector? = null,
+    width: Dp = 420.dp,
+    actions: @Composable RowScope.() -> Unit = {},
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val c = Stretch.colors
+    Popup(popupPositionProvider = InWindow(top = null), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
+        val shape = Stretch.shapes.cardShape
+        Column(
+            Modifier
+                .width(width)
+                .floating(shape, Stretch.shadows.float)
+                .background(c.surfacePanel),
+        ) {
+            DrawerHeader(title, icon) { IconButton(StretchIcons.Close, stringResource(Res.string.close), onDismiss, size = StretchSizes.seg) }
+            content()
+            Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalAlignment = Alignment.CenterVertically,
+                content = actions,
+            )
+        }
+    }
+}
+
+/** One toast at a time: what a command did, with Undo one click away. */
+@Stable
+class ToastState {
+    internal var current by mutableStateOf<Toast?>(null)
+
+    fun show(message: String, actionLabel: String? = null, onAction: () -> Unit = {}) {
+        current = Toast(message, actionLabel, onAction, (current?.serial ?: 0) + 1)
+    }
+
+    fun dismiss() {
+        current = null
+    }
+
+    internal data class Toast(val message: String, val actionLabel: String?, val onAction: () -> Unit, val serial: Int)
+}
+
+/** Shows the current toast and hides it after a few seconds or when replaced. Place it bottom-center of the viewport. */
+@Composable
+fun ToastHost(state: ToastState, modifier: Modifier = Modifier) {
+    val toast = state.current ?: return
+    LaunchedEffect(toast.serial) {
+        delay(5000)
+        if (state.current?.serial == toast.serial) state.dismiss()
+    }
+    val c = Stretch.colors
+    Row(
+        modifier
+            .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
+            .height(StretchSizes.row)
+            .padding(start = 12.dp, end = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(StretchIcons.Undo, c.inkControl)
+        BasicText(toast.message, style = Stretch.type.body.merge(TextStyle(color = c.ink)))
+        if (toast.actionLabel != null) {
+            Button(
+                toast.actionLabel,
+                {
+                    toast.onAction()
+                    state.dismiss()
+                },
+                kind = ButtonKind.Quiet,
+            )
+        } else {
+            Spacer(Modifier.width(8.dp))
+        }
+    }
+}

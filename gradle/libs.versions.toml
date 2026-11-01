@@ -3,6 +3,7 @@ compose = "1.12.2"
 kotlin = "2.4.21"
 kotlinx-coroutines = "1.11.0"
 jvmToolchain = "25"
+jna = "5.17.0"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
@@ -10,6 +11,8 @@ compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", v
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
 compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
+jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
+jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
