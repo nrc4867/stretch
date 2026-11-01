@@ -7,8 +7,11 @@
     <string name="drawer_menu">Drawer menu</string>
     <string name="dock_left">Dock left</string>
     <string name="dock_right">Dock right</string>
+    <string name="rail_bottom">Move to rail bottom</string>
+    <string name="rail_top">Move to rail top</string>
     <string name="reset_layout">Reset layout</string>
     <string name="resize">Resize</string>
+    <string name="resize_split">Resize split</string>
     <string name="search_commands">Search commands</string>
     <string name="no_matches">No matches</string>
 </resources>

@@ -35,6 +35,8 @@ import dev.chieppa.stretch.core.KeyChord
 import dev.chieppa.stretch.core.Keymap
 import dev.chieppa.stretch.frame.CommandPalette
 import dev.chieppa.stretch.frame.DrawerPlacement
+import dev.chieppa.stretch.frame.KeyCastState
+import dev.chieppa.stretch.frame.Popover
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.DrawerSpec
 import dev.chieppa.stretch.frame.FrameLayout
@@ -98,12 +100,16 @@ fun FrameDemo(switcher: @Composable () -> Unit) {
     var tool by remember { mutableStateOf("draw") }
     var palette by remember { mutableStateOf(false) }
     var color by remember { mutableStateOf("Ochre") }
+    var showKeys by remember { mutableStateOf(false) }
+    var settings by remember { mutableStateOf(false) }
+    val keyCast = remember { KeyCastState() }
     val defaults = FrameLayout(
         listOf(
             DrawerPlacement("layers", Side.Left, open = true),
             DrawerPlacement("library", Side.Left),
             DrawerPlacement("brush", Side.Right, open = true),
             DrawerPlacement("colors", Side.Right, open = true),
+            DrawerPlacement("help", Side.Left, bottom = true),
         ),
     )
     var layouts by remember { mutableStateOf(ModeLayouts(Mode.entries.associate { it.name to defaults })) }
@@ -180,6 +186,9 @@ fun FrameDemo(switcher: @Composable () -> Unit) {
                 SettingRow("Taper") { Spacer(Modifier.weight(1f)); Toggle(doc.taper, { history.execute(SetTaper(it)) }, "Taper") }
             }
         },
+        DrawerSpec("help", "Help", StretchIcons.Help) {
+            DrawerSection(divider = false) { RowText("Shortcuts"); RowText("Guides") }
+        },
         DrawerSpec("colors", "Colors", StretchIcons.Theme) {
             DrawerSection(divider = false) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -197,6 +206,7 @@ fun FrameDemo(switcher: @Composable () -> Unit) {
         drawers = drawers,
         onResetLayout = { layouts = layouts.reset(mode.name) },
         modifier = Modifier.actionKeys(keymap, mode.name).focusRequester(focus).focusable(),
+        keyCast = if (showKeys) keyCast else null,
         topBar = {
             TopBar("Stretch", "Frame demo · draft", modes = {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -204,7 +214,12 @@ fun FrameDemo(switcher: @Composable () -> Unit) {
                     switcher()
                 }
             }) {
-                TopBarActions(onUndo = { history.undo() }, onRedo = { history.redo() }, onCommands = { palette = true })
+                TopBarActions(onUndo = { history.undo() }, onRedo = { history.redo() }, onCommands = { palette = true }, onSettings = { settings = true })
+                Box {
+                    Popover(settings, { settings = false }, title = "Settings") {
+                        SettingRow("Show key presses") { Spacer(Modifier.weight(1f)); Toggle(showKeys, { showKeys = it }, "Show key presses") }
+                    }
+                }
             }
         },
     ) {

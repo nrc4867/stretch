@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -34,6 +37,7 @@ import dev.chieppa.stretch.frame.Menu
 import dev.chieppa.stretch.frame.MenuDivider
 import dev.chieppa.stretch.frame.MenuItem
 import dev.chieppa.stretch.frame.MenuLabel
+import dev.chieppa.stretch.frame.Popover
 import dev.chieppa.stretch.frame.StretchDialog
 import dev.chieppa.stretch.frame.ToastHost
 import dev.chieppa.stretch.frame.ToastState
@@ -52,6 +56,11 @@ import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.ButtonKind
 import dev.chieppa.stretch.ui.Callout
 import dev.chieppa.stretch.ui.Chip
+import dev.chieppa.stretch.ui.FieldIcon
+import dev.chieppa.stretch.ui.Grid
+import dev.chieppa.stretch.ui.Skeleton
+import dev.chieppa.stretch.ui.SkeletonText
+import dev.chieppa.stretch.ui.Spinner
 import dev.chieppa.stretch.ui.ChipKind
 import dev.chieppa.stretch.ui.IconButton
 import dev.chieppa.stretch.ui.Kbd
@@ -106,6 +115,8 @@ private fun ComponentsPage() {
         Section("Segmented") { SegmentedDemo() }
         Section("Menus, tooltips and dialogs") { OverlaysDemo() }
         Section("Feedback") { FeedbackDemo() }
+        Section("Loading") { LoadingDemo() }
+        Section("Grid") { GridDemo() }
         Section("Toolbar and readouts") { ToolbarDemo() }
         Section("Icons") { IconsDemo() }
     }
@@ -174,6 +185,15 @@ private fun SettingsDemo() {
         SettingRow("Spread") { Spacer(Modifier.weight(1f)); NumberField(spread, { spread = it }, "Spread", unit = "°", range = 0f..90f) }
         SettingRow("Blend") { Dropdown(listOf("Normal", "Multiply", "Screen"), blend, { blend = it }, { it }, "Blend", Modifier.weight(1f)) }
         TextField(search, { search = it }, placeholder = "Search commands", icon = StretchIcons.Search)
+        var name by remember { mutableStateOf("Fox") }
+        TextField(
+            name, { name = it }, placeholder = "Character name",
+            trailing = { Tooltip("Shown on exports and in the file name") { FieldIcon(StretchIcons.Help, contentDescription = "About names") } },
+        )
+        SettingRow("Line") {
+            Spacer(Modifier.weight(1f))
+            NumberField(spread, { spread = it }, "Line weight", unit = "px", width = 104.dp, leading = { FieldIcon(StretchIcons.Pen) })
+        }
     }
 }
 
@@ -224,6 +244,9 @@ private fun OverlaysDemo() {
     var dock by remember { mutableStateOf("Left") }
     var dialog by remember { mutableStateOf(false) }
     var scale by remember { mutableFloatStateOf(2f) }
+    var popover by remember { mutableStateOf(false) }
+    var width by remember { mutableFloatStateOf(2.5f) }
+    var taper by remember { mutableStateOf(true) }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box {
             Button("Open menu", { menu = true }, icon = StretchIcons.More)
@@ -237,6 +260,13 @@ private fun OverlaysDemo() {
             }
         }
         Tooltip("Mirror to other side", listOf("M")) { IconButton(StretchIcons.Mirror, "Mirror", {}, quiet = false) }
+        Box {
+            Button("Brush settings", { popover = true }, icon = StretchIcons.Pen)
+            Popover(popover, { popover = false }, title = "Brush") {
+                SettingRow("Width") { Slider(width, { width = it }, "Width", Modifier.weight(1f), valueRange = 0.5f..8f) }
+                SettingRow("Taper") { Spacer(Modifier.weight(1f)); Toggle(taper, { taper = it }, "Taper") }
+            }
+        }
         Button("Export", { dialog = true }, icon = StretchIcons.Export)
         Kbd(listOf("Ctrl", "K"))
     }
@@ -272,6 +302,32 @@ private fun FeedbackDemo() {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Button("Delete", { toasts.show("Deleted · Fur edge", "Undo") })
         ToastHost(toasts)
+    }
+}
+
+@Composable
+private fun LoadingDemo() {
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Spinner("Saving")
+        Spinner("Loading library", size = 24.dp)
+        Column(Modifier.width(200.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Skeleton(Modifier.size(40.dp), Stretch.shapes.cardShape)
+                SkeletonText(2, Modifier.weight(1f))
+            }
+            Skeleton(Modifier.fillMaxWidth().height(32.dp))
+        }
+    }
+}
+
+@Composable
+private fun GridDemo() {
+    Grid(minCell = 120.dp, gap = 8.dp) {
+        for (n in 1..7) {
+            Box(Modifier.height(72.dp).clip(Stretch.shapes.cardShape).background(Stretch.colors.surfaceControl), contentAlignment = Alignment.Center) {
+                BasicText("Pose $n", style = Stretch.type.bodySm.merge(TextStyle(color = Stretch.colors.ink)))
+            }
+        }
     }
 }
 

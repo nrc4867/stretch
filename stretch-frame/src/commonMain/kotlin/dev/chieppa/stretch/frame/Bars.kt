@@ -16,7 +16,6 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.generated.Res
@@ -28,7 +27,6 @@ import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
 import dev.chieppa.stretch.ui.IconButton
-import dev.chieppa.stretch.ui.ToolButton
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -72,33 +70,6 @@ fun RowScope.TopBarActions(
     onRedo?.let { Tooltip(stringResource(Res.string.redo), listOf("Ctrl", "Shift", "Z")) { IconButton(StretchIcons.Redo, stringResource(Res.string.redo), it) } }
     onCommands?.let { Tooltip(stringResource(Res.string.commands), listOf("Ctrl", "K")) { IconButton(StretchIcons.Command, stringResource(Res.string.commands), it) } }
     onSettings?.let { Tooltip(stringResource(Res.string.settings)) { IconButton(StretchIcons.Settings, stringResource(Res.string.settings), it) } }
-}
-
-data class RailItem(val id: String, val icon: ImageVector, val label: String)
-
-/** The 48px icon rail on one edge. Each button opens or closes one drawer; open drawers show as on. */
-@Composable
-fun Rail(
-    side: Side,
-    items: List<RailItem>,
-    open: Set<String>,
-    onToggle: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val c = Stretch.colors
-    Row(modifier.fillMaxHeight()) {
-        if (side == Side.Right) Spacer(Modifier.fillMaxHeight().width(Stretch.stroke).background(c.linePanel))
-        Column(
-            Modifier.fillMaxHeight().width(StretchSizes.rail).background(c.surfaceRail).padding(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            for (item in items) {
-                Tooltip(item.label) { ToolButton(item.icon, item.label, item.id in open, { onToggle(item.id) }) }
-            }
-        }
-        if (side == Side.Left) Spacer(Modifier.fillMaxHeight().width(Stretch.stroke).background(c.linePanel))
-    }
 }
 
 /** The floating bar at the top-left of the viewport: tools, then the armed tool's options. */

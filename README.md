@@ -22,8 +22,8 @@ IntelliJ IDEA: open the folder; the Gallery and Check run configurations are inc
 | --- | --- |
 | `stretch-core` | Commands, undo and gestures, session log, actions and keymap, the Settled interface |
 | `stretch-theme` | Tokens, the four themes, fonts, icons |
-| `stretch-ui` | Components: buttons, toggle, slider, chips, segmented, fields, swatch, key caps, callout, progress, dropzone, sortable lists and grids, stats, charts, table |
-| `stretch-frame` | The app frame: top bar, rails, drawers and their layout, menus, dropdown, palette, dialog, tooltip, toast, toolbar, viewport, action keys |
+| `stretch-ui` | Components: buttons, toggle, slider, chips, segmented, fields, swatch, key caps, callout, progress, spinner, skeleton, grid, field icons, dropzone, sortable lists and grids, stats, charts, table |
+| `stretch-frame` | The app frame: top bar, rails (reorderable, with a bottom group), resizable drawers and their layout, menus, dropdown, popover, palette, dialog, tooltip, toast, toolbar, viewport, action keys, key display |
 | `stretch-input` | Pointer and pen samples; Windows Ink pen input on desktop |
 | `stretch-test` | Command scenarios, a controllable Settled, Compose UI test helpers |
 | `gallery` | Every component in every theme, and an app frame demo |

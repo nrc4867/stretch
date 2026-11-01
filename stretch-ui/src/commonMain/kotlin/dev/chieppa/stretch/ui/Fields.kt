@@ -8,6 +8,8 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -38,6 +40,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -49,7 +52,10 @@ import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchSizes
 
-/** A one-line text or search field. No inline help text: anything that needs explaining goes in the tooltip. */
+/**
+ * A one-line text or search field. No inline help text: anything that needs explaining goes in the tooltip, often
+ * on a [FieldIcon] in [trailing]. [icon] is a shorthand for a plain leading icon.
+ */
 @Composable
 fun TextField(
     value: String,
@@ -58,6 +64,8 @@ fun TextField(
     placeholder: String = "",
     icon: ImageVector? = null,
     contentDescription: String = placeholder,
+    leading: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     val c = Stretch.colors
     val state = rememberControlState()
@@ -82,10 +90,12 @@ fun TextField(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (icon != null) Icon(icon, c.inkMuted)
+                leading?.invoke()
                 Box(Modifier.weight(1f)) {
                     if (value.isEmpty()) Label(placeholder, Stretch.type.body, c.inkSubtle)
                     inner()
                 }
+                trailing?.invoke()
             }
         },
     )
@@ -107,6 +117,8 @@ fun NumberField(
     format: (Float) -> String = { formatNumber(it) },
     width: Dp = 76.dp,
     onValueChangeFinished: () -> Unit = {},
+    leading: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     val c = Stretch.colors
     val state = rememberControlState()
@@ -161,7 +173,13 @@ fun NumberField(
             cursorBrush = SolidColor(c.inkStrong),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { commit() }),
-            decorationBox = { inner -> Box(Modifier.padding(horizontal = 10.dp), Alignment.CenterEnd) { inner() } },
+            decorationBox = { inner ->
+                Row(Modifier.padding(horizontal = 10.dp), horizontalArrangement = Arrangement.spacedBy(iconGap), verticalAlignment = Alignment.CenterVertically) {
+                    leading?.invoke()
+                    Box(Modifier.weight(1f), Alignment.CenterEnd) { inner() }
+                    trailing?.invoke()
+                }
+            },
         )
     } else {
         Row(
@@ -206,9 +224,39 @@ fun NumberField(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (leading != null) {
+                leading()
+                Spacer(Modifier.weight(1f))
+            }
             Label(format(value), style, c.inkStrong)
             if (unit.isNotEmpty()) Label(unit, Stretch.type.value, c.inkMuted)
+            if (trailing != null) {
+                Spacer(Modifier.width(iconGap))
+                trailing()
+            }
         }
+    }
+}
+
+/**
+ * A 16dp icon inside a field: a leading kind marker, or a trailing help, clear or reveal button. With [onClick] it is
+ * a button and needs [contentDescription]; without, it is decorative unless described.
+ */
+@Composable
+fun FieldIcon(icon: ImageVector, modifier: Modifier = Modifier, contentDescription: String? = null, onClick: (() -> Unit)? = null) {
+    val c = Stretch.colors
+    val state = rememberControlState()
+    val shape = Stretch.shapes.segShape
+    val base = modifier.size(20.dp)
+    Box(
+        if (onClick == null) {
+            base.hoverable(state.source)
+        } else {
+            base.focusRing(state, shape).clip(shape).hoverable(state.source).clickable(state.source, null, role = Role.Button, onClick = onClick)
+        },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, if (state.hovered && onClick != null) c.inkStrong else c.inkMuted, contentDescription = contentDescription)
     }
 }
 

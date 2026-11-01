@@ -155,6 +155,50 @@ fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnSc
     }
 }
 
+/**
+ * A popover: a small panel of live controls anchored to the thing that opened it, like a brush's settings or a
+ * color picker. Unlike a [Menu] it stays open while you work in it; a click outside or Esc closes it. Changes in it
+ * apply at once, so it has no OK button.
+ */
+@Composable
+fun Popover(
+    open: Boolean,
+    onDismiss: () -> Unit,
+    title: String? = null,
+    width: Dp = 280.dp,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    if (!open) return
+    val c = Stretch.colors
+    Popup(popupPositionProvider = BelowAnchor(6), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
+        Column(
+            Modifier
+                .width(width)
+                .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
+                .onPreviewKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
+                        onDismiss()
+                        true
+                    } else {
+                        false
+                    }
+                },
+        ) {
+            if (title != null) {
+                Row(
+                    Modifier.fillMaxWidth().height(StretchSizes.row).padding(start = 12.dp, end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    BasicText(title, Modifier.weight(1f), style = Stretch.type.body.merge(TextStyle(color = c.inkStrong)), maxLines = 1)
+                    IconButton(StretchIcons.Close, stringResource(Res.string.close), onDismiss, size = StretchSizes.seg)
+                }
+                Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+            }
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
+        }
+    }
+}
+
 /** One command in a menu: icon, label and the key on the right. [checked] makes it a check item. */
 @Composable
 fun MenuItem(
