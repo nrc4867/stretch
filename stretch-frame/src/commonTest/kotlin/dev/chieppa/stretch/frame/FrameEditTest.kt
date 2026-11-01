@@ -233,6 +233,14 @@ class FrameEditTest {
         onNodeWithText("Settings").performClick()
         val more = onNodeWithContentDescription("More actions").getUnclippedBoundsInRoot()
         assertTrue(onNodeWithText("Preferences").getUnclippedBoundsInRoot().top > more.bottom, "a folded action's popup opens under More")
+
+        width = 900.dp
+        waitForIdle()
+        val settings = onNodeWithContentDescription("Settings").getUnclippedBoundsInRoot()
+        assertTrue(onNodeWithText("Preferences").getUnclippedBoundsInRoot().top > settings.bottom, "an open popup follows its action back out")
+        width = 360.dp
+        waitForIdle()
+        onNodeWithText("Preferences").assertExists()
     }
 
     @Test
