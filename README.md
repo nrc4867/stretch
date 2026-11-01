@@ -13,6 +13,7 @@ Needs JDK 25 for Gradle (`JAVA_HOME`); Gradle provisions the toolchain. Apps run
 ./gradlew check          # unit, contrast and component tests, generated-code checks
 ./gradlew :gallery:run   # every component in every theme
 ./gradlew :gallery:run -Pdevtools=47811   # also serves screenshots of its windows: curl 127.0.0.1:47811/capture
+./gradlew :gallery:run -Pgpu              # adds a WebGPU viewport page and opens on it (needs a GPU; Windows)
 ```
 
 IntelliJ IDEA: open the folder; the Gallery and Check run configurations are included.
@@ -27,6 +28,7 @@ IntelliJ IDEA: open the folder; the Gallery and Check run configurations are inc
 | `stretch-frame` | The app frame: top bar, rails (reorderable, with a bottom group), resizable side and bottom drawers and their layout, menus, context menu, dropdown, popover, palette, dialog, toast, toolbar, viewport, view navigator, status bar, window title bar, action keys, key display, shortcut field, the opt-in keymap editor and history panel, the viewport camera (wheel, middle button, two-finger pan and pinch), rulers and guides, selection handles, marquee, clipboard routing, and the macOS menu bar |
 | `stretch-document` | One open document: unsaved-changes tracking and prompt, save and open with the OS's dialogs, recent files, crash recovery |
 | `stretch-input` | Pointer and pen samples; Windows Ink pen input on desktop |
+| `stretch-gpu` | WebGPU viewports (through wgpu4k): the device, frame loop, multisampled targets, overlay pass and render-to-image, plus an orbit camera and its navigation. Optional; only 3D apps depend on it |
 | `stretch-devtools` | Development only: a 127.0.0.1 endpoint that screenshots the app's own windows (`-Pdevtools=<port>` on the gallery's run task) |
 | `stretch-gradle-plugin` | The `dev.chieppa.stretch.app` plugin: app name, id and icon for launchers, installers and running windows |
 | `stretch-test` | Command scenarios, a controllable Settled, Compose UI test helpers |
@@ -46,6 +48,7 @@ Include it as a composite build in the app's `settings.gradle.kts` and depend on
 - **Clipboard.** Mark a part of the app that has its own selection with `Modifier.clipboardTarget(router, handler)`; Ctrl C, X and V (Cmd on macOS) and the router's `actions()` go to whichever target has the focus. Text fields keep their own clipboard.
 - **macOS.** Ctrl in a `KeyChord` is Cmd on macOS, and key caps show the Mac symbols. Inside `StretchWindow`, `MacMenuBar(menus, registry, keymap, mode)` fills the menu bar from the app's actions and hooks up About, Settings and Quit; it shows nothing elsewhere.
 - **Viewport.** Give `Viewport` a `ViewportCamera` for wheel, middle-button and two-finger navigation, and `rulers = true` with guides. Put `Modifier.marquee(camera)` and then `Modifier.transformHandles(...)` on the scene layer.
+- **GPU viewport.** Put a `NativeSurface(state, renderer)` in the `Viewport`: a native window that a `SurfaceRenderer` draws `state` into on its own thread, with mouse, pen and touch passing through to the Compose UI under it. Any GPU API can implement `SurfaceRenderer`; `stretch-gpu`'s `WebGpuRenderer` runs a `GpuScene` with WebGPU. Compose cannot draw over the surface, so the scene draws a `ViewportOverlay` for gizmos and handles, and the app calls `NativeSurfaces.enable()` first thing in `main` so popups open in windows of their own over it. Windows only for now.
 
 ### Documents
 

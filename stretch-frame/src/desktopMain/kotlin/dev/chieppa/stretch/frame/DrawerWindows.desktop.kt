@@ -154,7 +154,6 @@ internal class DesktopDrawerWindows(private val owner: java.awt.Window) : Drawer
     }
 }
 
-private val isWindows = System.getProperty("os.name").orEmpty().startsWith("Windows")
 private const val SM_SWAPBUTTON = 23
 private const val VK_LBUTTON = 1
 private const val VK_RBUTTON = 2

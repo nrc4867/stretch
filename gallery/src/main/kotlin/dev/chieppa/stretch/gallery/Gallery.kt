@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.Dropdown
+import dev.chieppa.stretch.gallery.gpu.GpuPage
 import dev.chieppa.stretch.frame.Hud
 import dev.chieppa.stretch.frame.Menu
 import dev.chieppa.stretch.frame.MenuDivider
@@ -81,7 +82,7 @@ import dev.chieppa.stretch.ui.Tooltip
 import dev.chieppa.stretch.ui.ToolButton
 import kotlin.math.roundToInt
 
-private enum class Page(val label: String) { Components("Components"), Data("Data"), Tools("Tools"), Frame("App frame") }
+private enum class Page(val label: String) { Components("Components"), Data("Data"), Tools("Tools"), Frame("App frame"), Gpu("3D") }
 
 /** The window's top bar: the plain [TopBar] in tests, the title bar when the gallery owns its window. */
 typealias GalleryBar = @Composable (document: String, edited: Boolean, modes: @Composable () -> Unit, actions: @Composable RowScope.() -> Unit) -> Unit
@@ -99,17 +100,20 @@ class GalleryHost {
 
 val LocalGalleryHost = staticCompositionLocalOf { GalleryHost() }
 
-/** Every component and the app frame in every theme. Labels here are examples, not app text. */
+/**
+ * Every component and the app frame in every theme. With [gpu], also a WebGPU viewport, which needs a GPU and
+ * [dev.chieppa.stretch.frame.NativeSurfaces] enabled. Labels here are examples, not app text.
+ */
 @Composable
-fun Gallery(bar: GalleryBar = plainBar) {
+fun Gallery(gpu: Boolean = false, bar: GalleryBar = plainBar) {
     var themeChoice by remember { mutableStateOf<StretchTheme?>(StretchThemes.Ink) }
     val theme = themeChoice ?: StretchThemes.system()
     var scale by remember { mutableFloatStateOf(1f) }
-    var page by remember { mutableStateOf(Page.Components) }
+    var page by remember { mutableStateOf(if (gpu) Page.Gpu else Page.Components) }
     StretchTheme(theme, scale) {
         val switcher: @Composable () -> Unit = {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Segmented(Page.entries, page, { page = it }, { it.label }, mode = true)
+                Segmented(Page.entries.filter { gpu || it != Page.Gpu }, page, { page = it }, { it.label }, mode = true)
                 Dropdown(listOf(null) + StretchThemes.all, themeChoice, { themeChoice = it }, { it?.name ?: "Match system" }, "Theme", Modifier.width(180.dp))
             }
         }
@@ -127,6 +131,10 @@ fun Gallery(bar: GalleryBar = plainBar) {
                 ToolsPage()
             }
             Page.Frame -> FrameDemo(switcher, bar, scale) { scale = it }
+            Page.Gpu -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
+                bar("Gallery", false, switcher) {}
+                GpuPage()
+            }
         }
     }
 }

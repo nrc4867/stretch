@@ -18,6 +18,7 @@ kotlin {
 
 dependencies {
     implementation(project(":stretch-frame"))
+    implementation(project(":stretch-gpu"))
     implementation(project(":stretch-document"))
     implementation(project(":stretch-core"))
     implementation(project(":stretch-devtools"))
@@ -42,5 +43,7 @@ compose.desktop {
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
         // -Pdevtools=<port> serves screenshots of the gallery's windows on 127.0.0.1 (see DevTools).
         providers.gradleProperty("devtools").orNull?.let { jvmArgs += "-Dstretch.devtools=$it" }
+        // -Pgpu adds the WebGPU viewport page and opens on it.
+        if (providers.gradleProperty("gpu").isPresent) jvmArgs += "-Dstretch.gpu=true"
     }
 }

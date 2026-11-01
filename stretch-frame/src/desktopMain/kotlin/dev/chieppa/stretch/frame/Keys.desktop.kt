@@ -40,6 +40,7 @@ internal actual fun KeyEvent.chord(): KeyChord? {
 }
 
 internal val isMac = System.getProperty("os.name").orEmpty().startsWith("Mac")
+internal val isWindows = System.getProperty("os.name").orEmpty().startsWith("Windows")
 
 internal actual fun modifierCap(name: String): String = if (!isMac) name else when (name) {
     "Ctrl" -> "\u2318"

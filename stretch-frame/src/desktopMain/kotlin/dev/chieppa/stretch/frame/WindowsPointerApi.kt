@@ -45,7 +45,7 @@ internal open class NativePenInfo : Structure() {
     @JvmField var tiltY = 0
 }
 
-/** The user32 calls [WindowsPointerInput] makes. */
+/** The user32 calls the Windows input code makes ([WindowsPointerInput], [HitTestPassThrough]). */
 @Suppress("FunctionName")
 internal interface PointerUser32 : Library {
     fun GetPointerType(pointerId: Int, pointerType: IntByReference): Boolean
@@ -54,6 +54,7 @@ internal interface PointerUser32 : Library {
     fun GetKeyState(key: Int): Short
     fun SetWindowLongPtrW(hWnd: WinDef.HWND, index: Int, proc: WinUser.WindowProc): Pointer?
     fun SetWindowLongPtrW(hWnd: WinDef.HWND, index: Int, proc: Pointer?): Pointer?
+    fun GetWindowLongPtrW(hWnd: WinDef.HWND, index: Int): Pointer?
     fun CallWindowProcW(previous: Pointer?, hWnd: WinDef.HWND, message: Int, wParam: WinDef.WPARAM, lParam: WinDef.LPARAM): WinDef.LRESULT
     fun ScreenToClient(hWnd: WinDef.HWND, point: WinDef.POINT): Boolean
     fun EnumChildWindows(parent: WinDef.HWND, callback: WinUser.WNDENUMPROC, data: Pointer?): Boolean
@@ -64,6 +65,8 @@ internal interface PointerUser32 : Library {
         const val GWLP_WNDPROC = -4
         const val PT_TOUCH = 2
         const val PT_PEN = 3
+        const val WM_NCHITTEST = 0x0084
+        const val HTTRANSPARENT = -1
         const val WM_POINTERUPDATE = 0x0245
         const val WM_POINTERDOWN = 0x0246
         const val WM_POINTERUP = 0x0247
