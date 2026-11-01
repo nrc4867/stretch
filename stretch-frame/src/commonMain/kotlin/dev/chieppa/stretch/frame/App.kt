@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
@@ -386,7 +387,12 @@ fun Viewport(
 ) {
     val c = Stretch.colors
     val withRulers = rulers && camera != null
-    Box(modifier.fillMaxSize().clipToBounds().background(c.surfaceWell).then(if (camera != null) Modifier.viewportNavigation(camera) else Modifier)) {
+    val guideDrag = remember { GuideDrag() }
+    Box(
+        modifier.fillMaxSize().clipToBounds().background(c.surfaceWell)
+            .then(if (camera != null) Modifier.viewportNavigation(camera) else Modifier)
+            .then(if (withRulers) Modifier.guideGrabbing(camera, guides, onGuidesChange, guideDrag) else Modifier),
+    ) {
         if (grid) {
             Canvas(Modifier.fillMaxSize()) {
                 var step = 32.dp.toPx() * (camera?.zoom ?: 1f)
@@ -405,14 +411,17 @@ fun Viewport(
             }
         }
         content()
-        if (withRulers) RulersAndGuides(camera!!, guides, onGuidesChange)
-        ViewportCorners(topStart, topEnd, bottomStart, bottomEnd, bottomCenter, lead = if (withRulers) RulerSize else 0.dp)
+        if (withRulers) RulersAndGuides(camera, guides, guideDrag)
+        ViewportCorners(topStart, topEnd, bottomStart, bottomEnd, bottomCenter, lead = if (withRulers) RulerSize else 0.dp) {
+            guideDrag.blocked = it
+        }
     }
 }
 
 /**
  * Places the viewport's corner UI, moving an end corner off its start corner when the two would overlap, and the
  * bottom centre above any bottom corner it would touch. [lead] keeps the top and start edges clear for rulers.
+ * [onPlaced] gets the area each one covers, in the viewport's pixels, every time they are placed.
  */
 @Composable
 private fun ViewportCorners(
@@ -422,6 +431,7 @@ private fun ViewportCorners(
     bottomEnd: (@Composable () -> Unit)?,
     bottomCenter: (@Composable () -> Unit)?,
     lead: Dp,
+    onPlaced: (List<Rect>) -> Unit = {},
 ) {
     val none: @Composable () -> Unit = {}
     Layout(
@@ -442,25 +452,32 @@ private fun ViewportCorners(
         val (ts, te, bs, be, bc) = slots.map { it.firstOrNull()?.measure(room) }
         fun fit(first: Placeable?, end: Placeable) = first == null || first.width + gap + end.width <= room.maxWidth
         layout(constraints.maxWidth, constraints.maxHeight) {
+            val areas = mutableListOf<Rect>()
+            fun Placeable.put(x: Int, y: Int) {
+                placeRelative(x, y)
+                val left = if (ltr) x else constraints.maxWidth - x - width
+                areas += Rect(left.toFloat(), y.toFloat(), (left + width).toFloat(), (y + height).toFloat())
+            }
             val right = constraints.maxWidth - endInset
             val bottom = constraints.maxHeight - inset
-            ts?.placeRelative(start, top)
-            te?.placeRelative(right - te.width, if (fit(ts, te)) top else top + ts!!.height + gap)
-            bs?.placeRelative(start, bottom - bs.height)
+            ts?.put(start, top)
+            te?.put(right - te.width, if (fit(ts, te)) top else top + ts!!.height + gap)
+            bs?.put(start, bottom - bs.height)
             val beTop = when {
                 be == null -> bottom
                 fit(bs, be) -> bottom - be.height
                 else -> bottom - bs!!.height - gap - be.height
             }
-            be?.placeRelative(right - be.width, beTop)
+            be?.put(right - be.width, beTop)
             if (bc != null) {
                 val x = start + (room.maxWidth - bc.width) / 2
                 val tops = buildList {
                     if (bs != null && x < start + bs.width + gap) add(bottom - bs.height)
                     if (be != null && x + bc.width > right - be.width - gap) add(beTop)
                 }
-                bc.placeRelative(x, (tops.minOrNull()?.minus(gap) ?: bottom) - bc.height)
+                bc.put(x, (tops.minOrNull()?.minus(gap) ?: bottom) - bc.height)
             }
+            onPlaced(areas)
         }
     }
 }

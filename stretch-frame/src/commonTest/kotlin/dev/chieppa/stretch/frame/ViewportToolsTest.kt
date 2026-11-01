@@ -225,6 +225,59 @@ class ViewportToolsTest {
     }
 
     @Test
+    fun theSceneStillGetsThePointerUnderRulersAndGuides() = runComposeUiTest {
+        val camera = ViewportCamera()
+        var box by mutableStateOf(BoxTransform(Rect(100f, 100f, 200f, 160f)))
+        var guides by mutableStateOf(listOf(Guide(vertical = true, position = 300f)))
+        setStretchContent {
+            Box(Modifier.size(400.dp, 300.dp)) {
+                Viewport(Modifier.testTag("view"), camera = camera, rulers = true, guides = guides, onGuidesChange = { guides = it }) {
+                    Box(Modifier.fillMaxSize().marquee(camera) { _, _ -> }.transformHandles(box, camera, { box = it }))
+                }
+            }
+        }
+        onNodeWithTag("view").performMouseInput {
+            moveTo(Offset(200f, 160f))
+            press()
+            moveTo(Offset(220f, 170f))
+            moveTo(Offset(240f, 180f))
+            release()
+            exit()
+        }
+        assertEquals(Rect(100f, 100f, 240f, 180f), box.bounds, "the corner handle follows the mouse with rulers on")
+
+        onNodeWithTag("view").performTouchInput {
+            down(Offset(300f, 250f))
+            moveTo(Offset(330f, 250f))
+            moveTo(Offset(350f, 250f))
+            up()
+        }
+        assertTrue(near(guides.single().position, camera.toScene(Offset(350f, 0f)).x, 2f), "guides still drag: $guides")
+        assertEquals(Rect(100f, 100f, 240f, 180f), box.bounds, "dragging a guide leaves the scene alone")
+    }
+
+    @Test
+    fun fingersReachFurtherForGuidesAndRulersThanTheMouse() {
+        val camera = ViewportCamera()
+        val guides = listOf(Guide(vertical = true, position = 200f), Guide(vertical = false, position = 150f))
+        val ruler = 20f
+        fun grab(at: Offset, reach: Float, rulerReach: Float, blocked: List<Rect> = emptyList()) =
+            grabAt(camera, guides, at, ruler, reach, rulerReach, blocked)
+
+        assertEquals(GuideGrab(vertical = true, index = 0), grab(Offset(204f, 250f), reach = 5f, rulerReach = 0f))
+        assertNull(grab(Offset(212f, 250f), reach = 5f, rulerReach = 0f), "the mouse must be close")
+        assertEquals(GuideGrab(vertical = true, index = 0), grab(Offset(212f, 250f), reach = 14f, rulerReach = 14f), "a finger reaches")
+        assertEquals(GuideGrab(vertical = false, index = 1), grab(Offset(300f, 147f), reach = 5f, rulerReach = 0f))
+
+        assertEquals(GuideGrab(vertical = false, index = null), grab(Offset(300f, 10f), reach = 5f, rulerReach = 0f), "the top ruler places a horizontal guide")
+        assertEquals(GuideGrab(vertical = true, index = null), grab(Offset(10f, 250f), reach = 5f, rulerReach = 0f), "the left ruler places a vertical guide")
+        assertNull(grab(Offset(300f, 28f), reach = 5f, rulerReach = 0f), "the mouse must be on the ruler")
+        assertEquals(GuideGrab(vertical = false, index = null), grab(Offset(300f, 28f), reach = 14f, rulerReach = 14f), "a finger just below the ruler")
+        assertNull(grab(Offset(10f, 10f), reach = 14f, rulerReach = 14f), "the corner square places nothing")
+        assertNull(grab(Offset(204f, 250f), reach = 5f, rulerReach = 0f, blocked = listOf(Rect(190f, 240f, 260f, 280f))), "the viewport's own controls come first")
+    }
+
+    @Test
     fun aSecondFingerTurnsAHandleDragIntoAPinch() = runComposeUiTest {
         val camera = ViewportCamera()
         var box by mutableStateOf(BoxTransform(Rect(100f, 100f, 200f, 160f)))

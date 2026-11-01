@@ -66,162 +66,11 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-/** A guide line across the scene: at x = [position] when [vertical], at y = [position] otherwise. */
-data class Guide(val vertical: Boolean, val position: Float)
-
-/** How thick the viewport's rulers are. */
-val RulerSize = 20.dp
-
 /** How close to a guide or handle the pointer must be to grab it, in pixels. */
-private const val GRAB = 5f
+internal const val GRAB = 5f
 
-/** The scene distance between labelled ruler ticks at [zoom]: 1, 2 or 5 times a power of ten, at least 64px apart. */
-fun rulerStep(zoom: Float): Float {
-    val raw = 64f / zoom
-    val power = 10f.pow(floor(log10(raw)))
-    return listOf(1f, 2f, 5f, 10f).first { it * power >= raw - 1e-6f } * power
-}
-
-/**
- * Rulers on the viewport's top and left edges, in scene units at [camera]'s zoom, and the [guides] across it.
- * Dragging out of a ruler places a guide; dragging a guide moves it, and dropping it back on its ruler removes it.
- * Each change comes back through [onGuidesChange] when the drag ends. [Viewport] draws these when given rulers.
- */
-@Composable
-internal fun RulersAndGuides(camera: ViewportCamera, guides: List<Guide>, onGuidesChange: ((List<Guide>) -> Unit)?) {
-    // The scene's axes run left to right in every language, so the rulers do too.
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) { Rulers(camera, guides, onGuidesChange) }
-}
-
-@Composable
-private fun Rulers(camera: ViewportCamera, guides: List<Guide>, onGuidesChange: ((List<Guide>) -> Unit)?) {
-    val c = Stretch.colors
-    val measurer = rememberTextMeasurer()
-    val labelStyle = Stretch.type.valueSm.copy(color = c.inkSubtle)
-    var pending by remember { mutableStateOf<Guide?>(null) }
-    var moving by remember { mutableStateOf<Int?>(null) }
-    val current by rememberUpdatedState(guides)
-    val change by rememberUpdatedState(onGuidesChange)
-
-    fun finish(guide: Guide, ruler: Float, index: Int?) {
-        val gone = guide.position.let { if (guide.vertical) camera.toScreen(Offset(it, 0f)).x else camera.toScreen(Offset(0f, it)).y } < ruler
-        val list = current.toMutableList()
-        if (index != null) list.removeAt(index)
-        if (!gone) list.add(index ?: list.size, guide)
-        change?.invoke(list)
-    }
-
-    Box(
-        Modifier.fillMaxSize().pointerInput(camera) {
-            if (onGuidesChange == null) return@pointerInput
-            val ruler = RulerSize.toPx()
-            awaitEachGesture {
-                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                if (down.position.x < ruler || down.position.y < ruler) return@awaitEachGesture
-                val index = current.indexOfFirst { g ->
-                    val at = if (g.vertical) camera.toScreen(Offset(g.position, 0f)).x else camera.toScreen(Offset(0f, g.position)).y
-                    abs((if (g.vertical) down.position.x else down.position.y) - at) <= GRAB
-                }
-                if (index < 0) return@awaitEachGesture
-                down.consume()
-                moving = index
-                val guide = current[index]
-                pending = guide
-                dragUntilUp(PointerEventPass.Initial) { p ->
-                    val scene = camera.toScene(p)
-                    pending = guide.copy(position = if (guide.vertical) scene.x else scene.y)
-                }
-                pending?.let { finish(it, ruler, index) }
-                pending = null
-                moving = null
-            }
-        },
-    ) {
-        Canvas(Modifier.fillMaxSize()) {
-            val shown = current.filterIndexed { i, _ -> i != moving } + listOfNotNull(pending)
-            for (g in shown) {
-                if (g.vertical) {
-                    val x = camera.toScreen(Offset(g.position, 0f)).x
-                    drawLine(c.accent, Offset(x, 0f), Offset(x, size.height), 1.dp.toPx())
-                } else {
-                    val y = camera.toScreen(Offset(0f, g.position)).y
-                    drawLine(c.accent, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
-                }
-            }
-        }
-        for (vertical in listOf(false, true)) {
-            val description = stringResource(if (vertical) Res.string.ruler_vertical else Res.string.ruler_horizontal)
-            Canvas(
-                (if (vertical) Modifier.width(RulerSize).fillMaxHeight() else Modifier.height(RulerSize).fillMaxWidth())
-                    .clipToBounds()
-                    .semantics { contentDescription = description }
-                    .pointerInput(camera, vertical) {
-                        if (onGuidesChange == null) return@pointerInput
-                        awaitEachGesture {
-                            val down = awaitFirstDown()
-                            down.consume()
-                            dragUntilUp(PointerEventPass.Main) { p ->
-                                val scene = camera.toScene(p)
-                                pending = Guide(vertical, if (vertical) scene.x else scene.y)
-                            }
-                            pending?.let { finish(it, RulerSize.toPx(), null) }
-                            pending = null
-                        }
-                    },
-            ) {
-                drawRect(c.surfacePanel)
-                val step = rulerStep(camera.zoom)
-                val minor = step / if (abs(step / 10f.pow(floor(log10(step))) - 2f) < 0.01f) 4 else 5
-                val length = if (vertical) size.height else size.width
-                val from = camera.toScene(Offset.Zero).let { if (vertical) it.y else it.x }
-                val to = camera.toScene(Offset(length, length)).let { if (vertical) it.y else it.x }
-                var v = floor(from / minor) * minor
-                val thickness = if (vertical) size.width else size.height
-                while (v <= to) {
-                    val at = camera.toScreen(Offset(v, v)).let { if (vertical) it.y else it.x }
-                    val major = abs(v / step - (v / step).roundToInt()) < 1e-3f
-                    val tick = if (major) thickness * 0.55f else thickness * 0.25f
-                    if (vertical) {
-                        drawLine(c.lineControl, Offset(thickness - tick, at), Offset(thickness, at), 1f)
-                    } else {
-                        drawLine(c.lineControl, Offset(at, thickness - tick), Offset(at, thickness), 1f)
-                    }
-                    if (major) {
-                        val label = measurer.measure(formatNumber(v), labelStyle)
-                        // Labels that would run under the corner square are left out rather than cut.
-                        if (vertical && at - label.size.width < thickness || !vertical && at < thickness) {
-                            v += minor
-                            continue
-                        }
-                        if (vertical) {
-                            rotate(-90f, Offset(2f, at - 3f)) { drawText(label, topLeft = Offset(2f, at - 3f)) }
-                        } else {
-                            drawText(label, topLeft = Offset(at + 3f, 1f))
-                        }
-                    }
-                    v += minor
-                }
-                if (vertical) {
-                    drawLine(c.linePanel, Offset(size.width - 0.5f, 0f), Offset(size.width - 0.5f, size.height), 1f)
-                } else {
-                    drawLine(c.linePanel, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1f)
-                }
-            }
-        }
-        Canvas(Modifier.size(RulerSize)) { drawRect(c.surfacePanel) }
-    }
-}
-
-/** Follows the pressed pointer until it lifts, reporting its position in this element's coordinates. */
-private suspend fun AwaitPointerEventScope.dragUntilUp(pass: PointerEventPass, onMove: (Offset) -> Unit) {
-    while (true) {
-        val event = awaitPointerEvent(pass)
-        val change = event.changes.firstOrNull() ?: break
-        if (!change.pressed) break
-        onMove(change.position)
-        change.consume()
-    }
-}
+/** How far past a guide, ruler or handle a fingertip still grabs it; a finger covers far more than a pointer. */
+internal val FingerReach = 14.dp
 
 /**
  * Drag a rectangle over empty scene to select what it touches: [onMarquee] gets the rectangle in scene units, and
@@ -288,7 +137,7 @@ private val handleSpots = listOf(
 
 /**
  * Selection handles for [transform]: drag inside the box to move it, a corner or edge handle to resize it from the
- * opposite side (Shift keeps a corner's proportions), and the round handle above it to rotate (Shift snaps to 15°).
+ * opposite side (Shift keeps a corner's proportions), and the round handle above it to rotate (Shift snaps to 15Â°).
  * Each step reports [onTransform]; [onTransformFinished] marks the end of the drag, where an app commits one undo
  * step. Put it after [marquee] on the same element so handles win over starting a marquee. Null draws nothing.
  */
@@ -307,8 +156,7 @@ fun Modifier.transformHandles(
     pointerInput(camera) {
         val handle = 4.dp.toPx()
         val stem = 22.dp.toPx()
-        // A fingertip covers far more than a handle, so touch reaches further.
-        val fingerReach = 14.dp.toPx()
+        val fingerReach = FingerReach.toPx()
         awaitPointerEventScope {
             while (true) {
                 val event = awaitPointerEvent()
