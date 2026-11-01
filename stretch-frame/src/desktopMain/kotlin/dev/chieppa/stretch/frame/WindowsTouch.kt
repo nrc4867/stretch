@@ -100,14 +100,24 @@ internal class WindowsTouch private constructor(
         scene.sendPointerEvent(type, pointers, timeMillis = time)
     }
 
-    /** A physical screen point in the scene's pixels, as the scene's own mouse handling measures them. */
+    /**
+     * A physical screen point in the scene's pixels, as the scene's own mouse handling measures them. The scene's
+     * canvas may be lightweight, with no native window of its own, so the point is measured against the nearest
+     * heavyweight ancestor (the canvas itself, or at the latest the window) and carried over to the canvas.
+     */
     private fun toScene(screen: WinDef.POINT): Offset? {
-        val hwnd = WinDef.HWND(Native.getComponentPointer(canvas) ?: return null)
+        val native = generateSequence(canvas) { it.parent }.firstOrNull { !it.isLightweight } ?: return null
+        val hwnd = WinDef.HWND(Native.getComponentPointer(native) ?: return null)
         if (!api.ScreenToClient(hwnd, screen)) return null
         val density = window.graphicsConfiguration.defaultTransform.scaleX.toFloat()
-        val origin = SwingUtilities.convertPoint(canvas, 0, 0, container)
+        // A window's client area starts inside its insets; any other heavyweight's starts at its own origin.
+        val insets = (native as? Window)?.insets
+        val inNative = SwingUtilities.convertPoint(canvas, 0, 0, native)
+        val inContainer = SwingUtilities.convertPoint(canvas, 0, 0, container)
+        val shiftX = (insets?.left ?: 0) - inNative.x + inContainer.x
+        val shiftY = (insets?.top ?: 0) - inNative.y + inContainer.y
         val bounds = runCatching { mediator.javaClass.getMethod("getSceneBoundsInPx").invoke(mediator) as Rect? }.getOrNull()
-        return Offset(screen.x + origin.x * density, screen.y + origin.y * density) - (bounds?.topLeft ?: Offset.Zero)
+        return Offset(screen.x + shiftX * density, screen.y + shiftY * density) - (bounds?.topLeft ?: Offset.Zero)
     }
 
     override fun close() {
