@@ -267,27 +267,29 @@ private fun OverlaysDemo() {
                 SettingRow("Taper") { Spacer(Modifier.weight(1f)); Toggle(taper, { taper = it }, "Taper") }
             }
         }
-        Button("Export", { dialog = true }, icon = StretchIcons.Export)
-        Kbd(listOf("Ctrl", "K"))
-    }
-    if (dialog) {
-        StretchDialog(
-            "Export",
-            onDismiss = { dialog = false },
-            icon = StretchIcons.Export,
-            actions = {
-                Button("Cancel", { dialog = false }, kind = ButtonKind.Quiet)
-                Button("Export", { dialog = false }, kind = ButtonKind.Primary)
-            },
-        ) {
-            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                var format by remember { mutableStateOf("PNG") }
-                var outline by remember { mutableStateOf(true) }
-                SettingRow("Format") { Segmented(listOf("PNG", "glTF"), format, { format = it }, { it }, Modifier.weight(1f), fill = true) }
-                SettingRow("Scale") { Spacer(Modifier.weight(1f)); NumberField(scale, { scale = it }, "Scale", unit = "×", range = 1f..8f) }
-                SettingRow("Outline") { Spacer(Modifier.weight(1f)); Toggle(outline, { outline = it }, "Outline") }
+        Box {
+            Button("Export", { dialog = true }, icon = StretchIcons.Export)
+            if (dialog) {
+                StretchDialog(
+                    "Export",
+                    onDismiss = { dialog = false },
+                    icon = StretchIcons.Export,
+                    actions = {
+                        Button("Cancel", { dialog = false }, kind = ButtonKind.Quiet)
+                        Button("Export", { dialog = false }, kind = ButtonKind.Primary)
+                    },
+                ) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        var format by remember { mutableStateOf("PNG") }
+                        var outline by remember { mutableStateOf(true) }
+                        SettingRow("Format") { Segmented(listOf("PNG", "glTF"), format, { format = it }, { it }, Modifier.weight(1f), fill = true) }
+                        SettingRow("Scale") { Spacer(Modifier.weight(1f)); NumberField(scale, { scale = it }, "Scale", unit = "×", range = 1f..8f) }
+                        SettingRow("Outline") { Spacer(Modifier.weight(1f)); Toggle(outline, { outline = it }, "Outline") }
+                    }
+                }
             }
         }
+        Kbd(listOf("Ctrl", "K"))
     }
 }
 

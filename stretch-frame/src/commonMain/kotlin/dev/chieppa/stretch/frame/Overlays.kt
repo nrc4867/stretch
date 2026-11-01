@@ -401,7 +401,8 @@ fun CommandPalette(
 /**
  * A modal panel for the few tasks that are not live edits: export, open, preferences. Never for "Are you sure?".
  * Drag its header to move it off what it covers; it stays inside the window and opens centered again next time.
- * Esc closes it.
+ * Esc closes it. Like [Menu] and [Popover], compose it in a Box with the control that opens it: as a direct child of
+ * a spaced Row or Column its zero-size anchor would add a gap.
  */
 @Composable
 fun StretchDialog(

@@ -8,9 +8,11 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.stretch.theme.StretchThemes
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 /** The gallery's three pages render in every theme, and the frame demo's undo works through the top bar. */
 @OptIn(ExperimentalTestApi::class)
@@ -37,6 +39,17 @@ class GalleryTest {
             pickTheme(theme.name)
             onAllNodesWithText("Layers").onFirst().assertExists()
         }
+    }
+
+    @Test
+    fun openingTheDialogLeavesItsSectionAlone() = runComposeUiTest {
+        setContent { Gallery() }
+        fun section() = onNodeWithText("MENUS, TOOLTIPS AND DIALOGS").fetchSemanticsNode().layoutInfo.parentInfo!!.height
+        onNodeWithText("MENUS, TOOLTIPS AND DIALOGS").performScrollTo()
+        val before = section()
+        onAllNodesWithText("Export")[1].performScrollTo().performClick()
+        onAllNodesWithText("Cancel").onFirst().assertExists()
+        assertEquals(before, section())
     }
 
     @Test
