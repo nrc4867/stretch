@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -31,20 +32,23 @@ internal fun rememberControlState(): ControlState {
     return ControlState(source, hovered, focused)
 }
 
-/** The 2px focus ring, drawn 2px outside the control. */
+/** Whether the last input was a key press rather than a pointer press: focus rings show only then. */
+internal expect val keyboardInput: State<Boolean>
+
+/**
+ * The 2px focus ring, drawn on the control's own edge so it never grows the control or overlaps a neighbor. Only
+ * keyboard focus shows it; focus that came from a click or a tap does not.
+ */
 @Composable
 internal fun Modifier.focusRing(state: ControlState, shape: Shape): Modifier {
-    if (!state.focused) return this
+    if (!state.focused || !keyboardInput.value) return this
     val color = Stretch.colors.focus
     val width = Stretch.theme.focusStroke
     return drawWithContent {
         drawContent()
         val stroke = width.toPx()
-        val inflate = 2.dp.toPx() + stroke / 2
-        val outline = shape.createOutline(
-            Size(size.width + 2 * inflate, size.height + 2 * inflate), layoutDirection, this,
-        )
-        translate(-inflate, -inflate) { drawOutline(outline, color, style = Stroke(stroke)) }
+        val outline = shape.createOutline(Size(size.width - stroke, size.height - stroke), layoutDirection, this)
+        translate(stroke / 2, stroke / 2) { drawOutline(outline, color, style = Stroke(stroke)) }
     }
 }
 

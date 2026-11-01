@@ -191,6 +191,21 @@ class FrameEditTest {
     }
 
     @Test
+    fun menusFitTheirItems() = runComposeUiTest {
+        setStretchContent {
+            Box {
+                Menu(true, {}) {
+                    MenuItem("Duplicate", {}, keys = "Ctrl D")
+                    MenuDivider()
+                    MenuItem("Lock", {})
+                }
+            }
+        }
+        val width = onNodeWithText("Duplicate").fetchSemanticsNode().layoutInfo.parentInfo!!.width
+        assertTrue(width < 400, "Menu row width $width")
+    }
+
+    @Test
     fun popoverStaysOpenUntilEscape() = runComposeUiTest {
         var open by mutableStateOf(false)
         var clicks = 0

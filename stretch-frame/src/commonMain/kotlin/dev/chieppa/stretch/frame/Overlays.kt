@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -147,7 +148,8 @@ fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnSc
     Popup(popupPositionProvider = BelowAnchor(4), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
         Column(
             Modifier
-                .widthIn(min = 200.dp)
+                .width(IntrinsicSize.Max)
+                .widthIn(min = 200.dp, max = 360.dp)
                 .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
                 .padding(4.dp),
             content = content,
