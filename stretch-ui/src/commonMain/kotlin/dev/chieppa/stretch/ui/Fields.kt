@@ -79,7 +79,7 @@ fun TextField(
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.focusRing(state, shape).semantics {
+        modifier = modifier.focusRing(state, shape, always = true).semantics {
             this.contentDescription = contentDescription
             if (error != null) error(error)
         },
@@ -155,7 +155,7 @@ fun NumberField(
     }
 
     val frame = modifier
-        .focusRing(state, shape)
+        .focusRing(state, shape, always = true)
         .width(width)
         .heightIn(min = StretchSizes.ctl)
         .clip(shape)

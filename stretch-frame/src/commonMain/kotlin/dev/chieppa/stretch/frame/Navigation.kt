@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -92,12 +93,13 @@ fun ViewNavigator(
             Tooltip(actual, listOf("Ctrl", "0")) {
                 val source = remember { MutableInteractionSource() }
                 val hovered by source.collectIsHoveredAsState()
+                val pressed by source.collectIsPressedAsState()
                 Box(
                     Modifier
                         .widthIn(min = 48.dp)
                         .height(StretchSizes.seg)
                         .clip(Stretch.shapes.segShape)
-                        .background(if (hovered) c.surfaceControl else Color.Transparent)
+                        .background(if (pressed) c.surfaceControlHi else if (hovered) c.surfaceControl else Color.Transparent)
                         .hoverable(source)
                         .clickable(source, null, role = Role.Button) { onZoomChange(1f) }
                         .semantics { contentDescription = actual },

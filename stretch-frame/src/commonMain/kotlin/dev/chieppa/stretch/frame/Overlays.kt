@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -185,12 +186,13 @@ fun MenuItem(
     val c = Stretch.colors
     val source = remember { MutableInteractionSource() }
     val hovered by source.collectIsHoveredAsState()
+    val pressed by source.collectIsPressedAsState()
     Row(
         Modifier
             .fillMaxWidth()
             .height(StretchSizes.icon)
             .clip(Stretch.shapes.segShape)
-            .background(if (hovered || highlighted) c.surfaceControlHi else Color.Transparent)
+            .background(if (pressed) c.surfaceControlPress else if (hovered || highlighted) c.surfaceControlHi else Color.Transparent)
             .hoverable(source)
             .clickable(source, indication = null, role = Role.Button, onClick = onClick)
             .padding(horizontal = 8.dp),

@@ -123,7 +123,7 @@ fun <T> Tabs(
                         .height(36.dp)
                         .width(IntrinsicSize.Max)
                         .focusRing(state, Stretch.shapes.segShape)
-                        .background(if (current) c.surfacePanel else if (state.hovered) c.surfaceControl else Color.Transparent)
+                        .background(if (current) c.surfacePanel else Fills.borderless(state))
                         .hoverable(state.source)
                         .clickable(state.source, null, role = Role.Tab) { onSelect(tab) },
                 ) {

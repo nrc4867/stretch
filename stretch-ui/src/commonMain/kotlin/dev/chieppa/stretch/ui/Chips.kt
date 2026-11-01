@@ -66,11 +66,7 @@ fun OptionChip(
     val c = Stretch.colors
     val state = rememberControlState()
     val shape = Stretch.shapes.pillShape
-    val fill = when {
-        selected -> c.onFill
-        state.hovered -> c.surfaceControlHi
-        else -> c.surfaceControl
-    }
+    val fill = if (selected) Fills.on(state) else Fills.filled(state)
     Row(
         modifier = modifier
             .focusRing(state, shape, fill)

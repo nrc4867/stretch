@@ -64,7 +64,7 @@ fun Checkbox(checked: Boolean?, onCheckedChange: (Boolean) -> Unit, label: Strin
             Modifier
                 .size(16.dp)
                 .clip(shape)
-                .background(if (on) c.toggleOn else if (state.hovered) c.surfaceControlHi else c.surfaceFloat)
+                .background(if (on) c.toggleOn else state.fill(c.surfaceFloat, c.surfaceControlHi, c.surfaceControlPress))
                 .border(Stretch.stroke, if (on) c.toggleOnEdge else c.toggleOffEdge, shape),
         ) {
             if (checked != false) {
@@ -107,7 +107,7 @@ fun Radio(selected: Boolean, onClick: () -> Unit, label: String, modifier: Modif
             Modifier
                 .size(16.dp)
                 .clip(CircleShape)
-                .background(if (state.hovered && !selected) c.surfaceControlHi else c.surfaceFloat)
+                .background(if (selected) c.surfaceFloat else state.fill(c.surfaceFloat, c.surfaceControlHi, c.surfaceControlPress))
                 .border(Stretch.stroke, if (selected) c.toggleOnEdge else c.toggleOffEdge, CircleShape),
             contentAlignment = Alignment.Center,
         ) {

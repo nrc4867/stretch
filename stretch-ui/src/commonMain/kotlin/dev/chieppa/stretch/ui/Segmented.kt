@@ -52,10 +52,9 @@ fun <T> Segmented(
             val state = rememberControlState()
             val shape = Stretch.shapes.segShape
             val (bg, edge, ink) = when {
-                isOn && mode -> Triple(c.onFill, c.onEdge, c.onInk)
+                isOn && mode -> Triple(Fills.on(state), c.onEdge, c.onInk)
                 isOn -> Triple(c.neutralOn, Color.Transparent, c.inkStrong)
-                state.hovered -> Triple(c.surfaceControlHi, Color.Transparent, c.inkControl)
-                else -> Triple(Color.Transparent, Color.Transparent, c.inkControl)
+                else -> Triple(Fills.menu(state), Color.Transparent, c.inkControl)
             }
             Box(
                 modifier = (if (fill) Modifier.weight(1f) else Modifier)

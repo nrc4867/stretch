@@ -42,9 +42,9 @@ fun Button(
     val state = rememberControlState()
     val shape = Stretch.shapes.ctlShape
     val (fill, edge, ink) = when (kind) {
-        ButtonKind.Default -> Triple(if (state.hovered) c.surfaceControlHi else c.surfaceControl, c.lineStrong, c.inkStrong)
-        ButtonKind.Primary -> Triple(c.onFill, c.onEdge, c.onInk)
-        ButtonKind.Quiet -> Triple(if (state.hovered) c.surfaceControl else Color.Transparent, Color.Transparent, c.inkControl)
+        ButtonKind.Default -> Triple(Fills.filled(state), c.lineStrong, c.inkStrong)
+        ButtonKind.Primary -> Triple(Fills.on(state), c.onEdge, c.onInk)
+        ButtonKind.Quiet -> Triple(Fills.borderless(state), Color.Transparent, c.inkControl)
     }
     Row(
         modifier = modifier
@@ -83,9 +83,9 @@ fun IconButton(
     val state = rememberControlState()
     val shape = Stretch.shapes.ctlShape
     val fill = when {
-        on -> c.onFill
-        quiet -> if (state.hovered) c.surfaceControl else Color.Transparent
-        else -> if (state.hovered) c.surfaceControlHi else c.surfaceControl
+        on -> Fills.on(state)
+        quiet -> Fills.borderless(state)
+        else -> Fills.filled(state)
     }
     val edge = when {
         on -> c.onEdge
@@ -122,11 +122,7 @@ fun ToolButton(
     val c = Stretch.colors
     val state = rememberControlState()
     val shape = Stretch.shapes.rowShape
-    val fill = when {
-        selected -> c.onFill
-        state.hovered -> c.surfaceControl
-        else -> Color.Transparent
-    }
+    val fill = if (selected) Fills.on(state) else Fills.borderless(state)
     val ink = if (selected) c.onInk else c.inkControl
     val base = modifier
         .focusRing(state, shape, fill)

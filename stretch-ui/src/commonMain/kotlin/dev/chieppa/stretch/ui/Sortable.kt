@@ -174,7 +174,7 @@ fun <T> SortableList(
                             .alpha(if (ghost) 0.4f else 1f)
                             .focusRing(control, shape)
                             .clip(shape)
-                            .background(if (control.hovered || control.focused) c.surfaceControl else c.surfacePanel)
+                            .background(control.fill(c.surfacePanel, c.surfaceControl, c.surfaceControlHi))
                             .hoverable(control.source)
                             .then(if (onClick != null) Modifier.clickable(control.source, null, role = Role.Button) { onClick(item) } else Modifier.focusable(interactionSource = control.source))
                             .onKeyEvent { event ->
@@ -266,7 +266,7 @@ fun <T> SortableGrid(
                         .alpha(if (session?.from == index) 0.4f else 1f)
                         .focusRing(control, shape)
                         .clip(shape)
-                        .background(if (control.hovered || control.focused) c.surfaceControl else c.surfacePanel)
+                        .background(control.fill(c.surfacePanel, c.surfaceControl, c.surfaceControlHi))
                         .border(if (target) 2.dp else Stretch.stroke, if (target) c.ringSelected else c.linePanel, shape)
                         .hoverable(control.source)
                         .then(if (onClick != null) Modifier.clickable(control.source, null, role = Role.Button) { onClick(item) } else Modifier.focusable(interactionSource = control.source))

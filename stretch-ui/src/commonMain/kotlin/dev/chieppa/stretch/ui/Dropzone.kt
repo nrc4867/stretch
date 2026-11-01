@@ -98,7 +98,7 @@ internal fun DropzoneFace(state: DropState, title: String, kinds: String, descri
         DropState.Reject -> c.warnEdge
     }
     val fill = when (state) {
-        DropState.Idle -> if (control.hovered) c.surfaceControl else c.surfacePanel
+        DropState.Idle -> control.fill(c.surfacePanel, c.surfaceControl, c.surfaceControlHi)
         DropState.Over -> c.surfaceControl
         DropState.Reject -> c.warnWash
     }

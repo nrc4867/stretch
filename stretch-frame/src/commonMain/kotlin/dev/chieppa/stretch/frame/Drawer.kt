@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -174,6 +175,7 @@ fun ListRow(
     val c = Stretch.colors
     val source = remember { MutableInteractionSource() }
     val hovered by source.collectIsHoveredAsState()
+    val pressed by source.collectIsPressedAsState()
     val shape = Stretch.shapes.rowShape
     Row(
         modifier
@@ -183,7 +185,9 @@ fun ListRow(
             .clip(shape)
             .background(
                 when {
+                    selected && pressed -> c.onFillPress
                     selected -> c.onFill
+                    pressed -> c.surfaceControlHi
                     hovered -> c.surfaceControl
                     else -> Color.Transparent
                 },
