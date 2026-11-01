@@ -107,6 +107,13 @@ object StretchIcons {
             stroke("M6 8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z")
         }
     }
+    val Eyedropper: ImageVector by lazy {
+        icon("eyedropper") {
+            stroke("M9.5 4.5l2 2")
+            stroke("M10.6 2.4a1.5 1.5 0 0 1 2.1 0l.9.9a1.5 1.5 0 0 1 0 2.1L12 7l-3-3z")
+            stroke("M10.5 5.5L4 12v2h2l6.5-6.5")
+        }
+    }
     val File: ImageVector by lazy {
         icon("file") {
             stroke("M4 1.5h5l3 3v10H4z")
