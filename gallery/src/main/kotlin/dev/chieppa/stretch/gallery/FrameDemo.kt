@@ -1,6 +1,8 @@
 package dev.chieppa.stretch.gallery
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,7 +10,9 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -35,14 +40,15 @@ import dev.chieppa.stretch.core.KeyChord
 import dev.chieppa.stretch.core.Keymap
 import dev.chieppa.stretch.frame.CommandPalette
 import dev.chieppa.stretch.frame.DrawerPlacement
-import dev.chieppa.stretch.frame.KeyCastState
-import dev.chieppa.stretch.frame.Popover
+import dev.chieppa.stretch.frame.DrawerPosition
 import dev.chieppa.stretch.frame.DrawerSection
 import dev.chieppa.stretch.frame.DrawerSpec
 import dev.chieppa.stretch.frame.FrameLayout
 import dev.chieppa.stretch.frame.Hud
+import dev.chieppa.stretch.frame.KeyCastState
 import dev.chieppa.stretch.frame.ListRow
 import dev.chieppa.stretch.frame.ModeLayouts
+import dev.chieppa.stretch.frame.Popover
 import dev.chieppa.stretch.frame.RowIcon
 import dev.chieppa.stretch.frame.RowText
 import dev.chieppa.stretch.frame.SettingRow
@@ -58,6 +64,7 @@ import dev.chieppa.stretch.frame.actionKeys
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.ui.Button
+import dev.chieppa.stretch.ui.Grid
 import dev.chieppa.stretch.ui.Segmented
 import dev.chieppa.stretch.ui.Slider
 import dev.chieppa.stretch.ui.Swatch
@@ -106,10 +113,11 @@ fun FrameDemo(switcher: @Composable () -> Unit) {
     val defaults = FrameLayout(
         listOf(
             DrawerPlacement("layers", Side.Left, open = true),
-            DrawerPlacement("library", Side.Left),
+            DrawerPlacement("library", Side.Left, bottom = true),
             DrawerPlacement("brush", Side.Right, open = true),
             DrawerPlacement("colors", Side.Right, open = true),
             DrawerPlacement("help", Side.Left, bottom = true),
+            DrawerPlacement("timeline", Side.Right, bottom = true, open = true),
         ),
     )
     var layouts by remember { mutableStateOf(ModeLayouts(Mode.entries.associate { it.name to defaults })) }
@@ -161,7 +169,7 @@ fun FrameDemo(switcher: @Composable () -> Unit) {
             }
         },
         DrawerSpec("library", "Library", StretchIcons.Grid) {
-            DrawerSection(divider = false) { RowText("Shapes and presets live here.", subtle = true) }
+            DrawerSection(divider = false) { Tiles(listOf("Bean", "Drop", "Ear", "Paw", "Tail", "Snout"), it) }
         },
         DrawerSpec("brush", "Brush", StretchIcons.Pen) {
             DrawerSection("Outline", divider = false) {
@@ -185,6 +193,9 @@ fun FrameDemo(switcher: @Composable () -> Unit) {
                 }
                 SettingRow("Taper") { Spacer(Modifier.weight(1f)); Toggle(doc.taper, { history.execute(SetTaper(it)) }, "Taper") }
             }
+        },
+        DrawerSpec("timeline", "Timeline", StretchIcons.Keyframe) {
+            DrawerSection(divider = false) { Tiles((1..12).map { n -> "$n" }, it) }
         },
         DrawerSpec("help", "Help", StretchIcons.Help) {
             DrawerSection(divider = false) { RowText("Shortcuts"); RowText("Guides") }
@@ -239,4 +250,22 @@ fun FrameDemo(switcher: @Composable () -> Unit) {
 @Composable
 private fun Column6(content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.padding(6.dp), verticalArrangement = Arrangement.spacedBy(2.dp), content = content)
+}
+
+/** Library and timeline cells: a wrapping grid in a side column, one scrolling strip in the bottom panel. */
+@Composable
+private fun Tiles(names: List<String>, position: DrawerPosition) {
+    val c = Stretch.colors
+    val tile = @Composable { name: String ->
+        Box(
+            Modifier.size(56.dp).clip(Stretch.shapes.cardShape).background(c.surfaceControl),
+            contentAlignment = Alignment.Center,
+        ) { BasicText(name, style = Stretch.type.bodySm.merge(TextStyle(color = c.ink))) }
+    }
+    when (position) {
+        DrawerPosition.Side -> Grid(minCell = 56.dp, gap = 6.dp) { names.forEach { tile(it) } }
+        DrawerPosition.Bottom -> Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            names.forEach { tile(it) }
+        }
+    }
 }

@@ -39,7 +39,8 @@ class FrameEditTest {
     private val drawers = listOf(
         DrawerSpec("layers", "Layers", StretchIcons.Layers) { RowText("Body") },
         DrawerSpec("library", "Library", StretchIcons.Grid) { RowText("Shapes") },
-        DrawerSpec("help", "Help", StretchIcons.Help) { RowText("Guides") },
+        DrawerSpec("help", "Help", StretchIcons.Help) { RowText(if (it == DrawerPosition.Bottom) "Guides, wide" else "Guides, tall") },
+        DrawerSpec("timeline", "Timeline", StretchIcons.Keyframe) { RowText("Frames") },
     )
 
     private fun start() = FrameLayout(
@@ -56,7 +57,8 @@ class FrameEditTest {
         assertEquals(listOf("library", "layers"), layout.move("layers", Side.Left, false, 1).group(Side.Left, false).map { it.id })
         val down = layout.move("layers", Side.Left, true, 0)
         assertEquals(listOf("layers", "help"), down.group(Side.Left, true).map { it.id })
-        assertEquals(listOf("library", "layers"), down.openOn(Side.Left).map { it.id })
+        assertEquals(listOf("library"), down.openOn(Side.Left).map { it.id })
+        assertEquals("layers", down.openBottom(Side.Left)?.id)
         assertEquals(listOf("layers"), layout.move("layers", Side.Right, true, 5).group(Side.Right, true).map { it.id })
     }
 
@@ -67,6 +69,54 @@ class FrameEditTest {
         assertEquals(0.5f, layout["library"]!!.height, 0.001f)
         val squeezed = start().resizeSplit("layers", "library", 5f)
         assertEquals(2f * (1 - FrameLayout.MIN_SHARE), squeezed["layers"]!!.height, 0.001f)
+    }
+
+    @Test
+    fun bottomDrawersOpenOneAtATimePerSide() {
+        val layout = FrameLayout(
+            listOf(
+                DrawerPlacement("help", Side.Left, bottom = true, open = true),
+                DrawerPlacement("guides", Side.Left, bottom = true),
+                DrawerPlacement("timeline", Side.Right, bottom = true, open = true),
+            ),
+        )
+        val swapped = layout.open("guides")
+        assertEquals("guides", swapped.openBottom(Side.Left)?.id)
+        assertEquals(false, swapped["help"]!!.open)
+        assertEquals("timeline", swapped.openBottom(Side.Right)?.id)
+        assertEquals("timeline", layout.move("timeline", Side.Left, true, 0).openBottom(Side.Left)?.id)
+        assertEquals(FrameLayout.MAX_BOTTOM_HEIGHT, layout.resizeBottom(9000f).bottomHeight)
+        assertEquals(1 - FrameLayout.MIN_BOTTOM_SHARE, layout.splitBottom(0.99f).bottomSplit)
+        assertEquals(DrawerPosition.Bottom, layout["help"]!!.position)
+    }
+
+    @Test
+    fun bottomPanelSpansOrSplitsAndTellsDrawersWhereTheyAre() = runComposeUiTest {
+        var layout by mutableStateOf(
+            FrameLayout(
+                listOf(
+                    DrawerPlacement("layers", Side.Left),
+                    DrawerPlacement("help", Side.Left, bottom = true, open = true),
+                    DrawerPlacement("timeline", Side.Right, bottom = true),
+                ),
+            ),
+        )
+        setStretchContent {
+            StretchApp(layout, { layout = it }, drawers, onResetLayout = {}, topBar = { TopBar("App", "Untitled") }) { Viewport {} }
+        }
+        onNodeWithText("Guides, wide").assertExists()
+        onNodeWithContentDescription("Resize split").assertDoesNotExist()
+        onNodeWithContentDescription("Timeline").performClick()
+        onNodeWithText("Frames").assertExists()
+        onNodeWithContentDescription("Resize split").assertExists()
+        onNodeWithContentDescription("Resize bottom panel").performTouchInput {
+            down(center)
+            repeat(10) { moveBy(Offset(0f, -6f)) }
+            up()
+        }
+        assertTrue(layout.bottomHeight > FrameLayout.DEFAULT_BOTTOM_HEIGHT + 30f, "Height ${layout.bottomHeight}")
+        layout = layout.move("help", Side.Left, false, 0)
+        onNodeWithText("Guides, tall").assertExists()
     }
 
     @Test
@@ -87,7 +137,7 @@ class FrameEditTest {
         onNodeWithContentDescription("Layers").performKeyInput { withKeyDown(Key.AltLeft) { pressKey(Key.DirectionDown) } }
         assertEquals(listOf("library", "layers"), layout.group(Side.Left, false).map { it.id })
         onAllNodesWithContentDescription("Drawer menu").onFirst().performClick()
-        onNodeWithText("Move to rail bottom").performClick()
+        onNodeWithText("Dock to bottom").performClick()
         assertEquals(listOf("help", "library"), layout.group(Side.Left, true).map { it.id })
     }
 

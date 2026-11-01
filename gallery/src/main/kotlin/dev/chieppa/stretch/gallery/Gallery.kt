@@ -356,10 +356,11 @@ private fun IconsDemo() {
         "smooth" to StretchIcons.Smooth, "mirror" to StretchIcons.Mirror, "move" to StretchIcons.Move, "rotate" to StretchIcons.Rotate,
         "grid" to StretchIcons.Grid, "camera" to StretchIcons.Camera, "play" to StretchIcons.Play, "pause" to StretchIcons.Pause,
         "keyframe" to StretchIcons.Keyframe, "folder" to StretchIcons.Folder, "save" to StretchIcons.Save, "export" to StretchIcons.Export,
-        "warn" to StretchIcons.Warn, "info" to StretchIcons.Info, "help" to StretchIcons.Help, "drag" to StretchIcons.Drag,
+        "warn" to StretchIcons.Warn, "error" to StretchIcons.Error, "info" to StretchIcons.Info, "help" to StretchIcons.Help, "drag" to StretchIcons.Drag,
         "pin" to StretchIcons.Pin, "dock-left" to StretchIcons.DockLeft, "dock-right" to StretchIcons.DockRight,
         "command" to StretchIcons.Command, "theme" to StretchIcons.Theme, "chevron-down" to StretchIcons.ChevronDown,
-        "chevron-right" to StretchIcons.ChevronRight,
+        "chevron-right" to StretchIcons.ChevronRight, "dock-bottom" to StretchIcons.DockBottom, "import" to StretchIcons.Import,
+        "file" to StretchIcons.File, "arrow-up" to StretchIcons.ArrowUp, "arrow-down" to StretchIcons.ArrowDown,
     )
     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         for ((name, icon) in icons) {

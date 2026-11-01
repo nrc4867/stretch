@@ -47,6 +47,12 @@ object StretchIcons {
             stroke("M5 6.5L6.5 8 5 9.5M8 9.5h3")
         }
     }
+    val DockBottom: ImageVector by lazy {
+        icon("dock-bottom") {
+            stroke("M3.5 3h9a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1 -1.5 1.5h-9a1.5 1.5 0 0 1 -1.5 -1.5v-7a1.5 1.5 0 0 1 1.5 -1.5z")
+            stroke("M2 9.5h12")
+        }
+    }
     val DockLeft: ImageVector by lazy {
         icon("dock-left") {
             stroke("M3.5 3h9a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1 -1.5 1.5h-9a1.5 1.5 0 0 1 -1.5 -1.5v-7a1.5 1.5 0 0 1 1.5 -1.5z")
@@ -74,6 +80,13 @@ object StretchIcons {
             stroke("M9.5 2.5l4 4-6.5 6.5H4.5l-2-2a1.4 1.4 0 0 1 0-2z")
             stroke("M6 6l4 4")
             stroke("M8 13h5.5")
+        }
+    }
+    val Error: ImageVector by lazy {
+        icon("error") {
+            stroke("M5.3 1.5h5.4l3.8 3.8v5.4l-3.8 3.8H5.3l-3.8-3.8V5.3z")
+            stroke("M8 4.8v3.8")
+            fill("M7.3 11a0.7 0.7 0 1 0 1.4 0a0.7 0.7 0 1 0 -1.4 0z")
         }
     }
     val Export: ImageVector by lazy {
