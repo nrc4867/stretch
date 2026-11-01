@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
@@ -26,7 +27,8 @@ private val LocalNativeTitleBar = staticCompositionLocalOf<NativeTitleBar?> { nu
  * frame, so maximize, snapping, resizing, the shadow, rounded corners and the window buttons behave like every other
  * window. Needs the JetBrains Runtime on Windows or macOS; elsewhere the system title bar stays above the top bar.
  * Drawers in a [StretchApp] inside it can pop out into windows of their own. Clicking empty space takes focus off
- * fields and buttons.
+ * fields and buttons. Without an [icon] it uses the app's icon from the `dev.chieppa.stretch.app` Gradle plugin, at
+ * every size, so the taskbar and Alt+Tab stay sharp; the process is identified to the OS before the window opens.
  */
 @Composable
 fun StretchWindow(
@@ -36,7 +38,11 @@ fun StretchWindow(
     icon: Painter? = null,
     content: @Composable FrameWindowScope.() -> Unit,
 ) {
+    AppIdentity.applyToProcess()
     Window(onCloseRequest = onCloseRequest, state = state, title = title, icon = icon) {
+        if (icon == null) {
+            LaunchedEffect(window) { AppIdentity.current?.icons?.takeIf { it.isNotEmpty() }?.let { window.iconImages = it } }
+        }
         val titleBar = remember(window) { NativeTitleBar(window) }
         val drawerWindows = remember(window) { DesktopDrawerWindows(window) }
         CompositionLocalProvider(LocalNativeTitleBar provides titleBar, LocalDrawerWindows provides drawerWindows) {

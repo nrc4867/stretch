@@ -27,6 +27,7 @@ IntelliJ IDEA: open the folder; the Gallery and Check run configurations are inc
 | `stretch-frame` | The app frame: top bar, rails (reorderable, with a bottom group), resizable side and bottom drawers and their layout, menus, context menu, dropdown, popover, palette, dialog, toast, toolbar, viewport, view navigator, status bar, window title bar, action keys, key display |
 | `stretch-input` | Pointer and pen samples; Windows Ink pen input on desktop |
 | `stretch-devtools` | Development only: a 127.0.0.1 endpoint that screenshots the app's own windows (`-Pdevtools=<port>` on the gallery's run task) |
+| `stretch-gradle-plugin` | The `dev.chieppa.stretch.app` plugin: app name, id and icon for launchers, installers and running windows |
 | `stretch-test` | Command scenarios, a controllable Settled, Compose UI test helpers |
 | `gallery` | Every component in every theme, and an app frame demo |
 
@@ -37,6 +38,22 @@ IntelliJ IDEA: open the folder; the Gallery and Check run configurations are inc
 ## Using Stretch from an app
 
 Include it as a composite build in the app's `settings.gradle.kts` and depend on `dev.chieppa.stretch:stretch-ui` (and `stretch-core`).
+
+### App identity
+
+The `dev.chieppa.stretch.app` Gradle plugin (in `stretch-gradle-plugin/`) gives the app one name, id and icon everywhere: the packaged launcher and installers, the taskbar, dock and Start menu, and Task Manager, which shows the launcher's name instead of "OpenJDK Platform binary". Add `includeBuild("<stretch>/stretch-gradle-plugin")` to the app's `pluginManagement`, then in the app module, next to the Compose plugin:
+
+```kotlin
+plugins { id("dev.chieppa.stretch.app") }
+
+stretchApp {
+    name = "Squash"
+    id = "dev.chieppa.squash"
+    icon = layout.projectDirectory.file("app-icon.png") // square PNG, 1024px best
+}
+```
+
+It fills in Compose's `nativeDistributions` (name, description, numeric version, icons, macOS bundle id, Windows upgrade id) unless the app set them, and puts the icon and identity on the classpath so `StretchWindow` badges its windows at every size. `./gradlew :app:runDistributable` runs through the real launcher; plain `run` is still `java.exe` to Task Manager, but the window, taskbar button and taskbar grouping carry the app's icon and id.
 
 ## License
 

@@ -1,6 +1,7 @@
 rootProject.name = "stretch"
 
 pluginManagement {
+    includeBuild("stretch-gradle-plugin")
     repositories {
         google {
             mavenContent {

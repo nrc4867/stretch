@@ -2,6 +2,14 @@ plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    id("dev.chieppa.stretch.app")
+}
+
+stretchApp {
+    name = "Stretch Gallery"
+    id = "dev.chieppa.stretch.gallery"
+    icon = layout.projectDirectory.file("app-icon.png")
+    vendor = "Nicholas Chieppa"
 }
 
 kotlin {
