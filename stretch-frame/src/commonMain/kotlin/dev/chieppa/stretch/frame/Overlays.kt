@@ -39,6 +39,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -363,7 +364,8 @@ fun CommandPalette(
  * A modal panel for the few tasks that are not live edits: export, open, preferences. Never for "Are you sure?".
  * Drag its header to move it off what it covers; it stays inside the window and opens centered again next time.
  * Esc closes it. Like [Menu] and [Popover], compose it in a Box with the control that opens it: as a direct child of
- * a spaced Row or Column its zero-size anchor would add a gap.
+ * a spaced Row or Column its zero-size anchor would add a gap. It opens after the frame it is composed in, so one open
+ * from the window's first frame, as a startup dialog is, gets its size like any other.
  */
 @Composable
 fun StretchDialog(
@@ -375,6 +377,12 @@ fun StretchDialog(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = Stretch.colors
+    var framed by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        withFrameNanos {}
+        framed = true
+    }
+    if (!framed) return
     var moved by remember { mutableStateOf(IntOffset.Zero) }
     Popup(popupPositionProvider = InWindow(top = null, moved), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
         val shape = Stretch.shapes.cardShape
