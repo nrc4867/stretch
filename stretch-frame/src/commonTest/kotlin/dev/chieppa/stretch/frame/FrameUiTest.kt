@@ -18,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
@@ -91,6 +92,20 @@ class FrameUiTest {
         DrawerSpec("layers", "Layers", StretchIcons.Layers) { RowText("Body") },
         DrawerSpec("library", "Library", StretchIcons.Grid) { RowText("Shapes") },
     )
+
+    @Test
+    fun aDrawersKeysShowInItsRailTooltip() = runComposeUiTest {
+        val keyed = listOf(DrawerSpec("layers", "Layers", StretchIcons.Layers, keys = listOf("L")) { RowText("Body") })
+        setStretchContent {
+            StretchApp(FrameLayout(listOf(DrawerPlacement("layers", Side.Left))), {}, keyed, onResetLayout = {}, topBar = { TopBar("App", "Untitled") }) {
+                Viewport {}
+            }
+        }
+        onNodeWithText("L").assertDoesNotExist()
+        onNodeWithContentDescription("Layers").performMouseInput { enter(center) }
+        mainClock.advanceTimeBy(1000)
+        onNodeWithText("L").assertExists()
+    }
 
     @Test
     fun railOpensAndClosesDrawers() = runComposeUiTest {

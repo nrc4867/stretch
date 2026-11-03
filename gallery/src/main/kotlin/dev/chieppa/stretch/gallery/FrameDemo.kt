@@ -367,7 +367,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
     val sceneFocus = remember { FocusRequester() }
 
     val drawers = listOf(
-        DrawerSpec("layers", "Layers", StretchIcons.Layers, count = doc.layers.size.toString()) {
+        DrawerSpec("layers", "Layers", StretchIcons.Layers, count = doc.layers.size.toString(), keys = listOf("L")) {
             Column(
                 Modifier
                     .padding(6.dp)

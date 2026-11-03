@@ -67,7 +67,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * One drawer an app offers: its rail icon, title and contents. [actions] go in its header before the menu; [badge]
- * goes on its rail button (see [dev.chieppa.stretch.ui.badgeCount]). [content]
+ * goes on its rail button (see [dev.chieppa.stretch.ui.badgeCount]) and [keys] in its rail button's tooltip. [content]
  * is told where the drawer is showing: a tall side column or the wide bottom panel, so it can lay out for either.
  */
 class DrawerSpec(
@@ -76,6 +76,7 @@ class DrawerSpec(
     val icon: ImageVector,
     val count: String? = null,
     val badge: String? = null,
+    val keys: List<String>? = null,
     val actions: @Composable RowScope.() -> Unit = {},
     val content: @Composable ColumnScope.(DrawerPosition) -> Unit,
 )
@@ -117,7 +118,7 @@ fun StretchApp(
         side = side,
         modifier = if (windows == null) Modifier else Modifier.onGloballyPositioned { windows.railBounds(side, it.boundsInWindow()) },
         windowDrop = windows?.dockTarget?.takeIf { it.side == side }?.bottom,
-        items = layout.on(side).mapNotNull { placement -> specs[placement.id]?.let { RailItem(it.id, it.icon, it.title, placement.bottom, it.badge) } },
+        items = layout.on(side).mapNotNull { placement -> specs[placement.id]?.let { RailItem(it.id, it.icon, it.title, placement.bottom, it.badge, it.keys) } },
         open = layout.on(side).filter { it.open || it.detached }.map { it.id }.toSet(),
         onToggle = { id ->
             if (current[id]?.detached == true) raises[id] = (raises[id] ?: 0) + 1 else change(current.toggle(id))

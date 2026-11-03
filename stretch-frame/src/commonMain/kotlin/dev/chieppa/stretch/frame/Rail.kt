@@ -48,9 +48,16 @@ import kotlin.math.roundToInt
 
 /**
  * A rail button. [bottom] puts it in the group at the foot of the rail. [badge] marks something new or waiting in
- * its drawer: a count, or an empty string for a dot.
+ * its drawer: a count, or an empty string for a dot. [keys] are the key caps its tooltip shows.
  */
-data class RailItem(val id: String, val icon: ImageVector, val label: String, val bottom: Boolean = false, val badge: String? = null)
+data class RailItem(
+    val id: String,
+    val icon: ImageVector,
+    val label: String,
+    val bottom: Boolean = false,
+    val badge: String? = null,
+    val keys: List<String>? = null,
+)
 
 /** Where a dragged rail button lands: its group and its index there, counted without the dragged button. */
 data class RailDrop(val bottom: Boolean, val index: Int)
@@ -154,7 +161,7 @@ fun Rail(
                 }
         }
         Box(Modifier.alpha(if (dragging == itemId) 0.4f else 1f).focusRequester(buttonFocus).then(drag)) {
-            Tooltip(item.label) {
+            Tooltip(item.label, item.keys) {
                 BadgedBox(item.badge, listOfNotNull(item.label, item.badge?.ifEmpty { null }).joinToString(" · ")) {
                     ToolButton(item.icon, item.label, item.id in open, { onToggle(item.id) })
                 }
