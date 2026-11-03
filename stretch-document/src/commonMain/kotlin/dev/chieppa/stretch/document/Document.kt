@@ -49,7 +49,7 @@ interface FileChooser {
  * One open document: its undo [history], the file it lives in, and whether it has changes that are not saved. The
  * app edits through [history] as before; the session reads and writes files through [storage] and keeps track of
  * what was saved, so undoing back to the saved state makes it clean again. Opening or starting a new document swaps
- * the history for a fresh one.
+ * the history for a fresh one. Pass [history] when something else already owns the document's undo.
  */
 @Stable
 class DocumentSession<D>(
@@ -57,8 +57,9 @@ class DocumentSession<D>(
     initial: D,
     private val storage: DocumentStorage,
     path: String? = null,
+    history: History<D> = History(initial),
 ) {
-    var history by mutableStateOf(History(initial))
+    var history by mutableStateOf(history)
         private set
 
     /** The file this document was opened from or last saved to; null until it is first saved. */

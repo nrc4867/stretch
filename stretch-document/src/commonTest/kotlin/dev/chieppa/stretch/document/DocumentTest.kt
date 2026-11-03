@@ -6,6 +6,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import dev.chieppa.stretch.core.Applied
 import dev.chieppa.stretch.core.Command
+import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.test.setStretchContent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -47,6 +48,19 @@ private data class Trim(val count: Int) : Command<String> {
 
 @OptIn(ExperimentalTestApi::class)
 class DocumentTest {
+    @Test
+    fun aSessionTracksAHistoryItIsGiven() = runTest {
+        val history = History("a")
+        val session = DocumentSession(TextFormat, history.document.value, MemoryStorage(), history = history)
+        assertFalse(session.edited)
+        history.execute(Append("b"))
+        assertTrue(session.edited)
+        session.saveTo("file.txt")
+        assertFalse(session.edited)
+        history.undo()
+        assertTrue(session.edited)
+    }
+
     @Test
     fun savingMakesItCleanAndUndoingBackToTheSaveDoesToo() = runTest {
         val storage = MemoryStorage()
