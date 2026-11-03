@@ -10,12 +10,14 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import java.util.Properties
 
 /**
  * Writes the app's identity from its name, id and icon: the icon files the packager puts on the launcher and
  * installer ([packaging]), and the resources the running app reads to name and badge its windows ([resources]).
  */
+@DisableCachingByDefault(because = "It writes a few small files quickly.")
 abstract class GenerateAppIdentity : DefaultTask() {
     @get:Input
     abstract val appName: Property<String>

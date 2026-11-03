@@ -14,10 +14,10 @@
 
 ## App identity
 
-The `dev.chieppa.stretch.app` Gradle plugin (in `stretch-gradle-plugin/`) gives the app one name, id and icon everywhere: the packaged launcher and installers, the taskbar, dock and Start menu, and Task Manager, which shows the launcher's name instead of "OpenJDK Platform binary". Apply it in the app module, next to the Compose plugin:
+The `dev.chieppa.stretch.app` Gradle plugin (in `stretch-gradle-plugin/`) gives the app one name, id and icon everywhere: the packaged launcher and installers, the taskbar, dock and Start menu, and Task Manager, which shows the launcher's name instead of "OpenJDK Platform binary". It's published with the modules, so add the same GitHub Packages repository to the app's `pluginManagement`, then apply it in the app module, next to the Compose plugin:
 
 ```kotlin
-plugins { id("dev.chieppa.stretch.app") }
+plugins { id("dev.chieppa.stretch.app") version "<version>" }
 
 stretchApp {
     name = "Squash"

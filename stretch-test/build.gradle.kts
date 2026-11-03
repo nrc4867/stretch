@@ -18,7 +18,8 @@ kotlin {
         }
         val desktopMain by getting {
             dependencies {
-                api(compose.desktop.currentOs)
+                // Not currentOs: that would tie apps' tests to the operating system that published this.
+                api(libs.compose.desktop)
             }
         }
     }

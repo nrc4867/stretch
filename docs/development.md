@@ -35,3 +35,9 @@ IntelliJ IDEA: open the folder; the Gallery and Check run configurations are inc
 `stretch-theme/.../Tokens.kt` comes from `design/tokens.json` and `StretchIcons.kt` from `design/icons/*.svg`. Change the source, then run `./gradlew :stretch-theme:generateTokens :stretch-theme:generateIcons`; `check` fails when they are out of date.
 
 `stretch-gpu-native/src/main/java` comes from wgpu-native's headers through jextract, for the symbols in `stretch-gpu-native/bindings.includes`. The build downloads the wgpu-native release named in `gradle/libs.versions.toml` (checked against the SHA-256 in `stretch-gpu-native/build.gradle.kts`) and packs its library into the jar. After changing the version or the symbol list, install jextract 25 and run `./gradlew :stretch-gpu-native:generateBindings -Pjextract.home=<jextract folder>`.
+
+## Publishing
+
+Pushing a tag like `v0.1.0` runs `.github/workflows/publish.yml`: it runs `check`, publishes version `0.1.0` to GitHub Packages and creates a GitHub Release. `publishedModules` in the root `build.gradle.kts` lists what goes out, along with `stretch-gradle-plugin`; the gallery and `stretch-devtools` stay out.
+
+`stretch-gpu-native` packs the wgpu-native library of the machine that builds it, so the workflow runs on Windows and the published `stretch-gpu` only works there.

@@ -11,6 +11,7 @@ wgpu-native = "v29.0.1.1"
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
+compose-desktop = { module = "org.jetbrains.compose.desktop:desktop", version.ref = "compose" }
 compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
 jbr-api = { module = "org.jetbrains.runtime:jbr-api", version.ref = "jbr-api" }

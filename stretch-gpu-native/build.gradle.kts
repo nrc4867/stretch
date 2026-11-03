@@ -21,7 +21,7 @@ val archives = listOf(
     WgpuArchive("wgpu-macos-x86_64-release.zip", "8e2f7378548ddd0e2cf21e7d864dda46e953f0af724855a33778b85ead206d41", "libwgpu_native.dylib", "macos-x64"),
 )
 
-/** The archive for the machine building, whose library goes in the jar. */
+/** The archive for the machine building, whose library goes in the jar. Published builds run on Windows; see publish.yml. */
 val hostArchive: WgpuArchive = run {
     val os = System.getProperty("os.name").lowercase()
     val arm = System.getProperty("os.arch").lowercase().let { it == "aarch64" || it == "arm64" }

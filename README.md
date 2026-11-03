@@ -59,7 +59,39 @@ You need JDK 25 for Gradle. Gradle fetches the rest, including the JetBrains Run
 
 ## Build an app on it
 
-An app depends on `dev.chieppa.stretch:stretch-frame`, which brings the components, themes and core with it, and starts from a window:
+Stretch is published to GitHub Packages. GitHub asks for a token to download packages, even public ones, so create one with the `read:packages` scope and put it in `~/.gradle/gradle.properties`:
+
+```properties
+GitHubPackagesUsername=<your GitHub username>
+GitHubPackagesPassword=<your token>
+```
+
+Add the repository to your `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        google()
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/nrc4867/stretch")
+            credentials(PasswordCredentials::class)
+        }
+    }
+}
+```
+
+Then depend on `stretch-frame`, which brings the components, themes and core with it, along with Compose's desktop runtime:
+
+```kotlin
+dependencies {
+    implementation("dev.chieppa.stretch:stretch-frame:<version>")
+    implementation(compose.desktop.currentOs)
+}
+```
+
+And start from a window:
 
 ```kotlin
 fun main() = application {

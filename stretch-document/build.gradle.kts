@@ -18,6 +18,11 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(project(":stretch-test"))
         }
+        val desktopTest by getting {
+            dependencies {
+                implementation(compose.desktop.currentOs)
+            }
+        }
     }
 }
 
