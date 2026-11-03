@@ -1,5 +1,6 @@
 // Publishes the applying project to GitHub Packages, in the repository named by GITHUB_REPOSITORY (set by Actions).
 // Credentials come from ORG_GRADLE_PROJECT_GitHubPackagesUsername and ORG_GRADLE_PROJECT_GitHubPackagesPassword.
+// Kotlin Multiplatform and java-gradle-plugin create their own publications; a plain Java library adds its own.
 
 val defaultRepository = "nrc4867/stretch"
 
@@ -23,13 +24,5 @@ configure<PublishingExtension> {
                 }
             }
         }
-    }
-}
-
-// Kotlin Multiplatform and java-gradle-plugin create their own publications; a plain Java library needs one.
-plugins.withId("java-library") {
-    configure<JavaPluginExtension> { withSourcesJar() }
-    configure<PublishingExtension> {
-        publications.create<MavenPublication>("maven") { from(components["java"]) }
     }
 }

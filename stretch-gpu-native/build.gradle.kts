@@ -3,10 +3,18 @@ import dev.chieppa.stretch.build.GenerateWgpuBindings
 
 plugins {
     `java-library`
+    `maven-publish`
 }
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(libs.versions.jvmToolchain.get().toInt()))
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") { from(components["java"]) }
+    }
 }
 
 /** One wgpu-native release archive for a platform, the library file in it, and where it goes in the jar. */
