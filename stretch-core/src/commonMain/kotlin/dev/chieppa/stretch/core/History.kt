@@ -22,6 +22,9 @@ class History<D>(initial: D, private val limit: Int = 500) {
     val steps: StateFlow<Steps<D>> = stepsState.asStateFlow()
     val log = SessionLog<D>()
 
+    /** True during a [begin] gesture, when undo, redo and execute are refused. */
+    val inGesture: Boolean get() = open != null
+
     val canUndo: Boolean get() = undoStack.isNotEmpty()
     val canRedo: Boolean get() = redoStack.isNotEmpty()
 

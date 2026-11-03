@@ -126,4 +126,14 @@ class HistoryTest {
 
         assertEquals(history.document.value, history.log.replay(Doc()))
     }
+
+    @Test
+    fun aGestureIsReportedWhileItIsOpen() {
+        val history = History(Doc())
+        assertFalse(history.inGesture)
+        val gesture = history.begin()
+        assertTrue(history.inGesture)
+        gesture.commit()
+        assertFalse(history.inGesture)
+    }
 }
