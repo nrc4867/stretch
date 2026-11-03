@@ -50,10 +50,10 @@ import dev.chieppa.stretch.ui.Tooltip
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The 44px bar across the top of the window: app name, document name and state, the mode switch, then window-level
- * actions. Nothing else goes here. [edited] puts a dot after the document name while it has unsaved changes. When
- * the window narrows, the document name shortens first, then actions from [TopBarActions] fold into a More menu; the
- * app name, the mode switch and that menu always stay.
+ * The 44px bar across the top of the window: app name, the [menus] of a [BarMenus], document name and state, the mode
+ * switch, then window-level actions. Nothing else goes here. [edited] puts a dot after the document name while it has
+ * unsaved changes. When the window narrows, the document name shortens first, then actions from [TopBarActions] fold
+ * into a More menu; the app name, the menus, the mode switch and that menu always stay.
  */
 @Composable
 fun TopBar(
@@ -61,9 +61,10 @@ fun TopBar(
     document: String,
     modifier: Modifier = Modifier,
     edited: Boolean = false,
+    menus: @Composable () -> Unit = {},
     modes: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
-) = TopBarLayout(appName, document, modifier, edited = edited, modes = modes, actions = actions)
+) = TopBarLayout(appName, document, modifier, edited = edited, menus = menus, modes = modes, actions = actions)
 
 /**
  * The [TopBar] with room kept at its [start] and [end] for buttons the OS draws over it, and [barModifier] on the bar
@@ -78,6 +79,7 @@ internal fun TopBarLayout(
     start: Dp = 0.dp,
     end: Dp = 0.dp,
     edited: Boolean = false,
+    menus: @Composable () -> Unit = {},
     modes: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -86,6 +88,7 @@ internal fun TopBarLayout(
         Layout(
             contents = listOf(
                 { BasicText(appName, style = Stretch.type.heading.merge(TextStyle(color = c.inkStrong)), maxLines = 1) },
+                menus,
                 { DocumentName(document, edited) },
                 modes,
                 { Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) { actions() } },
@@ -96,14 +99,16 @@ internal fun TopBarLayout(
                 .background(c.surfaceRail)
                 .then(barModifier)
                 .padding(start = start + 16.dp, end = end + 8.dp),
-        ) { (appSlot, documentSlot, modesSlot, actionsSlot), constraints ->
+        ) { (appSlot, menusSlot, documentSlot, modesSlot, actionsSlot), constraints ->
             val gap = 12.dp.roundToPx()
             val width = constraints.maxWidth
             val height = constraints.maxHeight
             fun loose(max: Int) = Constraints(maxWidth = max.coerceAtLeast(0), maxHeight = height)
             val app = appSlot.first().measure(loose(width))
+            val menus = menusSlot.map { it.measure(loose(width - app.width - gap)) }
+            val menusWidth = menus.sumOf { it.width }
             val modesWanted = modesSlot.sumOf { it.maxIntrinsicWidth(height) }
-            val afterApp = width - app.width - gap
+            val afterApp = width - app.width - gap - (if (menusWidth > 0) menusWidth + gap else 0)
             val actions = actionsSlot.first().measure(loose(maxOf(afterApp - modesWanted - gap, StretchSizes.icon.roundToPx())))
             val modes = modesSlot.map { it.measure(loose(afterApp - actions.width - gap)) }
             val modesWidth = modes.sumOf { it.width }
@@ -114,6 +119,10 @@ internal fun TopBarLayout(
                 var x = 0
                 app.centered(x)
                 x += app.width + gap
+                if (menusWidth > 0) {
+                    menus.forEach { it.centered(x); x += it.width }
+                    x += gap
+                }
                 if (documentRoom >= MIN_DOCUMENT.roundToPx()) {
                     document.centered(x)
                     x += document.width + gap

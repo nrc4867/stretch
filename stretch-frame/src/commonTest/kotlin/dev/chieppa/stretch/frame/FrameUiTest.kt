@@ -60,6 +60,33 @@ class FrameUiTest {
         assertEquals(top("readout") - 28.dp, top("status"), "above the readout, 8dp apart")
     }
 
+    @Test
+    fun barMenusSitAfterTheAppNameAndRunTheirItems() = runComposeUiTest {
+        var ran = 0
+        setStretchContent {
+            TopBar(
+                "App",
+                "Untitled",
+                menus = {
+                    BarMenus(
+                        listOf(
+                            BarMenu("File") { close -> MenuItem("Save", { ran++; close() }) },
+                            BarMenu("Edit") { close -> MenuItem("Undo", close) },
+                        ),
+                    )
+                },
+            )
+        }
+        fun left(text: String) = onNodeWithText(text).getUnclippedBoundsInRoot().left
+        assertTrue(left("App") < left("File") && left("File") < left("Edit") && left("Edit") < left("Untitled"))
+        onNodeWithText("Save").assertDoesNotExist()
+        onNodeWithText("File").performClick()
+        onNodeWithText("Undo").assertDoesNotExist()
+        onNodeWithText("Save").performClick()
+        assertEquals(1, ran)
+        onNodeWithText("Save").assertDoesNotExist()
+    }
+
     private val drawers = listOf(
         DrawerSpec("layers", "Layers", StretchIcons.Layers) { RowText("Body") },
         DrawerSpec("library", "Library", StretchIcons.Grid) { RowText("Shapes") },

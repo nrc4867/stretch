@@ -28,7 +28,10 @@ import dev.chieppa.stretch.document.Autosave
 import dev.chieppa.stretch.document.documentName
 import dev.chieppa.stretch.document.rememberEdited
 import dev.chieppa.stretch.document.rememberFileChooser
+import dev.chieppa.stretch.frame.ActionMenuItem
 import dev.chieppa.stretch.frame.BarAction
+import dev.chieppa.stretch.frame.BarMenu
+import dev.chieppa.stretch.frame.BarMenus
 import dev.chieppa.stretch.frame.BoxTransform
 import dev.chieppa.stretch.frame.ClipData
 import dev.chieppa.stretch.frame.ClipboardHandler
@@ -238,6 +241,8 @@ private fun BoxTransform.contains(p: Offset): Boolean {
 }
 
 private enum class Mode { Build, Pose }
+
+private fun ActionRegistry.named(id: String): Action = checkNotNull(get(ActionId(id)))
 
 @Composable
 fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, onScale: (Float) -> Unit) {
@@ -457,6 +462,22 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
         },
         topBar = {
             bar(documentName(session), edited, {
+                BarMenus(
+                    listOf(
+                        BarMenu("File") { close ->
+                            ActionMenuItem(registry.named("new"), keymap, icons, close)
+                            ActionMenuItem(registry.named("open"), keymap, icons, close)
+                            ActionMenuItem(registry.named("save"), keymap, icons, close)
+                            MenuDivider()
+                            RecentFilesMenuItems(recent, FileStorage, ::open, close)
+                        },
+                        BarMenu("Edit") { close ->
+                            ActionMenuItem(registry.named("undo"), keymap, icons, close)
+                            ActionMenuItem(registry.named("redo"), keymap, icons, close)
+                        },
+                    ),
+                )
+            }, {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Segmented(Mode.entries, mode, { mode = it }, { it.name }, mode = true)
                     switcher()

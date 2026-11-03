@@ -85,9 +85,9 @@ import kotlin.math.roundToInt
 private enum class Page(val label: String) { Components("Components"), Data("Data"), Tools("Tools"), Frame("App frame"), Gpu("3D") }
 
 /** The window's top bar: the plain [TopBar] in tests, the title bar when the gallery owns its window. */
-typealias GalleryBar = @Composable (document: String, edited: Boolean, modes: @Composable () -> Unit, actions: @Composable RowScope.() -> Unit) -> Unit
+typealias GalleryBar = @Composable (document: String, edited: Boolean, menus: @Composable () -> Unit, modes: @Composable () -> Unit, actions: @Composable RowScope.() -> Unit) -> Unit
 
-private val plainBar: GalleryBar = { document, edited, modes, actions -> TopBar("Stretch", document, edited = edited, modes = modes, actions = actions) }
+private val plainBar: GalleryBar = { document, edited, menus, modes, actions -> TopBar("Stretch", document, edited = edited, menus = menus, modes = modes, actions = actions) }
 
 /** What the gallery's window lends the frame demo: its frame, for file dialogs, and a check to run before closing. */
 class GalleryHost {
@@ -119,20 +119,20 @@ fun Gallery(gpu: Boolean = false, bar: GalleryBar = plainBar) {
         }
         when (page) {
             Page.Components -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
-                bar("Gallery", false, switcher) {}
+                bar("Gallery", false, {}, switcher) {}
                 ComponentsPage()
             }
             Page.Data -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
-                bar("Gallery", false, switcher) {}
+                bar("Gallery", false, {}, switcher) {}
                 DataPage()
             }
             Page.Tools -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
-                bar("Gallery", false, switcher) {}
+                bar("Gallery", false, {}, switcher) {}
                 ToolsPage()
             }
             Page.Frame -> FrameDemo(switcher, bar, scale) { scale = it }
             Page.Gpu -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
-                bar("Gallery", false, switcher) {}
+                bar("Gallery", false, {}, switcher) {}
                 GpuPage()
             }
         }

@@ -47,6 +47,14 @@ class GalleryTest {
     }
 
     @Test
+    fun theFrameDemoHasBarMenus() = runComposeUiTest {
+        setContent { Gallery() }
+        onNodeWithText("App frame").performClick()
+        onNodeWithText("Edit").performClick()
+        onNodeWithText("Redo").assertExists()
+    }
+
+    @Test
     fun openingTheDialogLeavesItsSectionAlone() = runComposeUiTest {
         setContent { Gallery() }
         fun section() = onNodeWithText("MENUS, TOOLTIPS AND DIALOGS").fetchSemanticsNode().layoutInfo.parentInfo!!.height

@@ -22,7 +22,7 @@ class AppMenu(val title: String, val items: List<ActionId?>)
  * The macOS menu bar, built from the app's actions: each item shows its action's label and current shortcut, and
  * only runs when the action is available in [mode]. The app menu's About, Settings and Quit run [onAbout],
  * [onSettings] and [onQuit]; without them the system's defaults stay. On Windows and Linux it shows nothing: the top
- * bar and the command palette already hold the same actions.
+ * bar's [BarMenus] and the command palette hold the same actions.
  */
 @Composable
 fun FrameWindowScope.MacMenuBar(

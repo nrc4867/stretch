@@ -54,7 +54,8 @@ fun StretchWindow(
 
 /**
  * The [TopBar] as the window's title bar. Its empty space, app name and document drag the window, double-click to
- * maximize and open the system menu; [modes] and [actions] stay app controls. The OS draws the window buttons.
+ * maximize and open the system menu; [menus], [modes] and [actions] stay app controls. The OS draws the window buttons.
+ * On macOS [menus] stay out of the bar, since [MacMenuBar] puts the same actions in the system's menu bar.
  */
 @Composable
 fun WindowTopBar(
@@ -62,12 +63,13 @@ fun WindowTopBar(
     document: String,
     modifier: Modifier = Modifier,
     edited: Boolean = false,
+    menus: @Composable () -> Unit = {},
     modes: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val titleBar = LocalNativeTitleBar.current
     if (titleBar == null || !titleBar.supported) {
-        TopBar(appName, document, modifier, edited, modes, actions)
+        TopBar(appName, document, modifier, edited, if (isMac) ({}) else menus, modes, actions)
         return
     }
     val insets = titleBar.installed()
@@ -80,6 +82,7 @@ fun WindowTopBar(
         start = insets.start.dp,
         end = insets.end.dp,
         edited = edited,
+        menus = { if (!isMac) Box(Modifier.titleBarControl(regions, "menus")) { menus() } },
         modes = { Box(Modifier.titleBarControl(regions, "modes")) { modes() } },
         actions = {
             Row(

@@ -26,8 +26,8 @@ fun main() {
         ) {
             host.window = window
             CompositionLocalProvider(LocalGalleryHost provides host) {
-                Gallery(gpu = gpu) { document, edited, modes, actions ->
-                    WindowTopBar("Stretch", document, edited = edited, modes = modes, actions = actions)
+                Gallery(gpu = gpu) { document, edited, menus, modes, actions ->
+                    WindowTopBar("Stretch", document, edited = edited, menus = menus, modes = modes, actions = actions)
                 }
             }
         }
