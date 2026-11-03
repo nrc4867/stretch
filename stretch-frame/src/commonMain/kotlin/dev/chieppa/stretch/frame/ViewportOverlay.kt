@@ -53,6 +53,26 @@ class OverlayBuilder internal constructor() {
         lines += OverlayLine(from, to, color, width)
     }
 
+    /** Lines along [path], [dash] long and [gap] apart, with the pattern running on around its corners. */
+    fun dashed(path: List<Offset>, color: Color, width: Float, dash: Float, gap: Float) {
+        require(dash > 0f && gap >= 0f) { "A dash has length" }
+        val period = dash + gap
+        var walked = 0f
+        for ((from, to) in path.zipWithNext()) {
+            val length = (to - from).getDistance()
+            if (length == 0f) continue
+            val along = (to - from) / length
+            var at = 0f
+            while (at < length) {
+                val phase = (walked + at) % period
+                val step = minOf(length - at, if (phase < dash) dash - phase else period - phase)
+                if (phase < dash) line(from + along * at, from + along * (at + step), color, width)
+                at += step
+            }
+            walked += length
+        }
+    }
+
     fun dot(center: Offset, radius: Float, color: Color) {
         dots += OverlayDot(center, radius, color)
     }

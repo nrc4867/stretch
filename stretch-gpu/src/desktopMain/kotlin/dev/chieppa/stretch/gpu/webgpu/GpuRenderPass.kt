@@ -19,6 +19,13 @@ class GpuRenderPass internal constructor(private val handle: MemorySegment) {
     /** Limits drawing to a rectangle of the target, in pixels. */
     fun setScissorRect(x: Int, y: Int, width: Int, height: Int) = wgpu_h.wgpuRenderPassEncoderSetScissorRect(handle, x, y, width, height)
 
+    /**
+     * Maps clip space onto a rectangle of the target, in pixels, so a pass can draw several views with a camera each.
+     * Pair it with [setScissorRect] on the same rectangle where a view must stay inside its own.
+     */
+    fun setViewport(x: Float, y: Float, width: Float, height: Float, minDepth: Float = 0f, maxDepth: Float = 1f) =
+        wgpu_h.wgpuRenderPassEncoderSetViewport(handle, x, y, width, height, minDepth, maxDepth)
+
     fun draw(vertexCount: Int, instanceCount: Int = 1, firstVertex: Int = 0, firstInstance: Int = 0) =
         wgpu_h.wgpuRenderPassEncoderDraw(handle, vertexCount, instanceCount, firstVertex, firstInstance)
 

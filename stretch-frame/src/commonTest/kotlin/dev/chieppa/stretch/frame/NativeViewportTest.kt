@@ -71,6 +71,20 @@ class NativeViewportTest {
     }
 
     @Test
+    fun dashesRunOnAroundCorners() {
+        val overlay = buildOverlay {
+            dashed(listOf(Offset(0f, 0f), Offset(6f, 0f), Offset(6f, 6f)), Color.Red, width = 2f, dash = 4f, gap = 4f)
+        }
+        assertEquals(
+            listOf(
+                OverlayLine(Offset(0f, 0f), Offset(4f, 0f), Color.Red, 2f),
+                OverlayLine(Offset(6f, 2f), Offset(6f, 6f), Color.Red, 2f),
+            ),
+            overlay.lines,
+        )
+    }
+
+    @Test
     fun guidesBecomeLinesAcrossTheView() {
         val camera = ViewportCamera(zoom = 2f, offset = Offset(10f, 0f))
         camera.viewSize = Size(400f, 300f)

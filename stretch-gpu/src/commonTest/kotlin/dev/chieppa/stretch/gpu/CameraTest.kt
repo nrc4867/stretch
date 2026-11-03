@@ -45,6 +45,19 @@ class CameraTest {
     }
 
     @Test
+    fun orthographicMapsItsBoxToClipSpaceWithoutPerspective() {
+        val lens = Mat4.orthographic(2f, 4f, near = 1f, far = 11f)
+        val corner = lens.project(Vec3(2f, -4f, -1f))!!
+        assertNear(1f, corner.x)
+        assertNear(-1f, corner.y)
+        assertNear(0f, corner.z)
+        val far = lens.project(Vec3(1f, 2f, -11f))!!
+        assertNear(0.5f, far.x)
+        assertNear(0.5f, far.y)
+        assertNear(1f, far.z)
+    }
+
+    @Test
     fun theTargetProjectsToTheMiddleOfTheView() {
         val camera = CameraView(eye = Vec3(3f, 2f, 5f), target = Vec3(0f, 1f, 0f))
         assertNear(Offset(400f, 300f), camera.project(Vec3(0f, 1f, 0f), 800, 600))

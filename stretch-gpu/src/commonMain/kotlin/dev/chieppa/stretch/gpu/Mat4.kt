@@ -134,6 +134,17 @@ class Mat4 private constructor(private val m: FloatArray) {
             )
         }
 
+        /** An orthographic projection showing [halfWidth] and [halfHeight] units either side of the view's centre. */
+        fun orthographic(halfWidth: Float, halfHeight: Float, near: Float, far: Float): Mat4 {
+            val range = 1f / (near - far)
+            return of(
+                1f / halfWidth, 0f, 0f, 0f,
+                0f, 1f / halfHeight, 0f, 0f,
+                0f, 0f, range, 0f,
+                0f, 0f, near * range, 1f,
+            )
+        }
+
         /** The view from [eye] towards [target], with [up] pointing up on screen. */
         fun lookAt(eye: Vec3, target: Vec3, up: Vec3 = Vec3.Up): Mat4 {
             val back = (eye - target).normalized()
