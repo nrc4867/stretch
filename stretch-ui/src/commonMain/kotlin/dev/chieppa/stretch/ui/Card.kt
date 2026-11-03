@@ -95,7 +95,7 @@ fun ArtCard(
             art()
             if (badge != null) BadgeMark("", badge, Modifier.align(Alignment.TopEnd).padding(cardBadgeInset), dot = cardBadgeDot)
         }
-        Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+        Divider()
         when (size) {
             CardSize.Regular -> RegularCaption(title, detail, trailing)
             CardSize.Large -> LargeCaption(title, detail, trailing)

@@ -25,6 +25,7 @@
     <string name="resize_split">Resize split</string>
     <string name="resize_panel">Resize bottom panel</string>
     <string name="search_commands">Search commands</string>
+    <string name="search">Search</string>
     <string name="no_matches">No matches</string>
     <string name="zoom_in">Zoom in</string>
     <string name="zoom_out">Zoom out</string>
@@ -36,4 +37,12 @@
     <string name="ruler_horizontal">Horizontal ruler. Drag down into the view to place a guide</string>
     <string name="ruler_vertical">Vertical ruler. Drag across into the view to place a guide</string>
     <string name="document_edited">Unsaved changes</string>
+    <string name="date_open">Open calendar</string>
+    <string name="date_invalid">Not a date this field takes</string>
+    <string name="month_previous">Previous month</string>
+    <string name="month_next">Next month</string>
+    <string name="time_open">Open time picker</string>
+    <string name="time_invalid">Not a time</string>
+    <string name="time_hour">Hour</string>
+    <string name="time_minute">Minute</string>
 </resources>

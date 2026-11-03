@@ -14,6 +14,14 @@ object StretchIcons {
             stroke("M8 12.5v-9M4.5 7L8 3.5 11.5 7")
         }
     }
+    val Calendar: ImageVector by lazy {
+        icon("calendar") {
+            stroke("M4 3.5h8a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1 -1.5 1.5h-8a1.5 1.5 0 0 1 -1.5 -1.5v-7a1.5 1.5 0 0 1 1.5 -1.5z")
+            stroke("M2.5 6.5h11")
+            stroke("M5.5 2v3")
+            stroke("M10.5 2v3")
+        }
+    }
     val Camera: ImageVector by lazy {
         icon("camera") {
             stroke("M3.5 4.5h9a2 2 0 0 1 2 2v5a2 2 0 0 1 -2 2h-9a2 2 0 0 1 -2 -2v-5a2 2 0 0 1 2 -2z")
@@ -31,9 +39,20 @@ object StretchIcons {
             stroke("M4 6l4 4 4-4")
         }
     }
+    val ChevronLeft: ImageVector by lazy {
+        icon("chevron-left") {
+            stroke("M10 4l-4 4 4 4")
+        }
+    }
     val ChevronRight: ImageVector by lazy {
         icon("chevron-right") {
             stroke("M6 4l4 4-4 4")
+        }
+    }
+    val Clock: ImageVector by lazy {
+        icon("clock") {
+            stroke("M2 8a6 6 0 1 0 12 0a6 6 0 1 0 -12 0z")
+            stroke("M8 4.5V8l2.5 1.5")
         }
     }
     val Close: ImageVector by lazy {
@@ -93,6 +112,13 @@ object StretchIcons {
         icon("export") {
             stroke("M8 10V2.5M5 5.5l3-3 3 3")
             stroke("M2.5 9.5v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3")
+        }
+    }
+    val ExternalLink: ImageVector by lazy {
+        icon("external-link") {
+            stroke("M6.5 3.5h-3v9h9v-3")
+            stroke("M9 3h4v4")
+            stroke("M13 3L7.5 8.5")
         }
     }
     val EyeOff: ImageVector by lazy {

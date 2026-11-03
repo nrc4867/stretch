@@ -53,6 +53,7 @@ import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
+import dev.chieppa.stretch.ui.Divider
 import dev.chieppa.stretch.ui.IconButton
 import dev.chieppa.stretch.ui.Tooltip
 import org.jetbrains.compose.resources.stringResource
@@ -113,7 +114,7 @@ fun ViewNavigator(
             val pan by rememberUpdatedState(onPan)
             val shown by rememberUpdatedState(visible)
             val description = stringResource(Res.string.navigator)
-            Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+            Divider()
             Box(
                 Modifier
                     .padding(6.dp)
@@ -158,7 +159,7 @@ fun ViewNavigator(
 fun StatusBar(modifier: Modifier = Modifier, start: @Composable RowScope.() -> Unit = {}, end: @Composable RowScope.() -> Unit = {}) {
     val c = Stretch.colors
     Column(modifier.fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+        Divider()
         Row(
             Modifier.fillMaxWidth().height(24.dp).background(c.surfaceRail).padding(horizontal = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),

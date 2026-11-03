@@ -46,6 +46,7 @@ import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.frame.generated.Res
 import dev.chieppa.stretch.frame.generated.collapsed
 import dev.chieppa.stretch.frame.generated.expanded
+import dev.chieppa.stretch.ui.Divider
 import dev.chieppa.stretch.ui.Chip
 import org.jetbrains.compose.resources.stringResource
 import dev.chieppa.stretch.ui.ScrollColumn
@@ -89,7 +90,7 @@ fun DrawerHeader(title: String, icon: ImageVector?, count: String? = null, actio
                 actions()
             }
         }
-        Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+        Divider()
     }
 }
 
@@ -161,7 +162,7 @@ fun DrawerSection(
             }
             if (collapsed != true) content()
         }
-        if (divider) Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+        if (divider) Divider()
     }
 }
 
@@ -242,10 +243,10 @@ fun RowIcon(icon: ImageVector) {
 fun DrawerSplit() {
     val c = Stretch.colors
     Column {
-        Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+        Divider()
         Box(Modifier.fillMaxWidth().height(8.dp).background(c.surfaceRail), contentAlignment = Alignment.Center) {
             Box(Modifier.size(width = 28.dp, height = 2.dp).clip(Stretch.shapes.pillShape).background(c.inkSubtle))
         }
-        Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+        Divider()
     }
 }

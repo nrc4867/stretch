@@ -75,6 +75,7 @@ import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
+import dev.chieppa.stretch.ui.Divider
 import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.ButtonKind
 import dev.chieppa.stretch.ui.IconButton
@@ -83,7 +84,7 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 
 /** Places a popup under its anchor, flipping above or shifting left when it would leave the window. */
-private class BelowAnchor(private val gap: Int) : PopupPositionProvider {
+internal class BelowAnchor(private val gap: Int) : PopupPositionProvider {
     override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
         val x = anchorBounds.left.coerceAtMost(windowSize.width - popupContentSize.width).coerceAtLeast(0)
         val below = anchorBounds.bottom + gap
@@ -166,7 +167,7 @@ fun Popover(
                     BasicText(title, Modifier.weight(1f), style = Stretch.type.body.merge(TextStyle(color = c.inkStrong)), maxLines = 1)
                     IconButton(StretchIcons.Close, stringResource(Res.string.close), onDismiss, size = StretchSizes.seg)
                 }
-                Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+                Divider()
             }
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
         }
@@ -224,7 +225,7 @@ fun ActionMenuItem(action: Action, keymap: Keymap, icons: (String) -> ImageVecto
 
 @Composable
 fun MenuDivider() {
-    Box(Modifier.padding(horizontal = 6.dp, vertical = 4.dp).fillMaxWidth().height(Stretch.stroke).background(Stretch.colors.linePanel))
+    Divider(Modifier.padding(horizontal = 6.dp, vertical = 4.dp))
 }
 
 @Composable
@@ -339,7 +340,7 @@ fun CommandPalette(
                     },
                 )
             }
-            Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+            Divider()
             Column(Modifier.padding(6.dp).heightIn(max = 360.dp)) {
                 if (matches.isEmpty()) {
                     BasicText(stringResource(Res.string.no_matches), Modifier.padding(8.dp), style = Stretch.type.body.merge(TextStyle(color = c.inkSubtle)))
@@ -404,7 +405,7 @@ fun StretchDialog(
                 DrawerHeader(title, icon) { IconButton(StretchIcons.Close, stringResource(Res.string.close), onDismiss, size = StretchSizes.seg) }
             }
             content()
-            Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+            Divider()
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),

@@ -29,6 +29,17 @@ import dev.chieppa.stretch.theme.StretchSizes
 
 enum class ButtonKind { Default, Primary, Quiet }
 
+/** Fill, edge and ink for a button of [kind] in [state]. */
+@Composable
+internal fun buttonLook(kind: ButtonKind, state: ControlState): Triple<Color, Color, Color> {
+    val c = Stretch.colors
+    return when (kind) {
+        ButtonKind.Default -> Triple(Fills.filled(state), c.lineStrong, c.inkStrong)
+        ButtonKind.Primary -> Triple(Fills.on(state), c.onEdge, c.onInk)
+        ButtonKind.Quiet -> Triple(Fills.borderless(state), Color.Transparent, c.inkControl)
+    }
+}
+
 /** A text button: 32px, sentence-case label of one to three words. At most one [ButtonKind.Primary] per panel. */
 @Composable
 fun Button(
@@ -38,14 +49,9 @@ fun Button(
     kind: ButtonKind = ButtonKind.Default,
     icon: ImageVector? = null,
 ) {
-    val c = Stretch.colors
     val state = rememberControlState()
     val shape = Stretch.shapes.ctlShape
-    val (fill, edge, ink) = when (kind) {
-        ButtonKind.Default -> Triple(Fills.filled(state), c.lineStrong, c.inkStrong)
-        ButtonKind.Primary -> Triple(Fills.on(state), c.onEdge, c.onInk)
-        ButtonKind.Quiet -> Triple(Fills.borderless(state), Color.Transparent, c.inkControl)
-    }
+    val (fill, edge, ink) = buttonLook(kind, state)
     Row(
         modifier = modifier
             .focusRing(state, shape, fill)

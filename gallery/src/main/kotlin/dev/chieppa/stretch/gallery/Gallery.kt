@@ -146,6 +146,15 @@ private fun ComponentsPage() {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Section("Buttons") { ButtonsDemo() }
+        Section("Split button") { SplitButtonDemo() }
+        Section("Dividers and links") {
+            DividersAndLinksDemo()
+            BreadcrumbsDemo()
+        }
+        Section("More fields") { MoreFieldsDemo() }
+        Section("Dates and times") { DatesAndTimesDemo() }
+        Section("Stepper") { SteppersDemo() }
+        Section("Paginator") { PaginatorsDemo() }
         Section("Toggles, sliders and fields") { SettingsDemo() }
         Section("Chips and swatches") { ChipsDemo() }
         Section("Segmented") { SegmentedDemo() }

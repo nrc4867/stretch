@@ -31,7 +31,7 @@ internal class IconScope(private val builder: ImageVector.Builder) {
 }
 
 /** Icons that point back or forward, and so face the other way in a right-to-left layout. */
-private val directional = setOf("undo", "redo", "chevron-right")
+private val directional = setOf("undo", "redo", "chevron-left", "chevron-right")
 
 internal fun icon(name: String, block: IconScope.() -> Unit): ImageVector {
     val builder = ImageVector.Builder(name, 16.dp, 16.dp, 16f, 16f, autoMirror = name in directional)

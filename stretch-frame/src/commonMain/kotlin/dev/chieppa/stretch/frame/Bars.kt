@@ -44,6 +44,7 @@ import dev.chieppa.stretch.frame.generated.undo
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
+import dev.chieppa.stretch.ui.Divider
 import dev.chieppa.stretch.ui.IconButton
 import dev.chieppa.stretch.ui.Tooltip
 import org.jetbrains.compose.resources.stringResource
@@ -121,7 +122,7 @@ internal fun TopBarLayout(
                 actions.centered(width - actions.width)
             }
         }
-        Spacer(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
+        Divider()
     }
 }
 

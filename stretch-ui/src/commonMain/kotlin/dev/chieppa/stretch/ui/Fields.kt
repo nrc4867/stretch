@@ -30,6 +30,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -115,13 +116,20 @@ fun TextField(
 }
 
 @Composable
-private fun ErrorMark(message: String) {
+internal fun ErrorMark(message: String) {
     Tooltip(message) { Icon(StretchIcons.Error, Stretch.colors.errorInk, contentDescription = message) }
 }
 
+private val stepperButton = 26.dp
+private const val fieldIconDisabledAlpha = 0.4f
+
+/** Names for a [NumberField]'s step buttons, for screen readers. Passing them is what turns the buttons on. */
+data class NumberSteppers(val decrease: String, val increase: String)
+
 /**
  * A number with a unit. Drag sideways to scrub, use the arrow keys to step (Shift steps ten), or click to type;
- * typing commits on Enter or when focus leaves. [onValueChangeFinished] marks the end of a scrub or an edit.
+ * typing commits on Enter or when focus leaves. [onValueChangeFinished] marks the end of a scrub or an edit. With
+ * [steppers] it also has minus and plus buttons, for pen and touch; they widen the field beyond [width].
  */
 @Composable
 fun NumberField(
@@ -138,6 +146,7 @@ fun NumberField(
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
     error: String? = null,
+    steppers: NumberSteppers? = null,
 ) {
     val c = Stretch.colors
     val state = rememberControlState()
@@ -157,9 +166,29 @@ fun NumberField(
         finished()
     }
 
+    fun stepBy(amount: Float) {
+        val base = if (editing) text.text.trim().toFloatOrNull() ?: current else current
+        change((base + amount).coerceIn(range))
+        editing = false
+        finished()
+    }
+
+    val leadingSlot: (@Composable () -> Unit)? = if (steppers == null) leading else {
+        {
+            FieldIcon(StretchIcons.Minus, Modifier.size(stepperButton, StretchSizes.ctl), steppers.decrease, enabled = value > range.start) { stepBy(-step) }
+            leading?.invoke()
+        }
+    }
+    val trailingSlot: (@Composable () -> Unit)? = if (steppers == null) trailing else {
+        {
+            trailing?.invoke()
+            FieldIcon(StretchIcons.Plus, Modifier.size(stepperButton, StretchSizes.ctl), steppers.increase, enabled = value < range.endInclusive) { stepBy(step) }
+        }
+    }
+
     val frame = modifier
         .focusRing(state, shape, always = true)
-        .width(width)
+        .width(if (steppers == null) width else width + (stepperButton + iconGap) * 2)
         .heightIn(min = StretchSizes.ctl)
         .clip(shape)
         .background(c.surfaceFloat)
@@ -196,10 +225,10 @@ fun NumberField(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { commit() }),
             decorationBox = { inner ->
-                Row(Modifier.padding(horizontal = 10.dp), horizontalArrangement = Arrangement.spacedBy(iconGap), verticalAlignment = Alignment.CenterVertically) {
-                    leading?.invoke()
+                Row(Modifier.padding(horizontal = if (steppers == null) 10.dp else 2.dp), horizontalArrangement = Arrangement.spacedBy(iconGap), verticalAlignment = Alignment.CenterVertically) {
+                    leadingSlot?.invoke()
                     Box(Modifier.weight(1f), Alignment.CenterEnd) { inner() }
-                    trailing?.invoke()
+                    trailingSlot?.invoke()
                     if (error != null) ErrorMark(error)
                 }
             },
@@ -243,12 +272,12 @@ fun NumberField(
                         change((start + (travelled / 4f).toInt() * step).coerceIn(range))
                     }
                 }
-                .padding(horizontal = 10.dp),
+                .padding(horizontal = if (steppers == null) 10.dp else 2.dp),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (leading != null) {
-                leading()
+            if (leadingSlot != null) {
+                leadingSlot()
                 Spacer(Modifier.weight(1f))
             }
             // The number and its unit read left to right in every language.
@@ -258,9 +287,9 @@ fun NumberField(
                     if (unit.isNotEmpty()) Label(unit, Stretch.type.value, c.inkMuted)
                 }
             }
-            if (trailing != null) {
+            if (trailingSlot != null) {
                 Spacer(Modifier.width(iconGap))
-                trailing()
+                trailingSlot()
             }
             if (error != null) {
                 Spacer(Modifier.width(iconGap))
@@ -272,10 +301,11 @@ fun NumberField(
 
 /**
  * A 16dp icon inside a field: a leading kind marker, or a trailing help, clear or reveal button. With [onClick] it is
- * a button and needs [contentDescription]; without, it is decorative unless described.
+ * a button and needs [contentDescription]; without, it is decorative unless described. A button that can't act now
+ * dims with [enabled] off.
  */
 @Composable
-fun FieldIcon(icon: ImageVector, modifier: Modifier = Modifier, contentDescription: String? = null, onClick: (() -> Unit)? = null) {
+fun FieldIcon(icon: ImageVector, modifier: Modifier = Modifier, contentDescription: String? = null, enabled: Boolean = true, onClick: (() -> Unit)? = null) {
     val c = Stretch.colors
     val state = rememberControlState()
     val shape = Stretch.shapes.segShape
@@ -284,7 +314,7 @@ fun FieldIcon(icon: ImageVector, modifier: Modifier = Modifier, contentDescripti
         if (onClick == null) {
             base.hoverable(state.source)
         } else {
-            base.focusRing(state, shape).clip(shape).hoverable(state.source).clickable(state.source, null, role = Role.Button, onClick = onClick)
+            base.alpha(if (enabled) 1f else fieldIconDisabledAlpha).focusRing(state, shape).clip(shape).hoverable(state.source).clickable(state.source, null, enabled, role = Role.Button, onClick = onClick)
         },
         contentAlignment = Alignment.Center,
     ) {
