@@ -58,7 +58,7 @@ fun BadgedBox(text: String?, description: String, modifier: Modifier = Modifier,
                     .padding(horizontal = if (dot) 0.dp else 4.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                if (!dot) Label(text, Stretch.type.valueSm.copy(fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.SemiBold), c.onInk)
+                if (!dot) Label(text, Stretch.type.valueSm.copy(fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.SemiBold), c.onAccent)
             }
         }
     }

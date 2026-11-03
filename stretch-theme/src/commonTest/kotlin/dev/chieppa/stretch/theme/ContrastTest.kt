@@ -23,6 +23,7 @@ class ContrastTest {
             val texts = listOf(c.inkStrong, c.ink, c.inkControl, c.inkMuted, c.inkSubtle)
             val text = texts.flatMap { fg -> grounds.map { bg -> Triple(fg, bg, 4.5) } } + listOf(
                 Triple(c.onInk, c.onFill, 4.5),
+                Triple(c.onAccent, c.accent, 4.5),
                 Triple(c.warnInk, c.warnWash, 4.5),
                 Triple(c.inkMuted, c.surfaceControlHi, 4.5),
                 Triple(c.inkStrong, c.neutralOn, 4.5),
