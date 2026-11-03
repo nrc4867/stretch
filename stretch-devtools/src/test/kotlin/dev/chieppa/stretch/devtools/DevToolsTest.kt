@@ -48,7 +48,9 @@ class DevToolsTest {
         val response = get(port, "/capture?window=probe")
         assertEquals(200, response.statusCode())
         val image = ImageIO.read(response.body().inputStream())
-        assertTrue(image.width >= 320 && image.height >= 240, "${image.width} x ${image.height}")
+        // The content pane, not the 320 x 240 given to setSize: that counts the invisible resize border, which capture leaves out.
+        val content = frame!!.contentPane.size
+        assertTrue(image.width >= content.width && image.height >= content.height, "${image.width} x ${image.height}, content $content")
         val center = Color(image.getRGB(image.width / 2, image.height / 2))
         assertEquals(Color(0xD0, 0x20, 0x30), center)
 
