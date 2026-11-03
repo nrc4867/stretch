@@ -11,6 +11,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -44,6 +45,17 @@ class ComponentsTest {
         onNodeWithText("Top").performClick()
         onNodeWithText("Top").assertIsSelected()
         assertEquals("Top", view)
+    }
+
+    @Test
+    fun aDisabledSegmentCannotBePicked() = runComposeUiTest {
+        var view by mutableStateOf("Side")
+        setContent {
+            StretchTheme(StretchThemes.Ink) { Segmented(listOf("Side", "Top"), view, { view = it }, { it }, enabled = { it == "Side" }) }
+        }
+        onNodeWithText("Top").assertIsNotEnabled()
+        onNodeWithText("Top").performClick()
+        assertEquals("Side", view)
     }
 
     @Test

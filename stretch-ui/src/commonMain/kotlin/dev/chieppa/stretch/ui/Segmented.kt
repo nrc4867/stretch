@@ -21,9 +21,12 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchSizes
 
+private const val disabledAlpha = 0.4f
+
 /**
  * Picks exactly one of two to five options. A neutral pick uses the neutral color; [mode] is for top-level modes and
- * the armed view, which use the on colors. [fill] stretches the buttons across the row.
+ * the armed view, which use the on colors. [fill] stretches the buttons across the row. An option [enabled] says no to
+ * is dimmed and cannot be picked.
  */
 @Composable
 fun <T> Segmented(
@@ -34,6 +37,7 @@ fun <T> Segmented(
     modifier: Modifier = Modifier,
     mode: Boolean = false,
     fill: Boolean = false,
+    enabled: (T) -> Boolean = { true },
 ) {
     val c = Stretch.colors
     val track = Stretch.shapes.rowShape
@@ -49,12 +53,14 @@ fun <T> Segmented(
     ) {
         for (option in options) {
             val isOn = option == selected
+            val canPick = enabled(option)
             val state = rememberControlState()
             val shape = Stretch.shapes.segShape
             val (bg, edge, ink) = when {
                 isOn && mode -> Triple(Fills.on(state), c.onEdge, c.onInk)
                 isOn -> Triple(c.neutralOn, Color.Transparent, c.inkStrong)
-                else -> Triple(Fills.menu(state), Color.Transparent, c.inkControl)
+                canPick -> Triple(Fills.menu(state), Color.Transparent, c.inkControl)
+                else -> Triple(Color.Transparent, Color.Transparent, c.inkControl.copy(alpha = disabledAlpha))
             }
             Box(
                 modifier = (if (fill) Modifier.weight(1f) else Modifier)
@@ -63,8 +69,8 @@ fun <T> Segmented(
                     .clip(shape)
                     .background(bg)
                     .border(Stretch.stroke, edge, shape)
-                    .hoverable(state.source)
-                    .selectable(isOn, state.source, indication = null, role = Role.Tab) { onSelect(option) }
+                    .hoverable(state.source, canPick)
+                    .selectable(isOn, state.source, indication = null, canPick, Role.Tab) { onSelect(option) }
                     .padding(horizontal = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
