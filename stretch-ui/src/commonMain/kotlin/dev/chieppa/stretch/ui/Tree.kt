@@ -145,7 +145,8 @@ private val indent: Dp = 16.dp
  * row, Ctrl-click adds or removes, Shift-click selects a range. Up and Down move, Right opens or steps in, Left closes
  * or steps out, Ctrl A selects every visible row. With [onRename], F2 or a double-click renames in place (Enter keeps,
  * Esc cancels). With [onMove], rows drag to a new place or parent; Esc cancels a drag. [stateText] gives the words
- * screen readers hear for an open or closed parent.
+ * screen readers hear for an open or closed parent. [leading] goes before the label, for a swatch or anything [icon]
+ * cannot draw.
  */
 @Composable
 fun <T> Tree(
@@ -161,6 +162,7 @@ fun <T> Tree(
     onRename: ((T, String) -> Unit)? = null,
     onMove: ((key: Any, drop: TreeDrop) -> Unit)? = null,
     stateText: (open: Boolean) -> String = { if (it) "Expanded" else "Collapsed" },
+    leading: @Composable RowScope.(T) -> Unit = {},
     trailing: @Composable RowScope.(T) -> Unit = {},
 ) {
     val c = Stretch.colors
@@ -322,6 +324,7 @@ fun <T> Tree(
                             if (parentRow) Icon(if (isOpen(item)) StretchIcons.ChevronDown else StretchIcons.ChevronRight, if (selected) c.onInk else c.inkMuted, size = 12.dp)
                         }
                         icon(item)?.let { Icon(it, if (selected) c.onInk else c.inkControl) }
+                        leading(item)
                         if (renaming == k && onRename != null) {
                             RenameField(label(item), ink, { name -> renaming = null; if (name.isNotBlank() && name != label(item)) onRename(item, name.trim()); treeFocus.requestFocus() }) {
                                 renaming = null

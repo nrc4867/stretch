@@ -112,6 +112,7 @@ private fun TreeDemo() {
             children = children.mapValues { (_, l) -> l.map { if (it == old) new else it } }.mapKeys { (k, _) -> if (k == old) new else k }
         },
         onMove = { k, drop -> children = children.moved(k as String, drop) },
+        leading = { if (it == "Scarf") Box(Modifier.size(12.dp).background(Stretch.colors.chart2, Stretch.shapes.segShape)) },
     )
 }
 

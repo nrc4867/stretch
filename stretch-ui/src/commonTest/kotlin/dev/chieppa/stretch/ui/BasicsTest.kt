@@ -15,6 +15,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -108,6 +109,22 @@ class BasicsTest {
         assertEquals(TreeDrop(null, 2, into = false), treeDrop(rows, parts, "Tail", 3, 0.9f, k) { it in open })
         assertNull(treeDrop(rows, parts, "Body", 1, 0.5f, k) { it in open })
         assertEquals(setOf("Head", "Tail", "Props"), treeRange(rows, "Props", "Head", k))
+    }
+
+    @Test
+    fun treeLeadingSitsBeforeTheLabel() = runComposeUiTest {
+        setContent {
+            StretchTheme(StretchThemes.Ink) {
+                Tree(
+                    listOf(TreeNode("Body")), { it }, { it }, emptySet(), { _, _ -> }, emptySet(), {},
+                    Modifier.width(260.dp),
+                    leading = { BasicText("swatch") },
+                )
+            }
+        }
+        val swatch = onNodeWithText("swatch").getUnclippedBoundsInRoot()
+        val label = onNodeWithText("Body").getUnclippedBoundsInRoot()
+        assertEquals(true, swatch.left < label.left)
     }
 
     @Test
