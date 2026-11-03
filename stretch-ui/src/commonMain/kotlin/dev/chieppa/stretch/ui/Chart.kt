@@ -93,14 +93,12 @@ private class Plot(val left: Float, val right: Float, val top: Float, val bottom
 @Composable
 private fun ChartFrame(title: String, series: List<ChartSeries>, modifier: Modifier, body: @Composable () -> Unit) {
     val c = Stretch.colors
-    val shape = Stretch.shapes.cardShape
-    Column(
-        modifier.clip(shape).background(c.surfacePanel).border(Stretch.stroke, c.linePanel, shape).padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Label(title, Stretch.type.bodySm.copy(fontWeight = FontWeight.SemiBold), c.inkStrong)
-        if (series.size >= 2) Legend(series)
-        body()
+    Card(modifier) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Label(title, Stretch.type.bodySm.copy(fontWeight = FontWeight.SemiBold), c.inkStrong)
+            if (series.size >= 2) Legend(series)
+            body()
+        }
     }
 }
 

@@ -126,7 +126,7 @@ internal fun DropzoneFace(state: DropState, title: String, kinds: String, descri
     }
 }
 
-private fun Modifier.dashedBorder(color: Color, width: Dp, radius: Dp, dashed: Boolean) = drawBehind {
+internal fun Modifier.dashedBorder(color: Color, width: Dp, radius: Dp, dashed: Boolean) = drawBehind {
     val w = width.toPx()
     val dash = if (dashed) PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx())) else null
     drawRoundRect(

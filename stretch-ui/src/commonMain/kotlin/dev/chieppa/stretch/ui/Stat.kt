@@ -1,8 +1,6 @@
 package dev.chieppa.stretch.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
@@ -11,7 +9,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -41,20 +38,16 @@ fun Stat(
     trendDescription: String? = null,
 ) {
     val c = Stretch.colors
-    val shape = Stretch.shapes.cardShape
-    Column(
-        modifier
-            .widthIn(min = 168.dp)
-            .clip(shape)
-            .background(c.surfacePanel)
-            .border(Stretch.stroke, c.linePanel, shape)
-            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 14.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Label(label, Stretch.type.bodySm, c.inkMuted)
-        Label(value, Stretch.type.body.copy(fontSize = 26.sp, lineHeight = 32.sp, fontWeight = FontWeight.SemiBold), c.inkStrong)
-        if (delta != null) Label(delta.text, Stretch.type.value.copy(fontWeight = FontWeight.Medium), if (delta.good) c.deltaUp else c.deltaDown)
-        if (trend != null && trend.size >= 2) Sparkline(trend, trendDescription ?: label)
+    Card(modifier.widthIn(min = 168.dp)) {
+        Column(
+            Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Label(label, Stretch.type.bodySm, c.inkMuted)
+            Label(value, Stretch.type.body.copy(fontSize = 26.sp, lineHeight = 32.sp, fontWeight = FontWeight.SemiBold), c.inkStrong)
+            if (delta != null) Label(delta.text, Stretch.type.value.copy(fontWeight = FontWeight.Medium), if (delta.good) c.deltaUp else c.deltaDown)
+            if (trend != null && trend.size >= 2) Sparkline(trend, trendDescription ?: label)
+        }
     }
 }
 

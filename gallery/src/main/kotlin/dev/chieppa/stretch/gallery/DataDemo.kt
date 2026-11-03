@@ -63,6 +63,7 @@ internal fun DataPage() {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        Section("Cards") { CardsDemo() }
         Section("Dropzone") { DropDemo() }
         Section("Drag and drop") { SortDemo() }
         Section("Stats") { StatsDemo() }

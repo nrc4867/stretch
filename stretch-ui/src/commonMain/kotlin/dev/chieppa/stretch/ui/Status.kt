@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.chieppa.stretch.theme.Icon
@@ -44,23 +45,28 @@ fun BadgedBox(text: String?, description: String, modifier: Modifier = Modifier,
     Box(modifier) {
         content()
         if (text != null) {
-            val c = Stretch.colors
             val dot = text.isEmpty()
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = if (dot) 1.dp else 5.dp, y = if (dot) (-1).dp else (-5).dp)
-                    .then(if (dot) Modifier.size(9.dp) else Modifier.heightIn(min = 16.dp).widthIn(min = 16.dp))
-                    .clip(Stretch.shapes.pillShape)
-                    .background(c.accent)
-                    .border(1.5.dp, c.surfaceRail, Stretch.shapes.pillShape)
-                    .semantics { contentDescription = description }
-                    .padding(horizontal = if (dot) 0.dp else 4.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (!dot) Label(text, Stretch.type.valueSm.copy(fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.SemiBold), c.onAccent)
-            }
+            BadgeMark(text, description, Modifier.align(Alignment.TopEnd).offset(x = if (dot) 1.dp else 5.dp, y = if (dot) (-1).dp else (-5).dp))
         }
+    }
+}
+
+/** The badge itself: a count or, with an empty [text], a dot [dot] across. */
+@Composable
+internal fun BadgeMark(text: String, description: String, modifier: Modifier = Modifier, dot: Dp = 9.dp) {
+    val c = Stretch.colors
+    val isDot = text.isEmpty()
+    Box(
+        modifier
+            .then(if (isDot) Modifier.size(dot) else Modifier.heightIn(min = 16.dp).widthIn(min = 16.dp))
+            .clip(Stretch.shapes.pillShape)
+            .background(c.accent)
+            .border(1.5.dp, c.surfaceRail, Stretch.shapes.pillShape)
+            .semantics { contentDescription = description }
+            .padding(horizontal = if (isDot) 0.dp else 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (!isDot) Label(text, Stretch.type.valueSm.copy(fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.SemiBold), c.onAccent)
     }
 }
 
