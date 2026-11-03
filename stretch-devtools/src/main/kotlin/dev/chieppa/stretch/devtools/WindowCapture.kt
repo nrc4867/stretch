@@ -33,7 +33,7 @@ internal fun capture(window: Window): BufferedImage {
     val image = BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_RGB)
     val g = image.createGraphics()
     g.drawImage(printWindow(window), 0, 0, null)
-    window.ownedWindows.filter { it.isShowing }.forEach { owned ->
+    window.ownedWindows.filter { it.isShowing && it.width > 0 && it.height > 0 }.forEach { owned ->
         val at = visibleBounds(owned)
         g.drawImage(printWindow(owned), at.x - bounds.x, at.y - bounds.y, null)
     }
