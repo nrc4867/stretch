@@ -155,8 +155,8 @@ class RecentFiles(entries: List<String> = emptyList(), val limit: Int = 10) {
     }
 
     /** Drops files that are gone, such as ones deleted or on a drive that is no longer there. */
-    fun prune(storage: DocumentStorage) {
-        entries = entries.filter(storage::exists)
+    suspend fun prune(storage: DocumentStorage) {
+        entries = entries.filter { storage.exists(it) }
     }
 }
 

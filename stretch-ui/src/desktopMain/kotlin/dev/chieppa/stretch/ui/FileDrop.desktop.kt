@@ -36,8 +36,7 @@ internal actual fun Modifier.fileDropTarget(onHover: (HoveredFiles?) -> Unit, on
     return dragAndDropTarget(shouldStartDragAndDrop = { true }, target = target)
 }
 
-/** Opens the system file picker and returns the chosen paths, empty when cancelled. */
-fun pickFiles(title: String, extensions: Set<String>, multiple: Boolean = true): List<String> {
+actual suspend fun pickFiles(title: String, extensions: Set<String>, multiple: Boolean): List<String> {
     val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD)
     dialog.isMultipleMode = multiple
     if (extensions.isNotEmpty()) dialog.setFilenameFilter { _, name -> fileExtension(name) in extensions }

@@ -37,6 +37,12 @@ enum class DropState { Idle, Over, Reject }
 /** A file's extension, lowercase and without the dot. */
 fun fileExtension(path: String): String = path.substringAfterLast('/').substringAfterLast('\\').substringAfterLast('.', "").lowercase()
 
+/** A file's name with its extension, without its folder. */
+fun fileName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\')
+
+/** Opens the system file picker and returns the chosen paths, empty when cancelled. */
+expect suspend fun pickFiles(title: String, extensions: Set<String>, multiple: Boolean = true): List<String>
+
 /** Whether a drop of [paths] is accepted: at least one file, all with one of [extensions] (any when empty). */
 fun acceptsFiles(paths: List<String>, extensions: Set<String>): Boolean =
     paths.isNotEmpty() && (extensions.isEmpty() || paths.all { fileExtension(it) in extensions })

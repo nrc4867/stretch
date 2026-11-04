@@ -24,18 +24,18 @@ private object TextFormat : DocumentFormat<String> {
 
 private class MemoryStorage : DocumentStorage {
     val files = mutableMapOf<String, ByteArray>()
-    override fun read(path: String) = files.getValue(path)
-    override fun write(path: String, bytes: ByteArray) {
+    override suspend fun read(path: String) = files.getValue(path)
+    override suspend fun write(path: String, bytes: ByteArray) {
         files[path] = bytes
     }
-    override fun exists(path: String) = path in files
+    override suspend fun exists(path: String) = path in files
     override fun displayName(path: String) = path.substringAfterLast('/').substringBeforeLast('.')
 }
 
 private class PickedFile(var path: String?) : FileChooser {
     var asked = 0
-    override fun chooseOpen(format: DocumentFormat<*>) = path.also { asked++ }
-    override fun chooseSave(format: DocumentFormat<*>, suggestedName: String) = path.also { asked++ }
+    override suspend fun chooseOpen(format: DocumentFormat<*>) = path.also { asked++ }
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String) = path.also { asked++ }
 }
 
 private data class Append(val text: String) : Command<String> {
@@ -110,7 +110,7 @@ class DocumentTest {
     }
 
     @Test
-    fun recentFilesPutTheLatestFirst() {
+    fun recentFilesPutTheLatestFirst() = runTest {
         val storage = MemoryStorage().apply { files["/b"] = byteArrayOf() }
         val recent = RecentFiles(listOf("/a", "/b"), limit = 3)
         recent.add("/c")

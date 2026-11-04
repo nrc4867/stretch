@@ -2,6 +2,8 @@ package dev.chieppa.stretch.document
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.awt.LocalAwtWindow
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
@@ -15,9 +17,11 @@ import dev.chieppa.stretch.document.generated.choose_save
 
 /** Documents on the local file system. Writes go to a temporary file beside the target, then replace it in one move. */
 object FileStorage : DocumentStorage {
-    override fun read(path: String): ByteArray = Files.readAllBytes(Path.of(path))
+    override suspend fun read(path: String): ByteArray = Files.readAllBytes(Path.of(path))
 
-    override fun write(path: String, bytes: ByteArray) {
+    override suspend fun write(path: String, bytes: ByteArray) = writeFile(path, bytes)
+
+    internal fun writeFile(path: String, bytes: ByteArray) {
         val target = Path.of(path).toAbsolutePath()
         Files.createDirectories(target.parent)
         val temp = Files.createTempFile(target.parent, ".${target.fileName}", ".tmp")
@@ -33,7 +37,7 @@ object FileStorage : DocumentStorage {
         }
     }
 
-    override fun exists(path: String): Boolean = Files.isRegularFile(Path.of(path))
+    override suspend fun exists(path: String): Boolean = Files.isRegularFile(Path.of(path))
 
     override fun displayName(path: String): String = Path.of(path).fileName.toString().substringBeforeLast('.')
 }
@@ -43,9 +47,9 @@ object FileStorage : DocumentStorage {
  * format's files listed and its extension added to a name typed without one.
  */
 class SystemFileChooser(private val owner: Frame?, private val openTitle: String, private val saveTitle: String) : FileChooser {
-    override fun chooseOpen(format: DocumentFormat<*>): String? = show(FileDialog.LOAD, openTitle, format, "*.${format.extension}")
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = show(FileDialog.LOAD, openTitle, format, "*.${format.extension}")
 
-    override fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? {
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? {
         val name = suggestedName.ifBlank { "*" } + ".${format.extension}"
         val chosen = show(FileDialog.SAVE, saveTitle, format, name) ?: return null
         return if (chosen.endsWith(".${format.extension}", ignoreCase = true)) chosen else "$chosen.${format.extension}"
@@ -60,6 +64,13 @@ class SystemFileChooser(private val owner: Frame?, private val openTitle: String
         return File(dialog.directory, chosen).path
     }
 }
+
+actual val documentStorage: DocumentStorage = FileStorage
+
+/** A [SystemFileChooser] over the window this is composed in. */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+actual fun rememberFileChooser(): FileChooser = rememberFileChooser(LocalAwtWindow.current as? Frame)
 
 /** A [SystemFileChooser] over [owner], the app's window, with dialog titles in the app's language. */
 @Composable

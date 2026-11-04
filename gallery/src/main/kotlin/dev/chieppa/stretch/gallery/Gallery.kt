@@ -90,9 +90,8 @@ typealias GalleryBar = @Composable (document: String, edited: Boolean, menus: @C
 
 private val plainBar: GalleryBar = { document, edited, menus, modes, actions -> TopBar("Stretch", document, edited = edited, menus = menus, modes = modes, actions = actions) }
 
-/** What the gallery's window lends the frame demo: its frame, for file dialogs, and a check to run before closing. */
+/** What the gallery's window lends the frame demo: a check to run before closing. */
 class GalleryHost {
-    var window: java.awt.Frame? = null
     var closeGuard: ((then: () -> Unit) -> Unit)? = null
 
     /** Where unsaved work is kept for after a crash; none in tests. */

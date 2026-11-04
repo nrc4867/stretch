@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.document
 
+import kotlinx.coroutines.test.runTest
 import java.nio.file.Files
 import kotlin.io.path.deleteRecursively
 import kotlin.io.path.listDirectoryEntries
@@ -13,10 +14,10 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalPathApi::class)
 class RecoveryTest {
     @Test
-    fun aSlotStillHeldIsNotOfferedAndAnAbandonedOneIs() {
+    fun aSlotStillHeldIsNotOfferedAndAnAbandonedOneIs() = runTest {
         val dir = Files.createTempDirectory("stretch-recovery")
         try {
-            val recovery = Recovery(dir)
+            val recovery = FileRecovery(dir)
             val live = recovery.slot()
             live.write("fox".encodeToByteArray(), "/docs/Fox.txt", "Fox")
             assertTrue(recovery.pending().isEmpty(), "this run still holds it")
@@ -41,7 +42,7 @@ class RecoveryTest {
     }
 
     @Test
-    fun fileStorageReplacesTheWholeFile() {
+    fun fileStorageReplacesTheWholeFile() = runTest {
         val dir = Files.createTempDirectory("stretch-files")
         try {
             val path = dir.resolve("Fox.txt").toString()

@@ -7,6 +7,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import dev.chieppa.stretch.devtools.DevTools
 import dev.chieppa.stretch.document.Recovery
+import dev.chieppa.stretch.document.forApp
 import dev.chieppa.stretch.frame.NativeSurfaces
 import dev.chieppa.stretch.frame.StretchWindow
 import dev.chieppa.stretch.frame.WindowTopBar
@@ -24,7 +25,6 @@ fun main() {
             title = "Stretch gallery",
             state = state,
         ) {
-            host.window = window
             CompositionLocalProvider(LocalGalleryHost provides host) {
                 Gallery(gpu = gpu) { document, edited, menus, modes, actions ->
                     WindowTopBar("Stretch", document, edited = edited, menus = menus, modes = modes, actions = actions)

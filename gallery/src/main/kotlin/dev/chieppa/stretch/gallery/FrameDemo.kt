@@ -19,12 +19,14 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import dev.chieppa.stretch.document.DocumentFormat
 import dev.chieppa.stretch.document.DocumentSession
-import dev.chieppa.stretch.document.FileStorage
 import dev.chieppa.stretch.document.RecentFiles
 import dev.chieppa.stretch.document.RecentFilesMenuItems
+import dev.chieppa.stretch.document.RecoveredDocument
 import dev.chieppa.stretch.document.RecoveryDialog
 import dev.chieppa.stretch.document.UnsavedChangesDialog
 import dev.chieppa.stretch.document.Autosave
+import dev.chieppa.stretch.document.LeaveGuard
+import dev.chieppa.stretch.document.documentStorage
 import dev.chieppa.stretch.document.documentName
 import dev.chieppa.stretch.document.rememberEdited
 import dev.chieppa.stretch.document.rememberFileChooser
@@ -247,11 +249,11 @@ private fun ActionRegistry.named(id: String): Action = checkNotNull(get(ActionId
 @Composable
 fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, onScale: (Float) -> Unit) {
     val host = LocalGalleryHost.current
-    val session = remember { DocumentSession(DemoFormat, startingDoc, FileStorage) }
+    val session = remember { DocumentSession(DemoFormat, startingDoc, documentStorage) }
     val history = session.history
     val doc by history.document.collectAsState()
     val edited = rememberEdited(session)
-    val chooser = rememberFileChooser(host.window)
+    val chooser = rememberFileChooser()
     val recent = remember { RecentFiles() }
     val scope = rememberCoroutineScope()
     val toasts = remember { ToastState() }
@@ -269,7 +271,9 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
     var fileMenu by remember { mutableStateOf(false) }
     val keyCast = remember { KeyCastState() }
     val recovery = host.recovery
-    var recovered by remember { mutableStateOf(recovery?.pending().orEmpty()) }
+    var recovered by remember { mutableStateOf(emptyList<RecoveredDocument>()) }
+    LaunchedEffect(recovery) { recovered = recovery?.pending().orEmpty() }
+    LeaveGuard(edited)
     if (recovery != null) Autosave(session, recovery, intervalMillis = 10_000)
     DisposableEffect(session) {
         host.closeGuard = { then -> session.whenSaved(then) }
@@ -289,12 +293,12 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
             scope.launch {
                 runCatching { session.open(path) }
                     .onSuccess { recent.add(path); selected = session.history.document.value.layers.firstOrNull().orEmpty() }
-                    .onFailure { recent.remove(path); toasts.show("Couldn't open ${FileStorage.displayName(path)}") }
+                    .onFailure { recent.remove(path); toasts.show("Couldn't open ${documentStorage.displayName(path)}") }
             }
         }
     }
 
-    fun chooseAndOpen() = session.whenSaved { chooser.chooseOpen(DemoFormat)?.let(::open) }
+    fun chooseAndOpen() = session.whenSaved { scope.launch { chooser.chooseOpen(DemoFormat)?.let(::open) } }
 
     val defaults = FrameLayout(
         listOf(
@@ -469,7 +473,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
                             ActionMenuItem(registry.named("open"), keymap, icons, close)
                             ActionMenuItem(registry.named("save"), keymap, icons, close)
                             MenuDivider()
-                            RecentFilesMenuItems(recent, FileStorage, ::open, close)
+                            RecentFilesMenuItems(recent, documentStorage, ::open, close)
                         },
                         BarMenu("Edit") { close ->
                             ActionMenuItem(registry.named("undo"), keymap, icons, close)
@@ -494,7 +498,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
                                 MenuItem("New", { fileMenu = false; registry[ActionId("new")]?.run?.invoke() }, StretchIcons.File)
                                 MenuItem("Open…", { fileMenu = false; chooseAndOpen() }, StretchIcons.Folder)
                                 MenuDivider()
-                                RecentFilesMenuItems(recent, FileStorage, ::open) { fileMenu = false }
+                                RecentFilesMenuItems(recent, documentStorage, ::open) { fileMenu = false }
                             }
                         },
                         BarAction(StretchIcons.Save, "Save", { save() }, listOf("Ctrl", "S")),
@@ -586,12 +590,14 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
         RecoveryDialog(
             recovered,
             onRestore = { item ->
-                runCatching { session.restore(DemoFormat.decode(recovery.read(item)), item.path) }
-                recovery.discard(item)
-                recovered = emptyList()
+                scope.launch {
+                    runCatching { session.restore(DemoFormat.decode(recovery.read(item)), item.path) }
+                    recovery.discard(item)
+                    recovered = emptyList()
+                }
             },
             onDiscard = { item ->
-                recovery.discard(item)
+                scope.launch { recovery.discard(item) }
                 recovered = recovered - item
             },
             onDismiss = { recovered = emptyList() },

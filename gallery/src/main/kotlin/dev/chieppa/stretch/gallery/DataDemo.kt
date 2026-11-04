@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -36,8 +37,9 @@ import dev.chieppa.stretch.ui.TableSort
 import dev.chieppa.stretch.ui.compactNumber
 import dev.chieppa.stretch.ui.groupThousands
 import dev.chieppa.stretch.ui.moved
+import dev.chieppa.stretch.ui.fileName
 import dev.chieppa.stretch.ui.pickFiles
-import java.io.File
+import kotlinx.coroutines.launch
 
 private val images = setOf("png", "jpg", "jpeg", "svg")
 
@@ -75,17 +77,18 @@ internal fun DataPage() {
 @Composable
 private fun DropDemo() {
     var files by remember { mutableStateOf(listOf<String>()) }
+    val scope = rememberCoroutineScope()
     Dropzone(
         "Drop reference images", "PNG, JPG, SVG", images,
         onFiles = { files = files + it },
-        onBrowse = { files = files + pickFiles("Import reference images", images) },
+        onBrowse = { scope.launch { files = files + pickFiles("Import reference images", images) } },
         overLabel = "Release to import",
         rejectLabel = "Not an image",
         modifier = Modifier.fillMaxWidth(),
     )
     if (files.isNotEmpty()) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            for (f in files) Chip(File(f).name)
+            for (f in files) Chip(fileName(f))
         }
     }
 }

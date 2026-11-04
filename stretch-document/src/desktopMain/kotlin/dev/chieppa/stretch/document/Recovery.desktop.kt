@@ -1,16 +1,7 @@
 package dev.chieppa.stretch.document
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import dev.chieppa.stretch.core.Steps
 import dev.chieppa.stretch.frame.AppIdentity
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import java.nio.channels.FileChannel
 import java.nio.channels.FileLock
 import java.nio.channels.OverlappingFileLockException
@@ -25,17 +16,11 @@ import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.nameWithoutExtension
 
-/**
- * Copies of open documents kept in [directory] while they have unsaved changes, so work survives a crash or power
- * cut. Each running document holds a [RecoverySlot]; a slot whose app is gone shows up in [pending] next time.
- * Other copies of the app that are still running keep their slots locked, so they are never offered.
- */
-class Recovery(val directory: Path) {
-    /** A slot for one open document. Close it when the document closes cleanly. */
-    fun slot(): RecoverySlot = RecoverySlot(directory, UUID.randomUUID().toString())
+/** [Recovery] in the files of [directory], with a file lock per slot. */
+class FileRecovery(val directory: Path) : Recovery {
+    override fun slot(): RecoverySlot = FileRecoverySlot(directory, UUID.randomUUID().toString())
 
-    /** Documents left behind by a run that ended without saving them, newest first. */
-    fun pending(): List<RecoveredDocument> {
+    override suspend fun pending(): List<RecoveredDocument> {
         if (!directory.exists()) return emptyList()
         return directory.listDirectoryEntries("*.properties")
             .filter { !lockedElsewhere(directory.resolve("${it.nameWithoutExtension}.lock")) }
@@ -46,31 +31,29 @@ class Recovery(val directory: Path) {
             }
     }
 
-    /** The recovered document's contents, for [DocumentSession.restore] after [DocumentFormat.decode]. */
-    fun read(item: RecoveredDocument): ByteArray = Files.readAllBytes(directory.resolve("${item.key}.data"))
+    override suspend fun read(item: RecoveredDocument): ByteArray = Files.readAllBytes(directory.resolve("${item.key}.data"))
 
-    /** Forgets [item], as after restoring it into a session (which keeps its own slot) or discarding it. */
-    fun discard(item: RecoveredDocument) = remove(directory, item.key)
-
-    companion object {
-        /** Recovery in the app's own data folder, named by its id from the `dev.chieppa.stretch.app` plugin. */
-        fun forApp(id: String = AppIdentity.current?.id ?: "stretch-app"): Recovery = Recovery(appDataDirectory(id).resolve("Recovery"))
-    }
+    override suspend fun discard(item: RecoveredDocument) = remove(directory, item.key)
 }
 
-/** One document's place in [Recovery]. It is locked while this run holds it. */
-class RecoverySlot internal constructor(private val directory: Path, private val key: String) : AutoCloseable {
+/** Recovery in the app's own data folder. */
+actual fun Recovery.Companion.forApp(id: String?): Recovery =
+    FileRecovery(appDataDirectory(id ?: AppIdentity.current?.id ?: DEFAULT_APP_ID).resolve(RECOVERY_FOLDER))
+
+private const val DEFAULT_APP_ID = "stretch-app"
+private const val RECOVERY_FOLDER = "Recovery"
+
+private class FileRecoverySlot(private val directory: Path, private val key: String) : RecoverySlot {
     private var channel: FileChannel? = null
     private var lock: FileLock? = null
 
-    /** Stores [bytes] as the document's latest state, with its file [path] and [name] for the recovery list. */
-    fun write(bytes: ByteArray, path: String?, name: String?) {
+    override suspend fun write(bytes: ByteArray, path: String?, name: String?) {
         Files.createDirectories(directory)
         if (lock == null) {
             channel = FileChannel.open(directory.resolve("$key.lock"), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
             lock = channel?.tryLock()
         }
-        FileStorage.write(directory.resolve("$key.data").toString(), bytes)
+        FileStorage.writeFile(directory.resolve("$key.data").toString(), bytes)
         val props = Properties().apply {
             path?.let { setProperty("path", it) }
             name?.let { setProperty("name", it) }
@@ -79,8 +62,7 @@ class RecoverySlot internal constructor(private val directory: Path, private val
         Files.newOutputStream(meta).use { props.store(it, null) }
     }
 
-    /** Removes the stored copy, once the document is saved or its changes are thrown away. */
-    fun clear() {
+    override suspend fun clear() {
         remove(directory, key, keepLock = true)
     }
 
@@ -127,33 +109,6 @@ fun appDataDirectory(id: String): Path {
     }
 }
 
-/**
- * Keeps [session]'s recovery copy current: every [intervalMillis] while it has changes not yet copied, and cleared
- * as soon as it is saved. The slot closes, and its copy goes, when this leaves the composition, which is when the
- * document closes cleanly.
- */
+/** A desktop app asks through [UnsavedChangesDialog] before its window closes. */
 @Composable
-fun <D> Autosave(session: DocumentSession<D>, recovery: Recovery, intervalMillis: Long = 30_000) {
-    val slot = remember(recovery) { recovery.slot() }
-    DisposableEffect(slot) { onDispose { slot.close() } }
-    val current by rememberUpdatedState(session)
-    LaunchedEffect(slot, intervalMillis) {
-        var copied: Steps<D>? = null
-        var copiedHistory: Any? = null
-        while (true) {
-            delay(intervalMillis)
-            val s = current
-            val steps = s.history.steps.value
-            if (!s.isEdited(steps)) {
-                if (copied != null) withContext(Dispatchers.IO) { slot.clear() }
-                copied = null
-                continue
-            }
-            if (copied === steps && copiedHistory === s.history) continue
-            val bytes = s.format.encode(s.history.document.value)
-            withContext(Dispatchers.IO) { runCatching { slot.write(bytes, s.path, s.fileName) } }
-            copied = steps
-            copiedHistory = s.history
-        }
-    }
-}
+actual fun LeaveGuard(edited: Boolean) = Unit

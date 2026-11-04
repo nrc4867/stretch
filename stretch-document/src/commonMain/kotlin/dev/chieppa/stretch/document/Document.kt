@@ -25,25 +25,32 @@ interface DocumentFormat<D> {
     fun decode(bytes: ByteArray): D
 }
 
-/** Where documents are read and written: the file system on desktop, something in memory in tests. */
+/** Where documents are read and written: the platform's [documentStorage], something in memory in tests. */
 interface DocumentStorage {
-    fun read(path: String): ByteArray
+    suspend fun read(path: String): ByteArray
 
     /** Replaces the file at [path] as a whole: a failed write leaves the old file as it was. */
-    fun write(path: String, bytes: ByteArray)
+    suspend fun write(path: String, bytes: ByteArray)
 
-    fun exists(path: String): Boolean
+    suspend fun exists(path: String): Boolean
 
     /** The file's name as people see it, without its folder or extension. */
     fun displayName(path: String): String
 }
 
-/** Asks where to open or save, with the OS's own dialogs on desktop. Null when the person cancels. */
+/** Asks where to open or save, with the platform's own dialogs. Null when the person cancels. */
 interface FileChooser {
-    fun chooseOpen(format: DocumentFormat<*>): String?
+    suspend fun chooseOpen(format: DocumentFormat<*>): String?
 
-    fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String?
+    suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String?
 }
+
+/** Documents where this platform keeps them. */
+expect val documentStorage: DocumentStorage
+
+/** Open and save dialogs for the app's window or page, with titles in the app's language. */
+@Composable
+expect fun rememberFileChooser(): FileChooser
 
 /**
  * One open document: its undo [history], the file it lives in, and whether it has changes that are not saved. The
