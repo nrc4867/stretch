@@ -34,8 +34,11 @@ import dev.chieppa.stretch.theme.StretchSizes
  * each side. A gap never hides a single page, since showing the page takes the same room.
  */
 fun pageWindow(page: Int, pageCount: Int, siblings: Int = 1): List<Int?> {
-    val shown = sortedSetOf(0, pageCount - 1)
-    for (p in (page - siblings)..(page + siblings)) if (p in 0 until pageCount) shown += p
+    val shown = buildSet {
+        add(0)
+        add(pageCount - 1)
+        for (p in (page - siblings)..(page + siblings)) if (p in 0 until pageCount) add(p)
+    }.sorted()
     val result = mutableListOf<Int?>()
     var last = -1
     for (p in shown) {

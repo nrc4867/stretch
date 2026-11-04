@@ -32,6 +32,9 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
+// Common tests run on the desktop target, so `check` needs no browser or Node.
+gradle.startParameter.excludedTaskNames += listOf("wasmJsTest", "wasmJsBrowserTest", "kotlinWasmStoreYarnLock")
+
 include(":stretch-core")
 include(":stretch-theme")
 include(":stretch-ui")

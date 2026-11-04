@@ -1,4 +1,5 @@
 plugins {
+    base
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinJvm) apply false
     alias(libs.plugins.composeMultiplatform) apply false
@@ -28,7 +29,7 @@ subprojects {
 }
 
 // The Gradle plugin is its own build; check runs its tests too.
-tasks.register("check") {
+tasks.named("check") {
     dependsOn(gradle.includedBuild("stretch-gradle-plugin").task(":check"))
 }
 
