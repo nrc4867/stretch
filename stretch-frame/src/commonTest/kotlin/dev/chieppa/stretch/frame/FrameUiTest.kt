@@ -35,6 +35,7 @@ import dev.chieppa.stretch.core.Keymap
 import dev.chieppa.stretch.test.setStretchContent
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.ui.Button
+import dev.chieppa.stretch.ui.TextField
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -156,6 +157,27 @@ class FrameUiTest {
         }
         runOnIdle { focus.requestFocus() }
         onNodeWithTag("root").performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.K) } }
+        assertEquals(1, commands)
+    }
+
+    @Test
+    fun typingInAFieldLeavesPlainKeyShortcutsAlone() = runComposeUiTest {
+        var types = 0
+        var commands = 0
+        val registry = ActionRegistry().apply {
+            register(Action(ActionId("types"), "Types", keys = listOf(KeyChord.parse("T"))) { types++ })
+            register(Action(ActionId("commands"), "Commands", keys = listOf(KeyChord.parse("Ctrl K"))) { commands++ })
+        }
+        var query by mutableStateOf("")
+        setStretchContent {
+            Box(Modifier.actionKeys(Keymap(registry), null)) { TextField(query, { query = it }, placeholder = "Search") }
+        }
+        val field = onNodeWithContentDescription("Search")
+        field.performClick()
+        field.performKeyInput { pressKey(Key.T) }
+        field.performKeyInput { withKeyDown(Key.ShiftLeft) { pressKey(Key.T) } }
+        assertEquals(0, types)
+        field.performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.K) } }
         assertEquals(1, commands)
     }
 

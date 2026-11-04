@@ -78,6 +78,7 @@ import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
 import dev.chieppa.stretch.ui.Divider
+import dev.chieppa.stretch.ui.holdsTyping
 import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.ButtonKind
 import dev.chieppa.stretch.ui.IconButton
@@ -336,7 +337,7 @@ fun CommandPalette(
                         query = it
                         index = 0
                     },
-                    modifier = Modifier.weight(1f).focusRequester(focus).semantics { contentDescription = placeholder },
+                    modifier = Modifier.weight(1f).holdsTyping().focusRequester(focus).semantics { contentDescription = placeholder },
                     singleLine = true,
                     textStyle = Stretch.type.body.merge(TextStyle(color = c.inkStrong, fontSize = Stretch.type.drawerTitle.fontSize)),
                     cursorBrush = SolidColor(c.inkStrong),

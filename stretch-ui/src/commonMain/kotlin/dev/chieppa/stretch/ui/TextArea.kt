@@ -49,6 +49,7 @@ fun TextArea(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier
+            .holdsTyping()
             .focusRing(state, shape, always = true)
             .clip(shape)
             .background(c.surfaceFloat)

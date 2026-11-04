@@ -385,6 +385,7 @@ private fun RenameField(initial: String, ink: Color, onDone: (String) -> Unit, o
         value = value,
         onValueChange = { value = it },
         modifier = Modifier
+            .holdsTyping()
             .focusRequester(focus)
             .onFocusChanged { if (it.isFocused) hadFocus = true else if (hadFocus) onDone(value.text) }
             .onPreviewKeyEvent {

@@ -13,7 +13,8 @@ internal expect fun KeyEvent.chord(): KeyChord?
 
 /**
  * Runs the action bound to a pressed chord in [mode]. Attach it near the root: it sees keys only after focused
- * controls such as text fields have passed on them, so typing never triggers a shortcut.
+ * controls have passed on them. Stretch's text fields hold what is typed into them, so typing never triggers a
+ * shortcut; a raw `BasicTextField` needs `Modifier.holdsTyping`.
  */
 fun Modifier.actionKeys(keymap: Keymap, mode: String?): Modifier = onKeyEvent { event ->
     val chord = event.chord() ?: return@onKeyEvent false

@@ -83,7 +83,7 @@ fun TextField(
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.focusRing(state, shape, always = true).semantics {
+        modifier = modifier.holdsTyping().focusRing(state, shape, always = true).semantics {
             this.contentDescription = contentDescription
             if (error != null) error(error)
         },
@@ -207,6 +207,7 @@ fun NumberField(
             value = text,
             onValueChange = { text = it },
             modifier = frame
+                .holdsTyping()
                 .focusRequester(focus)
                 .onFocusChanged {
                     if (it.isFocused) hadFocus = true else if (hadFocus && editing) commit()
