@@ -36,6 +36,13 @@ class PopupWindowPoolTest {
     }
 
     @Test
+    fun aPopupWindowHasNoDragHandles() = withOwner { owner ->
+        val dialog = newPopupWindow(owner, focusable = false)
+        assertFalse(dialog.isResizable)
+        dialog.dispose()
+    }
+
+    @Test
     fun aFullPoolDisposesWhatIsLeft() = withOwner { owner ->
         val released = List(17) { popup(owner).apply { pack() } }
         released.forEach(PopupWindowPool::release)

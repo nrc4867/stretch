@@ -150,13 +150,7 @@ private fun PopupWindow(
         },
         create = {
             val reused = if (reusable) PopupWindowPool.take(owner) else null
-            reused ?: ComposeDialog(owner, Dialog.ModalityType.MODELESS).apply {
-                isUndecorated = true
-                isTransparent = true
-                type = Window.Type.POPUP
-                focusableWindowState = currentProperties.focusable
-                isAutoRequestFocus = currentProperties.focusable
-            }
+            reused ?: newPopupWindow(owner, currentProperties.focusable)
         },
         dispose = { if (reusable) PopupWindowPool.release(it) else it.dispose() },
         update = placer::attach,
@@ -173,6 +167,16 @@ private fun PopupWindow(
             ) { currentContent() }
         }
     }
+}
+
+/** A bare window for a popup. It is not resizable, or Compose would put drag handles that move it along its edges. */
+internal fun newPopupWindow(owner: Window, focusable: Boolean) = ComposeDialog(owner, Dialog.ModalityType.MODELESS).apply {
+    isUndecorated = true
+    isResizable = false
+    isTransparent = true
+    type = Window.Type.POPUP
+    focusableWindowState = focusable
+    isAutoRequestFocus = focusable
 }
 
 /** Keeps a popup window where its position provider says, and answers what counts as a click outside it. */
