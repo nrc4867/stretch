@@ -63,7 +63,7 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
+import dev.chieppa.stretch.ui.StretchPopup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import dev.chieppa.stretch.core.Action
@@ -115,7 +115,7 @@ private const val DISABLED_ITEM_ALPHA = 0.4f
 @Composable
 fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     if (!expanded) return
-    Popup(popupPositionProvider = BelowAnchor(4), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
+    StretchPopup(popupPositionProvider = BelowAnchor(4), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true), shadow = Stretch.shadows.pop) {
         MenuPanel(content)
     }
 }
@@ -148,7 +148,7 @@ fun Popover(
 ) {
     if (!open) return
     val c = Stretch.colors
-    Popup(popupPositionProvider = BelowAnchor(6), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
+    StretchPopup(popupPositionProvider = BelowAnchor(6), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true), shadow = Stretch.shadows.pop) {
         Column(
             Modifier
                 .width(width)
@@ -303,7 +303,7 @@ fun CommandPalette(
         onDismiss()
         action.run()
     }
-    Popup(popupPositionProvider = InWindow(top = 96), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
+    StretchPopup(popupPositionProvider = InWindow(top = 96), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true), shadow = Stretch.shadows.float) {
         LaunchedEffect(Unit) { focus.requestFocus() }
         Column(
             Modifier
@@ -389,7 +389,7 @@ fun StretchDialog(
     }
     if (!framed) return
     var moved by remember { mutableStateOf(IntOffset.Zero) }
-    Popup(popupPositionProvider = InWindow(top = null, moved), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
+    StretchPopup(popupPositionProvider = InWindow(top = null, moved), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true), shadow = Stretch.shadows.float) {
         val shape = Stretch.shapes.cardShape
         var header by remember { mutableStateOf<LayoutCoordinates?>(null) }
         Column(

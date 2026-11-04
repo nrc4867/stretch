@@ -1,0 +1,21 @@
+package dev.chieppa.stretch.ui
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
+import dev.chieppa.stretch.theme.StretchShadow
+
+/**
+ * A popup placed by [popupPositionProvider]. Normally a plain Compose popup. Where popups have to show over a native
+ * surface it is an OS window of its own, measured and placed before it shows, so it never covers the window or the
+ * pointer while it opens, and moving it moves the window without drawing its content again. [shadow] is the shadow the
+ * content draws around itself, which that window leaves room for.
+ */
+@Composable
+expect fun StretchPopup(
+    popupPositionProvider: PopupPositionProvider,
+    onDismissRequest: (() -> Unit)? = null,
+    properties: PopupProperties = PopupProperties(),
+    shadow: StretchShadow? = null,
+    content: @Composable () -> Unit,
+)

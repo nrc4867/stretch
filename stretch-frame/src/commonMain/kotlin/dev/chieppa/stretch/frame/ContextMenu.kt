@@ -19,7 +19,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.window.Popup
+import dev.chieppa.stretch.theme.Stretch
+import dev.chieppa.stretch.ui.StretchPopup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import kotlinx.coroutines.withTimeoutOrNull
@@ -82,10 +83,11 @@ fun ContextMenuArea(
         val point = at
         if (point != null) {
             val close = { at = null }
-            Popup(
+            StretchPopup(
                 popupPositionProvider = AtPoint(IntOffset(point.x.roundToInt(), point.y.roundToInt())),
                 onDismissRequest = close,
                 properties = PopupProperties(focusable = true),
+                shadow = Stretch.shadows.pop,
             ) { MenuPanel { menu(close) } }
         }
     }

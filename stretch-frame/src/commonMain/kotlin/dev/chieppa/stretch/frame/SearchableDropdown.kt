@@ -41,7 +41,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
+import dev.chieppa.stretch.ui.StretchPopup
 import androidx.compose.ui.window.PopupProperties
 import dev.chieppa.stretch.frame.generated.Res
 import dev.chieppa.stretch.frame.generated.no_matches
@@ -113,7 +113,7 @@ private fun <T> SearchPanel(options: List<T>, selected: T, label: (T) -> String,
         val visible = list.layoutInfo.visibleItemsInfo.map { it.index }
         if (index !in visible.dropLast(1)) list.scrollToItem(index)
     }
-    Popup(popupPositionProvider = BelowAnchor(4), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
+    StretchPopup(popupPositionProvider = BelowAnchor(4), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true), shadow = Stretch.shadows.pop) {
         LaunchedEffect(Unit) { focus.requestFocus() }
         Column(
             Modifier

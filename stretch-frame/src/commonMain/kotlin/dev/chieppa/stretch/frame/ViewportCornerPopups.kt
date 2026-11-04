@@ -20,7 +20,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.window.Popup
+import dev.chieppa.stretch.theme.Stretch
+import dev.chieppa.stretch.ui.StretchPopup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 
@@ -55,7 +56,7 @@ internal fun ViewportCornerPopups(slots: List<(@Composable () -> Unit)?>, lead: 
             if (slot == null) return@forEachIndexed
             // Off the window until measured, so a slot never flashes in the wrong place.
             val at = places[i]?.topLeft ?: IntOffset(-viewSize.width, -viewSize.height)
-            Popup(popupPositionProvider = AtOffset(at), properties = CornerPopup) {
+            StretchPopup(popupPositionProvider = AtOffset(at), properties = CornerPopup, shadow = Stretch.shadows.pop) {
                 Box(
                     with(density) { Modifier.sizeIn(maxWidth = room.width.toDp(), maxHeight = room.height.toDp()) }
                         .onSizeChanged { sizes[i] = it },

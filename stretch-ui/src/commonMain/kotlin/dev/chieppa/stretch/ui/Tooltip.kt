@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import dev.chieppa.stretch.theme.Stretch
@@ -61,7 +60,7 @@ fun Tooltip(text: String, keys: List<String>? = null, content: @Composable () ->
         content()
         if (visible) {
             val c = Stretch.colors
-            Popup(popupPositionProvider = AboveAnchor(6), properties = PopupProperties(focusable = false)) {
+            StretchPopup(popupPositionProvider = AboveAnchor(6), properties = PopupProperties(focusable = false)) {
                 Row(
                     Modifier
                         .clip(Stretch.shapes.ctlShape)
