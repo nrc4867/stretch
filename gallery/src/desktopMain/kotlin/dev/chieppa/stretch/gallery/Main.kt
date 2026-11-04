@@ -11,6 +11,7 @@ import dev.chieppa.stretch.document.forApp
 import dev.chieppa.stretch.frame.NativeSurfaces
 import dev.chieppa.stretch.frame.StretchWindow
 import dev.chieppa.stretch.frame.WindowTopBar
+import dev.chieppa.stretch.gallery.gpu.GpuPage
 
 fun main() {
     // -Pgpu on the run task: show the WebGPU page, which needs popups in windows of their own.
@@ -26,7 +27,7 @@ fun main() {
             state = state,
         ) {
             CompositionLocalProvider(LocalGalleryHost provides host) {
-                Gallery(gpu = gpu) { document, edited, menus, modes, actions ->
+                Gallery(gpuPage = if (gpu) ({ GpuPage() }) else null) { document, edited, menus, modes, actions ->
                     WindowTopBar("Stretch", document, edited = edited, menus = menus, modes = modes, actions = actions)
                 }
             }

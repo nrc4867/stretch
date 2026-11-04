@@ -35,7 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.Dropdown
-import dev.chieppa.stretch.gallery.gpu.GpuPage
 import dev.chieppa.stretch.frame.Hud
 import dev.chieppa.stretch.frame.Menu
 import dev.chieppa.stretch.frame.MenuDivider
@@ -100,20 +99,17 @@ class GalleryHost {
 
 val LocalGalleryHost = staticCompositionLocalOf { GalleryHost() }
 
-/**
- * Every component and the app frame in every theme. With [gpu], also a WebGPU viewport, which needs a GPU and
- * [dev.chieppa.stretch.frame.NativeSurfaces] enabled. Labels here are examples, not app text.
- */
+/** Every component and the app frame in every theme, and [gpuPage] when there is one. Labels here are examples, not app text. */
 @Composable
-fun Gallery(gpu: Boolean = false, bar: GalleryBar = plainBar) {
+fun Gallery(gpuPage: (@Composable () -> Unit)? = null, bar: GalleryBar = plainBar) {
     var themeChoice by remember { mutableStateOf<StretchTheme?>(StretchThemes.Ink) }
     val theme = themeChoice ?: StretchThemes.system()
     var scale by remember { mutableFloatStateOf(1f) }
-    var page by remember { mutableStateOf(if (gpu) Page.Gpu else Page.Components) }
+    var page by remember { mutableStateOf(if (gpuPage != null) Page.Gpu else Page.Components) }
     StretchTheme(theme, scale) {
         val switcher: @Composable () -> Unit = {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Segmented(Page.entries.filter { gpu || it != Page.Gpu }, page, { page = it }, { it.label }, mode = true)
+                Segmented(Page.entries.filter { gpuPage != null || it != Page.Gpu }, page, { page = it }, { it.label }, mode = true)
                 Dropdown(listOf(null) + StretchThemes.all, themeChoice, { themeChoice = it }, { it?.name ?: "Match system" }, "Theme", Modifier.width(180.dp))
             }
         }
@@ -133,7 +129,7 @@ fun Gallery(gpu: Boolean = false, bar: GalleryBar = plainBar) {
             Page.Frame -> FrameDemo(switcher, bar, scale) { scale = it }
             Page.Gpu -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
                 bar("Gallery", false, {}, switcher) {}
-                GpuPage()
+                gpuPage?.invoke()
             }
         }
     }
