@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -99,6 +100,9 @@ private fun PopupWindow(
     val margins = PopupMargins.around(shadow)
     val placer = remember(owner, root) { PopupPlacer(owner, root, provider, density) }
     var anchored by remember { mutableStateOf(false) }
+    // Only popups that hold their place share windows: a reused window keeps its stacking order, so one that opens over
+    // other popups needs a new window to come out on top.
+    val reusable = remember { !properties.focusable && !properties.dismissOnClickOutside }
     Layout(
         content = {},
         modifier = Modifier.onGloballyPositioned { coordinates ->
@@ -145,7 +149,8 @@ private fun PopupWindow(
             dismiss
         },
         create = {
-            ComposeDialog(owner, Dialog.ModalityType.MODELESS).apply {
+            val reused = if (reusable) PopupWindowPool.take(owner) else null
+            reused ?: ComposeDialog(owner, Dialog.ModalityType.MODELESS).apply {
                 isUndecorated = true
                 isTransparent = true
                 type = Window.Type.POPUP
@@ -153,7 +158,7 @@ private fun PopupWindow(
                 isAutoRequestFocus = currentProperties.focusable
             }
         },
-        dispose = { it.dispose() },
+        dispose = { if (reusable) PopupWindowPool.release(it) else it.dispose() },
         update = placer::attach,
     ) {
         CompositionLocalProvider(LocalPopupRoot provides root) {
@@ -171,6 +176,7 @@ private fun PopupWindow(
 }
 
 /** Keeps a popup window where its position provider says, and answers what counts as a click outside it. */
+@OptIn(ExperimentalComposeUiApi::class)
 private class PopupPlacer(
     private val owner: Window,
     private val root: Window,
@@ -188,6 +194,7 @@ private class PopupPlacer(
 
     /** On the first call, measures the content while the window is still hidden, so it opens at its real size. */
     fun attach(dialog: ComposeDialog) {
+        val reused = window == null && dialog.isDisplayable
         if (window == null) {
             window = dialog
             dialog.preferredSize = Dimension(root.width, root.height)
@@ -200,6 +207,13 @@ private class PopupPlacer(
             )
         }
         place()
+        // A reused window still holds its last picture, which must not show when it opens.
+        if (reused) {
+            Snapshot.withoutReadObservation {
+                dialog.validate()
+                dialog.renderImmediately()
+            }
+        }
     }
 
     fun place() {
