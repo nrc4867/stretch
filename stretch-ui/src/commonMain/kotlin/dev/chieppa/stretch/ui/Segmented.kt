@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchSizes
 
-private const val disabledAlpha = 0.4f
+internal const val disabledAlpha = 0.4f
 
 /**
  * Picks exactly one of two to five options. A neutral pick uses the neutral color; [mode] is for top-level modes and

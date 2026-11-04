@@ -168,13 +168,15 @@ class BarAction(
     val label: String,
     val onClick: () -> Unit,
     val keys: List<String> = emptyList(),
+    val enabled: Boolean = true,
     val popup: @Composable () -> Unit = {},
 )
 
 /**
  * The standard top bar actions: undo, redo, the command palette and settings, then the app's [more]. Pass null to
  * leave one out. Put what settings opens, such as a [Popover], in [settingsPopup], so it anchors under the settings
- * button. Actions that do not fit fold, last first, into a More menu at the end.
+ * button. [undoEnabled] and [redoEnabled] keep their buttons in place, faint, while there is nothing to take back or
+ * bring back. Actions that do not fit fold, last first, into a More menu at the end.
  */
 @Composable
 fun TopBarActions(
@@ -183,6 +185,8 @@ fun TopBarActions(
     onCommands: (() -> Unit)?,
     onSettings: (() -> Unit)? = null,
     more: List<BarAction> = emptyList(),
+    undoEnabled: Boolean = true,
+    redoEnabled: Boolean = true,
     settingsPopup: @Composable () -> Unit = {},
 ) {
     val undo = stringResource(Res.string.undo)
@@ -190,8 +194,8 @@ fun TopBarActions(
     val commands = stringResource(Res.string.commands)
     val settings = stringResource(Res.string.settings)
     val actions = listOfNotNull(
-        onUndo?.let { BarAction(StretchIcons.Undo, undo, it, listOf("Ctrl", "Z")) },
-        onRedo?.let { BarAction(StretchIcons.Redo, redo, it, listOf("Ctrl", "Shift", "Z")) },
+        onUndo?.let { BarAction(StretchIcons.Undo, undo, it, listOf("Ctrl", "Z"), enabled = undoEnabled) },
+        onRedo?.let { BarAction(StretchIcons.Redo, redo, it, listOf("Ctrl", "Shift", "Z"), enabled = redoEnabled) },
         onCommands?.let { BarAction(StretchIcons.Command, commands, it, listOf("Ctrl", "K")) },
         onSettings?.let { BarAction(StretchIcons.Settings, settings, it, popup = settingsPopup) },
     ) + more
@@ -213,7 +217,7 @@ private fun OverflowActions(actions: List<BarAction>) {
             {
                 actions.forEachIndexed { i, action ->
                     Box(Modifier.hiddenUnless(i < shown)) {
-                        Tooltip(action.label, action.keys.ifEmpty { null }) { IconButton(action.icon, action.label, action.onClick) }
+                        Tooltip(action.label, action.keys.ifEmpty { null }) { IconButton(action.icon, action.label, action.onClick, enabled = action.enabled) }
                     }
                 }
             },
@@ -255,7 +259,7 @@ private fun MoreMenu(label: String, actions: List<BarAction>) {
         Tooltip(label) { IconButton(StretchIcons.More, label, { open = true }) }
         Menu(open && actions.isNotEmpty(), { open = false }) {
             actions.forEach { action ->
-                MenuItem(action.label, { open = false; action.onClick() }, icon = action.icon, keys = action.keys.joinToString(" ").ifEmpty { null })
+                MenuItem(action.label, { open = false; action.onClick() }, icon = action.icon, keys = action.keys.joinToString(" ").ifEmpty { null }, enabled = action.enabled)
             }
         }
     }
@@ -281,13 +285,16 @@ fun ToolbarSeparator() {
     Box(Modifier.padding(horizontal = 4.dp).width(Stretch.stroke).height(22.dp).background(Stretch.colors.linePanel))
 }
 
-/** A small readout over the viewport: angle, size, zoom. */
+/** A small readout over the viewport: angle, size, zoom. [leading] goes before the text, such as a progress bar. */
 @Composable
-fun Hud(text: String, modifier: Modifier = Modifier) {
+fun Hud(text: String, modifier: Modifier = Modifier, leading: (@Composable () -> Unit)? = null) {
     val c = Stretch.colors
-    Box(
+    Row(
         modifier.floating(Stretch.shapes.pillShape, shadow = null).padding(horizontal = 10.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
+        leading?.invoke()
         BasicText(text, style = Stretch.type.value.merge(TextStyle(color = c.inkMuted)))
     }
 }

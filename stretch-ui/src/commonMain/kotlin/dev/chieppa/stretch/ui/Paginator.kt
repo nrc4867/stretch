@@ -28,7 +28,6 @@ import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
 
-private const val disabledAlpha = 0.4f
 
 /**
  * The pages a paginator shows, zero-based, with null for a gap: always the first and last, [page] and [siblings] on

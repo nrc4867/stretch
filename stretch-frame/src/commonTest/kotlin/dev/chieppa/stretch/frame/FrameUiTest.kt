@@ -2,6 +2,7 @@ package dev.chieppa.stretch.frame
 
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,6 +13,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -192,5 +195,44 @@ class FrameUiTest {
         onNodeWithText("Undo").performClick()
         assertTrue(undone)
         onNodeWithText("Deleted · Fur edge").assertDoesNotExist()
+    }
+
+    @Test
+    fun aDrawerNotEnabledKeepsItsRailButtonAndDoesNotOpen() = runComposeUiTest {
+        var layout by mutableStateOf(FrameLayout(listOf(DrawerPlacement("rig", Side.Right), DrawerPlacement("part", Side.Right))))
+        setStretchContent {
+            StretchApp(
+                layout,
+                { layout = it },
+                listOf(DrawerSpec("rig", "Rig", StretchIcons.Layers, enabled = false) {}, DrawerSpec("part", "Part", StretchIcons.Layers, headerIcon = StretchIcons.Pen) {}),
+                onResetLayout = {},
+                topBar = { TopBar("App", "Untitled") },
+            ) { Viewport {} }
+        }
+        onNodeWithContentDescription("Rig").assertExists().assertIsNotEnabled().performClick()
+        assertTrue(layout["rig"]!!.open.not())
+        onNodeWithContentDescription("Part").performClick()
+        assertTrue(layout["part"]!!.open)
+    }
+
+    @Test
+    fun undoAndRedoStayInTheBarWhileThereIsNothingToDo() = runComposeUiTest {
+        var undone = 0
+        setStretchContent {
+            TopBar("App", "Untitled", actions = { TopBarActions({ undone++ }, {}, {}, undoEnabled = false, redoEnabled = true) })
+        }
+        onNodeWithContentDescription("Undo").assertIsNotEnabled().performClick()
+        assertEquals(0, undone)
+        onNodeWithContentDescription("Redo").assertIsEnabled()
+    }
+
+    @Test
+    fun anActionMenuItemIsFaintWhileItsActionIsNotAvailable() = runComposeUiTest {
+        var ran = 0
+        val registry = ActionRegistry()
+        val action = Action(ActionId("x"), "x", isAvailable = { false }, run = { ran++ }).also(registry::register)
+        setStretchContent { Column { ActionMenuItem(action, Keymap(registry)) } }
+        onNodeWithText("x").assertIsNotEnabled().performClick()
+        assertEquals(0, ran)
     }
 }

@@ -73,7 +73,7 @@ fun Button(
 
 /**
  * A square icon-only button. [contentDescription] names the action; it is required because there is no label.
- * [on] marks a toggled-on state with the on colors.
+ * [on] marks a toggled-on state with the on colors. A button not [enabled] shows faint and takes no clicks.
  */
 @Composable
 fun IconButton(
@@ -84,6 +84,7 @@ fun IconButton(
     size: Dp = StretchSizes.icon,
     quiet: Boolean = true,
     on: Boolean = false,
+    enabled: Boolean = true,
 ) {
     val c = Stretch.colors
     val state = rememberControlState()
@@ -106,15 +107,18 @@ fun IconButton(
             .background(fill)
             .border(Stretch.stroke, edge, shape)
             .hoverable(state.source)
-            .clickable(state.source, indication = null, role = Role.Button, onClick = onClick)
+            .clickable(state.source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { this.contentDescription = contentDescription },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, if (on) c.onInk else c.inkControl)
+        Icon(icon, (if (on) c.onInk else c.inkControl).let { if (enabled) it else it.copy(alpha = disabledAlpha) })
     }
 }
 
-/** A tool button for rails and toolbars: 40px, or 34px inside a toolbar. [selected] marks the armed tool. */
+/**
+ * A tool button for rails and toolbars: 40px, or 34px inside a toolbar. [selected] marks the armed tool. A button not
+ * [enabled] shows faint and takes no clicks.
+ */
 @Composable
 fun ToolButton(
     icon: ImageVector,
@@ -124,12 +128,13 @@ fun ToolButton(
     modifier: Modifier = Modifier,
     size: Dp = StretchSizes.tool,
     label: String? = null,
+    enabled: Boolean = true,
 ) {
     val c = Stretch.colors
     val state = rememberControlState()
     val shape = Stretch.shapes.rowShape
     val fill = if (selected) Fills.on(state) else Fills.borderless(state)
-    val ink = if (selected) c.onInk else c.inkControl
+    val ink = (if (selected) c.onInk else c.inkControl).let { if (enabled) it else it.copy(alpha = disabledAlpha) }
     val base = modifier
         .focusRing(state, shape, fill)
         .height(size)
@@ -137,7 +142,7 @@ fun ToolButton(
         .background(fill)
         .border(Stretch.stroke, if (selected) c.onEdge else Color.Transparent, shape)
         .hoverable(state.source)
-        .clickable(state.source, indication = null, role = Role.Button, onClick = onClick)
+        .clickable(state.source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
         .semantics {
             this.contentDescription = contentDescription
             this.selected = selected

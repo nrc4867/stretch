@@ -69,6 +69,26 @@ class FrameLayoutTest {
     }
 
     @Test
+    fun aBottomDrawerWithItsButtonOnTopStaysThereAndKeepsItsPanel() {
+        val mixed = FrameLayout(
+            listOf(
+                DrawerPlacement("parts", Side.Left),
+                DrawerPlacement("types", Side.Left, bottom = true, railTop = true),
+                DrawerPlacement("history", Side.Left),
+                DrawerPlacement("help", Side.Left, bottom = true),
+            ),
+        )
+        assertEquals(listOf(false, false, false, true), mixed.on(Side.Left).map { it.inRailFoot })
+        val moved = mixed.move("history", Side.Left, bottom = false, index = 1)
+        assertEquals(listOf("parts", "history", "types", "help"), moved.on(Side.Left).map { it.id })
+        val reordered = mixed.move("types", Side.Left, bottom = false, index = 2)
+        assertEquals(listOf("parts", "history", "types", "help"), reordered.on(Side.Left).map { it.id })
+        assertTrue(reordered["types"]!!.bottom, "it still opens in the bottom panel")
+        val toFoot = mixed.move("types", Side.Left, bottom = true, index = 0)
+        assertTrue(toFoot["types"]!!.inRailFoot)
+    }
+
+    @Test
     fun unknownIdsChangeNothing() {
         assertEquals(layout, layout.toggle("nope").dock("nope", Side.Right).resize("nope", 300f))
     }

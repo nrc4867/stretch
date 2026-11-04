@@ -14,7 +14,8 @@ data class WindowBounds(val x: Float, val y: Float, val width: Float, val height
 /**
  * Where one drawer sits: its side, its order on that side, its width in dp and whether it is open. [bottom] puts its
  * rail button in the group at the foot of the rail and opens it in the bottom panel instead of the side column.
- * [height] is its share of the side column when drawers stack. A [detached] drawer shows in a window of its own,
+ * [height] is its share of the side column when drawers stack. [railTop] keeps a [bottom] drawer's rail button in the
+ * top group, for an app whose bottom panel belongs with its side drawers. A [detached] drawer shows in a window of its own,
  * placed at [window]; its rail button stays where it was, so it docks back there. [window] is kept after docking, so
  * popping out again reopens it in the same place.
  */
@@ -27,7 +28,11 @@ data class DrawerPlacement(
     val height: Float = 1f,
     val detached: Boolean = false,
     val window: WindowBounds? = null,
+    val railTop: Boolean = false,
 ) {
+    /** Whether its rail button sits in the group at the foot of the rail. */
+    val inRailFoot: Boolean get() = bottom && !railTop
+
     val position: DrawerPosition
         get() = when {
             detached -> DrawerPosition.Window
@@ -114,10 +119,14 @@ data class FrameLayout(
     fun move(id: String, side: Side, bottom: Boolean, index: Int): FrameLayout {
         val drawer = get(id) ?: return this
         val rest = drawers.filter { it.id != id }
-        val group = rest.filter { it.side == side && it.bottom == bottom }
+        val group = rest.filter { it.side == side && it.inRailFoot == bottom }
         val at = index.coerceIn(0, group.size)
-        val position = if (at < group.size) rest.indexOf(group[at]) else (rest.indexOfLast { it.side == side && it.bottom == bottom } + 1).takeIf { it > 0 } ?: rest.size
-        val moved = drawer.copy(side = side, bottom = bottom, detached = false)
+        val position = if (at < group.size) rest.indexOf(group[at]) else (rest.indexOfLast { it.side == side && it.inRailFoot == bottom } + 1).takeIf { it > 0 } ?: rest.size
+        val moved = if (drawer.railTop && !bottom) {
+            drawer.copy(side = side, detached = false)
+        } else {
+            drawer.copy(side = side, bottom = bottom, railTop = false, detached = false)
+        }
         val placed = withDrawers(rest.toMutableList().apply { add(position, moved.copy(open = false)) })
         return if (drawer.open || drawer.detached) placed.open(id) else placed
     }

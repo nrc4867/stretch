@@ -109,6 +109,8 @@ private class InWindow(private val top: Int?, private val moved: IntOffset = Int
     }
 }
 
+private const val DISABLED_ITEM_ALPHA = 0.4f
+
 /** A dropdown or context menu under its anchor. Put [MenuItem], [MenuDivider] and [MenuLabel] inside. */
 @Composable
 fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
@@ -175,7 +177,7 @@ fun Popover(
     }
 }
 
-/** One command in a menu: icon, label and the key on the right. [checked] makes it a check item. */
+/** One command in a menu: icon, label and the key on the right. [checked] makes it a check item. One not [enabled] shows faint and takes no clicks. */
 @Composable
 fun MenuItem(
     text: String,
@@ -184,10 +186,12 @@ fun MenuItem(
     keys: String? = null,
     checked: Boolean? = null,
     highlighted: Boolean = false,
+    enabled: Boolean = true,
 ) {
     val c = Stretch.colors
     val source = remember { MutableInteractionSource() }
     val hovered by source.collectIsHoveredAsState()
+    val faint = if (enabled) 1f else DISABLED_ITEM_ALPHA
     val pressed by source.collectIsPressedAsState()
     Row(
         Modifier
@@ -196,17 +200,17 @@ fun MenuItem(
             .clip(Stretch.shapes.segShape)
             .background(if (pressed) c.surfaceControlPress else if (hovered || highlighted) c.surfaceControlHi else Color.Transparent)
             .hoverable(source)
-            .clickable(source, indication = null, role = Role.Button, onClick = onClick)
+            .clickable(source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         when {
-            checked != null -> Box(Modifier.size(16.dp)) { if (checked) Icon(StretchIcons.Check, c.inkControl) }
-            icon != null -> Icon(icon, c.inkControl)
+            checked != null -> Box(Modifier.size(16.dp)) { if (checked) Icon(StretchIcons.Check, c.inkControl.copy(alpha = faint)) }
+            icon != null -> Icon(icon, c.inkControl.copy(alpha = faint))
         }
-        BasicText(text, Modifier.weight(1f), style = Stretch.type.body.merge(TextStyle(color = if (hovered) c.inkStrong else c.ink)), maxLines = 1)
-        if (keys != null) BasicText(keys, style = Stretch.type.valueSm.merge(TextStyle(color = c.inkSubtle)))
+        BasicText(text, Modifier.weight(1f), style = Stretch.type.body.merge(TextStyle(color = (if (hovered) c.inkStrong else c.ink).copy(alpha = faint))), maxLines = 1)
+        if (keys != null) BasicText(keys, style = Stretch.type.valueSm.merge(TextStyle(color = c.inkSubtle.copy(alpha = faint))))
     }
 }
 
@@ -221,6 +225,7 @@ fun ActionMenuItem(action: Action, keymap: Keymap, icons: (String) -> ImageVecto
         },
         icon = action.icon?.let(icons),
         keys = keymap.keysFor(action.id).firstOrNull()?.caps()?.joinToString(" "),
+        enabled = action.isAvailable(),
     )
 }
 
