@@ -41,9 +41,12 @@ fun fileExtension(path: String): String = path.substringAfterLast('/').substring
 fun acceptsFiles(paths: List<String>, extensions: Set<String>): Boolean =
     paths.isNotEmpty() && (extensions.isEmpty() || paths.all { fileExtension(it) in extensions })
 
+/** Files being dragged over a target. [paths] is null where the platform hides them until the drop. */
+internal class HoveredFiles(val paths: List<String>?)
+
 /** Reports files dragged over and dropped on this element from outside the app. [onHover] gets null on exit. */
 @Composable
-internal expect fun Modifier.fileDropTarget(onHover: (List<String>?) -> Unit, onDrop: (List<String>) -> Boolean): Modifier
+internal expect fun Modifier.fileDropTarget(onHover: (HoveredFiles?) -> Unit, onDrop: (List<String>) -> Boolean): Modifier
 
 /**
  * A target for files dropped from outside the app. Clicking opens the picker through [onBrowse], so dragging is
@@ -72,10 +75,11 @@ fun Dropzone(
         label,
         onBrowse,
         modifier.fileDropTarget(
-            onHover = { paths ->
+            onHover = { hovered ->
+                val paths = hovered?.paths
                 state = when {
-                    paths == null -> DropState.Idle
-                    acceptsFiles(paths, extensions) -> DropState.Over
+                    hovered == null -> DropState.Idle
+                    paths == null || acceptsFiles(paths, extensions) -> DropState.Over
                     else -> DropState.Reject
                 }
             },

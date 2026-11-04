@@ -5,6 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -15,6 +16,9 @@ import androidx.compose.ui.input.key.onKeyEvent
 import dev.chieppa.stretch.core.Action
 import dev.chieppa.stretch.core.ActionId
 import dev.chieppa.stretch.core.KeyChord
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 
 /**
  * What goes on the clipboard: [text] for other apps, and the app's own data under types it names (such as
@@ -29,7 +33,7 @@ class ClipData(val text: String? = null, val custom: Map<String, String> = empty
 /** The system clipboard. Each platform supplies one; tests can provide their own through [LocalClipboardAccess]. */
 interface ClipboardAccess {
     /** What is on the clipboard, with the [types] of custom data the app understands, or null when it is empty. */
-    fun read(types: Set<String>): ClipData?
+    suspend fun read(types: Set<String>): ClipData?
 
     fun write(data: ClipData)
 }
@@ -38,14 +42,17 @@ interface ClipboardAccess {
 class MemoryClipboard : ClipboardAccess {
     var content: ClipData? = null
 
-    override fun read(types: Set<String>): ClipData? = content?.let { data ->
-        val custom = data.custom.filterKeys { it in types }
-        if (data.text == null && custom.isEmpty()) null else ClipData(data.text, custom)
-    }
+    override suspend fun read(types: Set<String>): ClipData? = content?.narrowedTo(types)
 
     override fun write(data: ClipData) {
         content = data
     }
+}
+
+/** This data with only the custom [types] kept, or null when that leaves nothing. */
+internal fun ClipData.narrowedTo(types: Set<String>): ClipData? {
+    val kept = custom.filterKeys { it in types }
+    return if (text == null && kept.isEmpty()) null else ClipData(text, kept)
 }
 
 internal expect fun systemClipboard(): ClipboardAccess
@@ -72,7 +79,7 @@ interface ClipboardHandler {
  * themselves; menus, the command palette and the macOS menu bar go through [copy], [cut] and [paste], or through
  * [actions]. Text fields keep their own clipboard keys.
  */
-class ClipboardRouter(private val clipboard: () -> ClipboardAccess) {
+class ClipboardRouter(private val scope: CoroutineScope, private val clipboard: () -> ClipboardAccess) {
     internal var focused by mutableStateOf<ClipboardHandler?>(null)
 
     /** Whether something has the focus that copy, cut and paste would act on. */
@@ -82,10 +89,13 @@ class ClipboardRouter(private val clipboard: () -> ClipboardAccess) {
 
     fun cut(): Boolean = focused?.cut()?.also { clipboard().write(it) } != null
 
+    /** Pastes into the focused target once the clipboard answers; returns whether there is a target. */
     fun paste(): Boolean {
         val handler = focused ?: return false
-        val data = clipboard().read(handler.types) ?: return false
-        return handler.paste(data)
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            clipboard().read(handler.types)?.let(handler::paste)
+        }
+        return true
     }
 
     /** Copy, Cut and Paste as actions with the usual keys, available while a target has the focus. */
@@ -105,7 +115,8 @@ class ClipboardRouter(private val clipboard: () -> ClipboardAccess) {
 @Composable
 fun rememberClipboardRouter(): ClipboardRouter {
     val access by rememberUpdatedState(LocalClipboardAccess.current)
-    return remember { ClipboardRouter { access } }
+    val scope = rememberCoroutineScope()
+    return remember { ClipboardRouter(scope) { access } }
 }
 
 /**

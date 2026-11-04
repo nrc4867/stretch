@@ -7,6 +7,19 @@ plugins {
 kotlin {
     jvmToolchain(libs.versions.jvmToolchain.get().toInt())
     jvm("desktop")
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+    wasmJs { browser() }
+
+    // Compose's scrollbars exist where it draws with Skia: every target here.
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
+    applyDefaultHierarchyTemplate {
+        common {
+            group("skiko") {
+                withJvm()
+                withWasmJs()
+            }
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {

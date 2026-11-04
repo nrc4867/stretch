@@ -22,12 +22,12 @@ private fun DragAndDropEvent.paths(): List<String>? = runCatching {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-internal actual fun Modifier.fileDropTarget(onHover: (List<String>?) -> Unit, onDrop: (List<String>) -> Boolean): Modifier {
+internal actual fun Modifier.fileDropTarget(onHover: (HoveredFiles?) -> Unit, onDrop: (List<String>) -> Boolean): Modifier {
     val hover = rememberUpdatedState(onHover)
     val drop = rememberUpdatedState(onDrop)
     val target = remember {
         object : DragAndDropTarget {
-            override fun onEntered(event: DragAndDropEvent) = hover.value(event.paths().orEmpty())
+            override fun onEntered(event: DragAndDropEvent) = hover.value(HoveredFiles(event.paths().orEmpty()))
             override fun onExited(event: DragAndDropEvent) = hover.value(null)
             override fun onEnded(event: DragAndDropEvent) = hover.value(null)
             override fun onDrop(event: DragAndDropEvent): Boolean = drop.value(event.paths().orEmpty())

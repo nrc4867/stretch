@@ -12,7 +12,7 @@ internal actual fun systemClipboard(): ClipboardAccess = AwtClipboard
 private object AwtClipboard : ClipboardAccess {
     private val clipboard get() = Toolkit.getDefaultToolkit().systemClipboard
 
-    override fun read(types: Set<String>): ClipData? {
+    override suspend fun read(types: Set<String>): ClipData? {
         val contents = runCatching { clipboard.getContents(null) }.getOrNull() ?: return null
         val text = if (contents.isDataFlavorSupported(DataFlavor.stringFlavor)) {
             runCatching { contents.getTransferData(DataFlavor.stringFlavor) as String }.getOrNull()
