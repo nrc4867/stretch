@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.gallery
 
+import dev.chieppa.stretch.ui.opensOnPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -305,7 +306,7 @@ private fun OverlaysDemo() {
     var taper by remember { mutableStateOf(true) }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box {
-            Button("Open menu", { menu = true }, icon = StretchIcons.More)
+            Button("Open menu", { menu = true }, Modifier.opensOnPress(menu) { menu = true }, icon = StretchIcons.More)
             Menu(menu, { menu = false }) {
                 MenuItem("Duplicate", { menu = false }, icon = StretchIcons.Plus, keys = "Ctrl D")
                 MenuItem("Mirror to other side", { menu = false }, icon = StretchIcons.Mirror, keys = "M")
@@ -317,7 +318,7 @@ private fun OverlaysDemo() {
         }
         Tooltip("Mirror to other side", listOf("M")) { IconButton(StretchIcons.Mirror, "Mirror", {}, quiet = false) }
         Box {
-            Button("Brush settings", { popover = true }, icon = StretchIcons.Pen)
+            Button("Brush settings", { popover = true }, Modifier.opensOnPress(popover) { popover = true }, icon = StretchIcons.Pen)
             Popover(popover, { popover = false }, title = "Brush") {
                 SettingRow("Width") { Slider(width, { width = it }, "Width", Modifier.weight(1f), valueRange = 0.5f..8f) }
                 SettingRow("Taper") { Spacer(Modifier.weight(1f)); Toggle(taper, { taper = it }, "Taper") }

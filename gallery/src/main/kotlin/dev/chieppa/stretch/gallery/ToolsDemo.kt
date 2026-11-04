@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.gallery
 
+import dev.chieppa.stretch.ui.opensOnPress
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -177,7 +178,7 @@ private fun ColorDemo() {
     Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Top) {
         ColorPicker(color, { color = it }, recent = recent, onPickFromScreen = {})
         Box {
-            Swatch(color, color.toHex(), popover, { popover = true })
+            Swatch(color, color.toHex(), popover, { popover = true }, Modifier.opensOnPress(popover) { popover = true })
             Popover(popover, { popover = false }, title = "Fill", width = 268.dp) { ColorPicker(color, { color = it }, recent = recent) }
         }
     }

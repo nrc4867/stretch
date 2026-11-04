@@ -100,7 +100,7 @@ private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.dragItem
 @Composable
 private fun Modifier.lifted(shape: Shape): Modifier {
     val c = Stretch.colors
-    return zIndex(1f).stretchShadow(Stretch.shadows.pop, shape).clip(shape).background(c.surfaceFloat).border(Stretch.stroke, c.lineStrong, shape)
+    return zIndex(1f).stretchShadow(Stretch.shadows.pop, shape).framedSurface(shape, c.surfaceFloat, c.lineStrong, Stretch.stroke)
 }
 
 /**

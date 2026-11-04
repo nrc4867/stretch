@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import dev.chieppa.stretch.ui.opensOnPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
@@ -216,7 +217,7 @@ private fun <T : Any> PickerField(
                 },
             placeholder = placeholder,
             contentDescription = contentDescription,
-            trailing = { FieldIcon(icon, contentDescription = openDescription, onClick = { open = true }) },
+            trailing = { FieldIcon(icon, Modifier.opensOnPress(open) { open = true }, contentDescription = openDescription, onClick = { open = true }) },
             error = if (invalid) invalidMessage else null,
         )
         Popover(open, { open = false }, width = popoverWidth) { picker { open = false } }

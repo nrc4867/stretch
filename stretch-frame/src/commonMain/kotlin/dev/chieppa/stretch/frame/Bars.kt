@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import dev.chieppa.stretch.ui.opensOnPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -161,7 +162,8 @@ private val MIN_DOCUMENT = 48.dp
 
 /**
  * One window-level action for [TopBarActions]: shown as an icon button with a tooltip, or as a menu item once it
- * folds into the More menu. [popup], such as a [Popover], opens from wherever the action is showing.
+ * folds into the More menu. [popup], such as a [Popover], opens from wherever the action is showing; pass whether it
+ * is open as [popupOpen] and the action's button opens it on press.
  */
 class BarAction(
     val icon: ImageVector,
@@ -169,14 +171,16 @@ class BarAction(
     val onClick: () -> Unit,
     val keys: List<String> = emptyList(),
     val enabled: Boolean = true,
+    val popupOpen: Boolean? = null,
     val popup: @Composable () -> Unit = {},
 )
 
 /**
  * The standard top bar actions: undo, redo, the command palette and settings, then the app's [more]. Pass null to
  * leave one out. Put what settings opens, such as a [Popover], in [settingsPopup], so it anchors under the settings
- * button. [undoEnabled] and [redoEnabled] keep their buttons in place, faint, while there is nothing to take back or
- * bring back. Actions that do not fit fold, last first, into a More menu at the end.
+ * button, and whether it is open in [settingsOpen]. [undoEnabled] and [redoEnabled] keep their buttons in place, faint,
+ * while there is nothing to take back or bring back. Actions that do not fit fold, last first, into a More menu at the
+ * end.
  */
 @Composable
 fun TopBarActions(
@@ -187,6 +191,7 @@ fun TopBarActions(
     more: List<BarAction> = emptyList(),
     undoEnabled: Boolean = true,
     redoEnabled: Boolean = true,
+    settingsOpen: Boolean? = null,
     settingsPopup: @Composable () -> Unit = {},
 ) {
     val undo = stringResource(Res.string.undo)
@@ -197,7 +202,7 @@ fun TopBarActions(
         onUndo?.let { BarAction(StretchIcons.Undo, undo, it, listOf("Ctrl", "Z"), enabled = undoEnabled) },
         onRedo?.let { BarAction(StretchIcons.Redo, redo, it, listOf("Ctrl", "Shift", "Z"), enabled = redoEnabled) },
         onCommands?.let { BarAction(StretchIcons.Command, commands, it, listOf("Ctrl", "K")) },
-        onSettings?.let { BarAction(StretchIcons.Settings, settings, it, popup = settingsPopup) },
+        onSettings?.let { BarAction(StretchIcons.Settings, settings, it, popup = settingsPopup, popupOpen = settingsOpen) },
     ) + more
     OverflowActions(actions)
 }
@@ -217,7 +222,8 @@ private fun OverflowActions(actions: List<BarAction>) {
             {
                 actions.forEachIndexed { i, action ->
                     Box(Modifier.hiddenUnless(i < shown)) {
-                        Tooltip(action.label, action.keys.ifEmpty { null }) { IconButton(action.icon, action.label, action.onClick, enabled = action.enabled) }
+                        val press = action.popupOpen?.takeIf { action.enabled }?.let { Modifier.opensOnPress(it, action.onClick) } ?: Modifier
+                        Tooltip(action.label, action.keys.ifEmpty { null }) { IconButton(action.icon, action.label, action.onClick, press, enabled = action.enabled) }
                     }
                 }
             },
@@ -256,7 +262,7 @@ private fun Modifier.hiddenUnless(visible: Boolean): Modifier = if (visible) thi
 private fun MoreMenu(label: String, actions: List<BarAction>) {
     var open by remember { mutableStateOf(false) }
     Box {
-        Tooltip(label) { IconButton(StretchIcons.More, label, { open = true }) }
+        Tooltip(label) { IconButton(StretchIcons.More, label, { open = true }, Modifier.opensOnPress(open) { open = true }) }
         Menu(open && actions.isNotEmpty(), { open = false }) {
             actions.forEach { action ->
                 MenuItem(action.label, { open = false; action.onClick() }, icon = action.icon, keys = action.keys.joinToString(" ").ifEmpty { null }, enabled = action.enabled)

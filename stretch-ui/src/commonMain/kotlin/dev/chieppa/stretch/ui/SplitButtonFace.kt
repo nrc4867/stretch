@@ -40,6 +40,7 @@ fun SplitButtonFace(
     modifier: Modifier = Modifier,
     kind: ButtonKind = ButtonKind.Default,
     icon: ImageVector? = null,
+    menuOpen: Boolean = false,
 ) {
     val radius = Stretch.shapes.ctl
     val main = rememberControlState()
@@ -68,6 +69,7 @@ fun SplitButtonFace(
         Box(Modifier.fillMaxHeight().width(Stretch.stroke).background(edge))
         Box(
             Modifier
+                .opensOnPress(menuOpen, onOpen)
                 .fillMaxHeight()
                 .width(28.dp)
                 .focusRing(open, openShape, openFill)

@@ -28,7 +28,7 @@ fun SplitButton(
 ) {
     var open by remember { mutableStateOf(false) }
     Box(modifier) {
-        SplitButtonFace(text, onClick, menuDescription, { open = true }, kind = kind, icon = icon)
+        SplitButtonFace(text, onClick, menuDescription, { open = true }, kind = kind, icon = icon, menuOpen = open)
         Menu(open, { open = false }) { menu { open = false } }
     }
 }

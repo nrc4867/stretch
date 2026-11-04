@@ -489,7 +489,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
                     onCommands = { palette = true },
                     onSettings = { settings = true },
                     more = listOf(
-                        BarAction(StretchIcons.Folder, "Open", { fileMenu = true }, listOf("Ctrl", "O")) {
+                        BarAction(StretchIcons.Folder, "Open", { fileMenu = true }, listOf("Ctrl", "O"), popupOpen = fileMenu) {
                             Menu(fileMenu, { fileMenu = false }) {
                                 MenuItem("New", { fileMenu = false; registry[ActionId("new")]?.run?.invoke() }, StretchIcons.File)
                                 MenuItem("Open…", { fileMenu = false; chooseAndOpen() }, StretchIcons.Folder)
@@ -499,6 +499,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
                         },
                         BarAction(StretchIcons.Save, "Save", { save() }, listOf("Ctrl", "S")),
                     ),
+                    settingsOpen = settings,
                 ) {
                     Popover(settings, { settings = false }, title = "Settings") {
                         SettingRow("Show keys") { Spacer(Modifier.weight(1f)); Toggle(showKeys, { showKeys = it }, "Show key presses") }

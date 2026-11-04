@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import dev.chieppa.stretch.ui.opensOnPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
@@ -256,7 +257,7 @@ fun StretchApp(
 private fun DrawerMenuButton(placement: DrawerPlacement, canPopOut: Boolean, rtl: Boolean, change: ((FrameLayout) -> FrameLayout) -> Unit, onReset: () -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
-        IconButton(StretchIcons.More, stringResource(Res.string.drawer_menu), { open = true }, size = StretchSizes.seg)
+        IconButton(StretchIcons.More, stringResource(Res.string.drawer_menu), { open = true }, Modifier.opensOnPress(open) { open = true }, size = StretchSizes.seg)
         Menu(open, { open = false }) {
             if (canPopOut && !placement.detached) {
                 MenuItem(stringResource(Res.string.pop_out), { change { it.popOut(placement.id) }; open = false })

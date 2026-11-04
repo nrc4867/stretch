@@ -131,9 +131,7 @@ private fun ChartTooltip(x: Float, heading: String, rows: List<Triple<Color?, St
             .offset { IntOffset(left.roundToInt(), 0) }
             .widthIn(max = 150.dp)
             .stretchShadow(Stretch.shadows.pop, shape)
-            .clip(shape)
-            .background(c.surfaceFloat)
-            .border(Stretch.stroke, c.lineStrong, shape)
+            .framedSurface(shape, c.surfaceFloat, c.lineStrong, Stretch.stroke)
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {

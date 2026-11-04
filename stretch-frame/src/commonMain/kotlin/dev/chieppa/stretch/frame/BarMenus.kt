@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import dev.chieppa.stretch.ui.opensOnPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
@@ -57,6 +58,7 @@ private fun BarMenuTitle(title: String, open: Boolean, onClick: () -> Unit) {
     val pressed by source.collectIsPressedAsState()
     Box(
         Modifier
+            .opensOnPress(open, onClick)
             .height(StretchSizes.icon)
             .clip(Stretch.shapes.segShape)
             .background(

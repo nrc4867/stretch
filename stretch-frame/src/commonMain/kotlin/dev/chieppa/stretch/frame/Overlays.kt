@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import dev.chieppa.stretch.ui.opensOnPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -259,6 +260,7 @@ fun <T> Dropdown(
     Box(modifier) {
         Row(
             Modifier
+                .opensOnPress(open) { open = true }
                 .height(StretchSizes.ctl)
                 .clip(shape)
                 .background(c.surfaceFloat)
@@ -395,8 +397,7 @@ fun StretchDialog(
         Column(
             Modifier
                 .width(width)
-                .floating(shape, Stretch.shadows.float)
-                .background(c.surfacePanel),
+                .floating(shape, Stretch.shadows.float, fill = c.surfacePanel),
         ) {
             Box(
                 Modifier
