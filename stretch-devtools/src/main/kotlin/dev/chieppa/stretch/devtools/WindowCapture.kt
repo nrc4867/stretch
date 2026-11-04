@@ -17,6 +17,7 @@ private interface Dwm : Library {
 }
 
 private const val PW_RENDERFULLCONTENT = 2
+private const val OPAQUE = 0xFF shl 24
 private const val DWMWA_EXTENDED_FRAME_BOUNDS = 9
 
 private val dwm by lazy { Native.load("dwmapi", Dwm::class.java) }
@@ -35,10 +36,25 @@ internal fun capture(window: Window): BufferedImage {
     g.drawImage(printWindow(window), 0, 0, null)
     window.ownedWindows.filter { it.isShowing && it.width > 0 && it.height > 0 }.forEach { owned ->
         val at = visibleBounds(owned)
-        g.drawImage(printWindow(owned), at.x - bounds.x, at.y - bounds.y, null)
+        g.drawImage(seeThrough(printWindow(owned)), at.x - bounds.x, at.y - bounds.y, null)
     }
     g.dispose()
     return image
+}
+
+/**
+ * [image] with its pure black clear. PrintWindow reads a popup's see-through pixels as black, with no alpha to tell them
+ * apart, and themes draw their darkest ink lighter than that.
+ */
+internal fun seeThrough(image: BufferedImage): BufferedImage {
+    val out = BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_ARGB)
+    for (y in 0 until image.height) {
+        for (x in 0 until image.width) {
+            val rgb = image.getRGB(x, y) and 0xFFFFFF
+            if (rgb != 0) out.setRGB(x, y, OPAQUE or rgb)
+        }
+    }
+    return out
 }
 
 private fun hwnd(window: Window) = WinDef.HWND(Native.getWindowPointer(window))

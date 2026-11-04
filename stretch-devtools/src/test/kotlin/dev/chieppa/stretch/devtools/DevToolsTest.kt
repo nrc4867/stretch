@@ -56,4 +56,13 @@ class DevToolsTest {
 
         assertEquals(404, get(port, "/capture?window=no-such-window").statusCode())
     }
+
+    @Test
+    fun aPopupsSeeThroughPixelsStaySeeThrough() {
+        val popup = java.awt.image.BufferedImage(2, 1, java.awt.image.BufferedImage.TYPE_INT_RGB)
+        popup.setRGB(1, 0, 0x1A1416)
+        val shown = seeThrough(popup)
+        kotlin.test.assertEquals(0, shown.getRGB(0, 0) ushr 24)
+        kotlin.test.assertEquals(0xFF1A1416.toInt(), shown.getRGB(1, 0))
+    }
 }

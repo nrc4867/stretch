@@ -18,6 +18,8 @@ description: See the running Stretch gallery (or any app that calls DevTools.sta
    - 409 means the window is minimized; 404 means no window matched.
 4. Stop the gallery before rebuilding (a rebuild under a running gallery breaks it with ClassNotFoundException).
 
+An app drawing through OpenGL, as one with a native surface does, reads back unevenly through the OS: a band along the window's right and bottom edges can hold an earlier frame, so a status bar or rail there can show what an earlier screen had. Trust a UI test's semantics over that band.
+
 The endpoint only captures; it does not click or type. To see a state that needs input (focus, hover, an open menu), render it offscreen in a throwaway test with `runComposeUiTest` and `captureToImage`, then delete the test.
 
 Other apps opt in the same way: depend on `:stretch-devtools`, call `DevTools.startIfRequested()` at the start of `main`, and pass `-Dstretch.devtools=<port>` to the JVM.

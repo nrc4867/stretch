@@ -435,6 +435,9 @@ fun StretchDialog(
 class ToastState {
     internal var current by mutableStateOf<Toast?>(null)
 
+    /** Whether a toast is up, for a host that gives it a place only while it needs one. */
+    val showing: Boolean get() = current != null
+
     fun show(message: String, actionLabel: String? = null, onAction: () -> Unit = {}) {
         current = Toast(message, actionLabel, onAction, (current?.serial ?: 0) + 1)
     }
