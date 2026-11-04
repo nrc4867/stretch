@@ -70,8 +70,8 @@ import org.jetbrains.compose.resources.stringResource
  * One drawer an app offers: its rail icon, title and contents. [actions] go in its header before the menu; [badge]
  * goes on its rail button (see [dev.chieppa.stretch.ui.badgeCount]) and [keys] in its rail button's tooltip. [content]
  * is told where the drawer is showing: a tall side column or the wide bottom panel, so it can lay out for either.
- * [headerIcon] is the icon in its header when that differs from the rail's, as when a drawer's title follows the armed
- * tool. A drawer not [enabled] shows on the rail, faint, and does not open: a place kept for what is not built yet.
+ * [headerIcon] is the icon in its header and [railLabel] the name on its rail button, when those differ from the
+ * [icon] and [title], as when a drawer's title follows the armed tool. A drawer not [enabled] shows on the rail, faint, and does not open: a place kept for what is not built yet.
  */
 class DrawerSpec(
     val id: String,
@@ -81,6 +81,7 @@ class DrawerSpec(
     val badge: String? = null,
     val keys: List<String>? = null,
     val headerIcon: ImageVector = icon,
+    val railLabel: String = title,
     val enabled: Boolean = true,
     val actions: @Composable RowScope.() -> Unit = {},
     val content: @Composable ColumnScope.(DrawerPosition) -> Unit,
@@ -123,7 +124,7 @@ fun StretchApp(
         side = side,
         modifier = if (windows == null) Modifier else Modifier.onGloballyPositioned { windows.railBounds(side, it.boundsInWindow()) },
         windowDrop = windows?.dockTarget?.takeIf { it.side == side }?.bottom,
-        items = layout.on(side).mapNotNull { placement -> specs[placement.id]?.let { RailItem(it.id, it.icon, it.title, placement.inRailFoot, it.badge, it.keys, it.enabled) } },
+        items = layout.on(side).mapNotNull { placement -> specs[placement.id]?.let { RailItem(it.id, it.icon, it.railLabel, placement.inRailFoot, it.badge, it.keys, it.enabled) } },
         open = layout.on(side).filter { it.open || it.detached }.map { it.id }.toSet(),
         onToggle = { id ->
             if (current[id]?.detached == true) raises[id] = (raises[id] ?: 0) + 1 else change(current.toggle(id))

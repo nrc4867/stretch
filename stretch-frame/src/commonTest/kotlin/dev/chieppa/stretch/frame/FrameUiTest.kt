@@ -204,7 +204,7 @@ class FrameUiTest {
             StretchApp(
                 layout,
                 { layout = it },
-                listOf(DrawerSpec("rig", "Rig", StretchIcons.Layers, enabled = false) {}, DrawerSpec("part", "Part", StretchIcons.Layers, headerIcon = StretchIcons.Pen) {}),
+                listOf(DrawerSpec("rig", "Rig", StretchIcons.Layers, enabled = false) {}, DrawerSpec("part", "Outline", StretchIcons.Layers, headerIcon = StretchIcons.Pen, railLabel = "Part") {}),
                 onResetLayout = {},
                 topBar = { TopBar("App", "Untitled") },
             ) { Viewport {} }
