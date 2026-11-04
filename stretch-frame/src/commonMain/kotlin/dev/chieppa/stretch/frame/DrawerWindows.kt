@@ -2,6 +2,7 @@ package dev.chieppa.stretch.frame
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Dp
 
@@ -32,6 +33,16 @@ interface DrawerWindowHost {
 
     /** Where the app's window shows the rail on [side], in its window's pixels, so drawer windows can dock there. */
     fun railBounds(side: Side, bounds: Rect?)
+
+    /**
+     * [content], a [size] square, above every window with its top left corner at [at], in the dp of [WindowBounds], or
+     * hidden while [at] is null. It follows a drag, including past the app's window, and never takes focus or input.
+     */
+    @Composable
+    fun DragFloat(at: Offset?, size: Dp, content: @Composable () -> Unit)
+
+    /** Where [point], in the app window's pixels, is on screen, in the dp of [WindowBounds]. */
+    fun screenPosition(point: Offset): Offset
 
     /** The rail and group a drawer window would dock into if let go now, while one is dragged over a rail. */
     val dockTarget: DockTarget?

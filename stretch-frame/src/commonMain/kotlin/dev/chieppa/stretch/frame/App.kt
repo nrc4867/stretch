@@ -94,9 +94,10 @@ class DrawerSpec(
  * for their widths they are shown narrower, down to [FrameLayout.MIN_WIDTH], so the viewport keeps
  * [FrameLayout.MIN_VIEWPORT] as long as it can. Drawers resize from their
  * inner edge, the split between stacked drawers and the bottom panel's
- * top edge; rail buttons reorder by dragging. Where the platform has a [LocalDrawerWindows] host, a drawer's menu
- * pops it out into a window of its own; its rail button stays lit and brings the window to the front, and docking
- * or closing the window puts it back, as does dragging the window onto either rail. The layout is the app's state: every change comes back through
+ * top edge; rail buttons drag to any slot on either rail. Where the platform has a [LocalDrawerWindows] host, a
+ * drawer's menu pops it out into a window of its own, as does letting its rail button go away from the rails, which
+ * opens the window there; its rail button stays lit and brings the window to the front, and docking or closing the
+ * window puts it back, as does dragging the window onto either rail. The layout is the app's state: every change comes back through
  * [onLayoutChange]. Pass a [keyCast] to show key presses over the viewport and a [statusBar] for the window's foot.
  */
 @Composable
@@ -118,6 +119,7 @@ fun StretchApp(
     val windows = LocalDrawerWindows.current
     val raises = remember { mutableStateMapOf<String, Int>() }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val railDrag = remember { RailDragState() }
 
     @Composable
     fun rail(side: Side) = Rail(
@@ -129,7 +131,16 @@ fun StretchApp(
         onToggle = { id ->
             if (current[id]?.detached == true) raises[id] = (raises[id] ?: 0) + 1 else change(current.toggle(id))
         },
-        onMove = { id, drop -> change(current.move(id, side, drop.bottom, drop.index)) },
+        onMove = { id, to, drop -> change(current.move(id, to, drop.bottom, drop.index)) },
+        drag = railDrag,
+        canPopOut = { id -> windows != null && current[id]?.detached == false && specs[id]?.enabled == true },
+        onPopOut = { id, pointer ->
+            val placement = current[id]
+            if (windows != null && placement != null) {
+                val bounds = windowUnderPointer(windows.screenPosition(pointer), placement.windowWidth, placement.windowHeight)
+                change(current.popOut(id).moveWindow(id, bounds))
+            }
+        },
     )
 
     @Composable

@@ -33,6 +33,12 @@ data class DrawerPlacement(
     /** Whether its rail button sits in the group at the foot of the rail. */
     val inRailFoot: Boolean get() = bottom && !railTop
 
+    /** The width of its window, in dp. */
+    val windowWidth: Float get() = window?.width ?: width
+
+    /** The height of its window, in dp. */
+    val windowHeight: Float get() = window?.height ?: FrameLayout.DEFAULT_WINDOW_HEIGHT
+
     val position: DrawerPosition
         get() = when {
             detached -> DrawerPosition.Window
@@ -173,6 +179,7 @@ data class FrameLayout(
         const val MAX_BOTTOM_HEIGHT = 480f
         const val DEFAULT_BOTTOM_HEIGHT = 220f
         const val MIN_BOTTOM_SHARE = 0.25f
+        const val DEFAULT_WINDOW_HEIGHT = 520f
 
         /** The narrowest the viewport gets while side drawers are open; past it the drawers are shown narrower. */
         const val MIN_VIEWPORT = 240f

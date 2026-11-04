@@ -16,6 +16,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -32,6 +33,7 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.withKeyDown
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.test.setStretchContent
 import dev.chieppa.stretch.theme.StretchIcons
@@ -142,6 +144,15 @@ class FrameEditTest {
 
         override fun railBounds(side: Side, bounds: Rect?) {
             rails[side] = bounds
+        }
+
+        override fun screenPosition(point: Offset) = point + Offset(1000f, 2000f)
+
+        var floatAt: Offset? = null
+
+        @Composable
+        override fun DragFloat(at: Offset?, size: Dp, content: @Composable () -> Unit) {
+            floatAt = at
         }
 
         @Composable
@@ -279,6 +290,112 @@ class FrameEditTest {
         assertEquals(RailDrop(false, 2), railDrop(98f, 600f, 3, 1, 44f, 8f))
         assertEquals(RailDrop(true, 1), railDrop(580f, 600f, 3, 1, 44f, 8f))
         assertEquals(RailDrop(true, 0), railDrop(520f, 600f, 3, 1, 44f, 8f))
+    }
+
+    @Test
+    fun aRailIsNearOnlyWithinItsSlack() {
+        val rails = mapOf(Side.Left to Rect(0f, 0f, 48f, 600f), Side.Right to Rect(952f, 0f, 1000f, 600f))
+        assertEquals(Side.Left, railNear(20f, rails, 48f))
+        assertEquals(Side.Left, railNear(96f, rails, 48f))
+        assertEquals(null, railNear(97f, rails, 48f))
+        assertEquals(null, railNear(500f, rails, 48f))
+        assertEquals(null, railNear(-49f, rails, 48f))
+        assertEquals(Side.Right, railNear(904f, rails, 48f))
+        assertEquals(Side.Right, railNear(60f, mapOf(Side.Left to Rect(0f, 0f, 48f, 600f), Side.Right to Rect(50f, 0f, 98f, 600f)), 48f))
+    }
+
+    /** Drags the rail button labelled [label] by [dp] and lets go. */
+    private fun ComposeUiTest.dragRailButton(label: String, dp: Offset) {
+        onNodeWithContentDescription(label).performTouchInput {
+            down(center)
+            repeat(20) { moveBy(dp * density / 20f) }
+            up()
+        }
+        waitForIdle()
+    }
+
+    /** The app at a known size, so drags have a center and an opposite rail to reach. */
+    private fun ComposeUiTest.showApp(start: FrameLayout, windows: DrawerWindowHost?, specs: List<DrawerSpec> = drawers, onChange: (FrameLayout) -> Unit) {
+        setStretchContent {
+            CompositionLocalProvider(LocalDrawerWindows provides windows) {
+                var layout by remember { mutableStateOf(start) }
+                Box(Modifier.size(1000.dp, 700.dp)) {
+                    StretchApp(layout, { layout = it; onChange(it) }, specs, onResetLayout = {}, topBar = { TopBar("App", "Untitled") }) { Viewport {} }
+                }
+            }
+        }
+        waitForIdle()
+    }
+
+    @Test
+    fun aRailButtonDraggedAcrossLandsOnTheOppositeRail() = runComposeUiTest {
+        var layout = FrameLayout(listOf(DrawerPlacement("layers", Side.Left), DrawerPlacement("help", Side.Right)))
+        showApp(layout, InlineWindows()) { layout = it }
+        val from = onNodeWithContentDescription("Layers").getUnclippedBoundsInRoot()
+        val to = onNodeWithContentDescription("Help").getUnclippedBoundsInRoot()
+        dragRailButton("Layers", Offset((to.left - from.left).value, 0f))
+        assertEquals(Side.Right, layout["layers"]!!.side)
+        assertEquals(false, layout["layers"]!!.detached)
+        assertEquals(listOf("layers", "help"), layout.on(Side.Right).map { it.id })
+    }
+
+    @Test
+    fun aRailButtonDraggedToTheCenterPopsOutUnderThePointer() = runComposeUiTest {
+        var layout = FrameLayout(listOf(DrawerPlacement("help", Side.Left, open = true, width = 320f)))
+        showApp(layout, InlineWindows()) { layout = it }
+        dragRailButton("Help", Offset(400f, 100f))
+        val help = layout["help"]!!
+        assertTrue(help.detached && !help.open, "popped out: $help")
+        assertEquals(Side.Left, help.side, "its rail button stays where it was")
+        assertEquals(320f, help.window!!.width)
+        assertEquals(FrameLayout.DEFAULT_WINDOW_HEIGHT, help.window!!.height)
+        assertTrue(help.window!!.x > 1000f && help.window!!.y > 2000f, "opens where it was let go: ${help.window}")
+        onNodeWithTag("window Help").assertExists()
+    }
+
+    @Test
+    fun aRailButtonAwayFromTheRailsFloatsInItsOwnWindow() = runComposeUiTest {
+        val windows = InlineWindows()
+        showApp(start(), windows) {}
+        // While it hovers by the rail its floating copy has the same label, so this takes the button itself.
+        val node = onAllNodesWithContentDescription("Layers").onFirst()
+        node.performTouchInput {
+            down(center)
+            repeat(20) { moveBy(Offset(1f, 0f)) }
+        }
+        waitForIdle()
+        assertEquals(null, windows.floatAt, "hidden while it can land on the rail")
+        node.performTouchInput { repeat(20) { moveBy(Offset(20f, 0f)) } }
+        waitForIdle()
+        assertTrue(windows.floatAt!!.x > 1400f && windows.floatAt!!.y > 2000f, "follows the pointer on screen: ${windows.floatAt}")
+        node.performTouchInput { up() }
+    }
+
+    @Test
+    fun aRailButtonLetGoNearItsRailStaysDocked() = runComposeUiTest {
+        var layout = start()
+        showApp(layout, InlineWindows()) { layout = it }
+        dragRailButton("Layers", Offset(40f, 0f))
+        assertTrue(layout.detached.isEmpty())
+        assertEquals(Side.Left, layout["layers"]!!.side)
+    }
+
+    @Test
+    fun withoutAWindowHostARailButtonLetGoInTheCenterGoesBack() = runComposeUiTest {
+        val before = start()
+        var layout = before
+        showApp(layout, null) { layout = it }
+        dragRailButton("Layers", Offset(400f, 0f))
+        assertEquals(before, layout)
+    }
+
+    @Test
+    fun aDrawerNotEnabledDoesNotPopOutFromItsRailButton() = runComposeUiTest {
+        val before = FrameLayout(listOf(DrawerPlacement("rig", Side.Left)))
+        var layout = before
+        showApp(layout, InlineWindows(), listOf(DrawerSpec("rig", "Rig", StretchIcons.Layers, enabled = false) {})) { layout = it }
+        dragRailButton("Rig", Offset(400f, 0f))
+        assertEquals(before, layout)
     }
 
     @Test

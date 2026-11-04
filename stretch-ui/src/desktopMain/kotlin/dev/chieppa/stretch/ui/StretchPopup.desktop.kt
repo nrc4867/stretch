@@ -170,7 +170,7 @@ private fun PopupWindow(
 }
 
 /** A bare window for a popup. It is not resizable, or Compose would put drag handles that move it along its edges. */
-internal fun newPopupWindow(owner: Window, focusable: Boolean) = ComposeDialog(owner, Dialog.ModalityType.MODELESS).apply {
+fun newPopupWindow(owner: Window, focusable: Boolean) = ComposeDialog(owner, Dialog.ModalityType.MODELESS).apply {
     isUndecorated = true
     isResizable = false
     isTransparent = true
