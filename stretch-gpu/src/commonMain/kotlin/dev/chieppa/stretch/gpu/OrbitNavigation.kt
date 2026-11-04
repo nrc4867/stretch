@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.gpu
 
+import dev.chieppa.stretch.frame.wheelNotches
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -39,7 +40,7 @@ fun Modifier.orbitNavigation(camera: OrbitCamera): Modifier = composed {
                     when {
                         event.type == PointerEventType.Scroll -> {
                             val change = event.changes.first()
-                            camera.dollyBy(exp(-change.scrollDelta.y * WHEEL_DOLLY))
+                            camera.dollyBy(exp(-change.wheelNotches.y * WHEEL_DOLLY))
                             change.consume()
                         }
                         event.buttons.isTertiaryPressed && event.changes.any { it.type == PointerType.Mouse } -> {

@@ -32,11 +32,11 @@ kotlin {
             implementation(project(":stretch-frame"))
             implementation(project(":stretch-document"))
             implementation(project(":stretch-core"))
+            implementation(project(":stretch-gpu"))
         }
         val desktopMain by getting {
             resources.srcDir(tasks.named<GenerateAppIdentity>("generateAppIdentity").flatMap { it.resources })
             dependencies {
-                implementation(project(":stretch-gpu"))
                 implementation(project(":stretch-devtools"))
                 implementation(compose.desktop.currentOs)
                 implementation(libs.kotlinx.coroutines.swing)

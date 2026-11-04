@@ -4,8 +4,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.window.ComposeViewport
 import dev.chieppa.stretch.ui.focusHome
 import kotlinx.browser.document
@@ -13,6 +16,9 @@ import kotlinx.browser.document
 private const val FULL = "100%"
 private const val NO_SPACE = "0"
 private const val HIDDEN = "hidden"
+
+/** Compose pixels per CSS pixel at the page's root, whatever interface size a theme puts on the content inside. */
+internal val LocalPageDensity = staticCompositionLocalOf { 1f }
 
 /**
  * Runs the app as this page: [content] fills the browser's viewport and the tab is titled [title]. The page's
@@ -30,7 +36,9 @@ fun stretchPage(title: String, content: @Composable () -> Unit) {
     body.style.overflowX = HIDDEN
     body.style.overflowY = HIDDEN
     ComposeViewport(body) {
-        Box(Modifier.fillMaxSize().focusHome()) { content() }
+        CompositionLocalProvider(LocalPageDensity provides LocalDensity.current.density) {
+            Box(Modifier.fillMaxSize().focusHome()) { content() }
+        }
     }
 }
 

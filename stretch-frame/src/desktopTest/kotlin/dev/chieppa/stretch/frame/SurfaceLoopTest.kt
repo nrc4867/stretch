@@ -23,7 +23,7 @@ class SurfaceLoopTest {
         val detached = CountDownLatch(1)
         @Volatile var frames = CountDownLatch(1)
 
-        override fun attach(handle: SurfaceHandle) {
+        override suspend fun attach(handle: SurfaceHandle) {
             calls += "attach"
         }
 
@@ -91,7 +91,7 @@ class SurfaceLoopTest {
         var failure: Throwable? = null
         val renderer = object : SurfaceRenderer<Unit> {
             var detached = false
-            override fun attach(handle: SurfaceHandle) = Unit
+            override suspend fun attach(handle: SurfaceHandle) = Unit
             override fun render(state: Unit, size: SurfaceSize): Boolean = throw boom
             override fun detach() {
                 detached = true
@@ -109,7 +109,7 @@ class SurfaceLoopTest {
     private class Picker : SurfaceRenderer<String>, SurfacePicker<String> {
         val frames = CountDownLatch(1)
 
-        override fun attach(handle: SurfaceHandle) = Unit
+        override suspend fun attach(handle: SurfaceHandle) = Unit
 
         override fun render(state: String, size: SurfaceSize): Boolean {
             frames.countDown()
@@ -118,7 +118,7 @@ class SurfaceLoopTest {
 
         override fun detach() = Unit
 
-        override fun pick(x: Int, y: Int): String = "$x,$y on ${Thread.currentThread().name}"
+        override suspend fun pick(x: Int, y: Int): String = "$x,$y on ${Thread.currentThread().name.substringBefore(" @")}"
     }
 
     @Test

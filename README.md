@@ -1,6 +1,6 @@
 # Stretch
 
-A shared app shell for creative desktop tools, built on Kotlin and Compose Multiplatform. Stretch brings the design system, the components, the app frame and the plumbing every creative tool needs. An app picks a theme and adds only what is its own.
+A shared app shell for creative tools on the desktop and in the browser, built on Kotlin and Compose Multiplatform. Stretch brings the design system, the components, the app frame and the plumbing every creative tool needs. An app picks a theme and adds only what is its own.
 
 ![An app frame built with Stretch: layers and brush drawers, a canvas with rulers and selection handles, and a timeline](docs/images/app-frame.png)
 
@@ -55,6 +55,7 @@ You need JDK 25 for Gradle. Gradle fetches the rest, including the JetBrains Run
 ```
 ./gradlew :gallery:run         # every component in every theme, and an app frame demo
 ./gradlew :gallery:run -Pgpu   # adds the 3D page (Windows, needs a GPU)
+./gradlew :gallery:wasmJsBrowserProductionRun   # the gallery in a browser, with the 3D page where WebGPU is available
 ```
 
 ## Build an app on it
@@ -123,13 +124,13 @@ fun main() = application {
 | `stretch-gpu`, `stretch-gpu-native` | Optional WebGPU viewports and their wgpu-native bindings |
 | `stretch-gradle-plugin` | App name, id and icon |
 | `stretch-test` | Command scenarios and Compose UI test helpers |
-| `gallery` | Every component in every theme |
+| `gallery` | Every component in every theme, on the desktop and in the browser |
 
 To work on Stretch itself, see [Developing Stretch](docs/development.md).
 
 ## Platforms
 
-Stretch runs on the desktop JVM. Windows has everything: the custom title bar, pen, touch and GPU surfaces. macOS has the custom title bar, the native menu bar and Mac key symbols. Linux has the app and its components with the system title bar and mouse input.
+Stretch runs on the desktop JVM and in the browser. Windows has everything: the custom title bar, pen, touch and GPU surfaces. macOS has the custom title bar, the native menu bar and Mac key symbols. Linux has the app and its components with the system title bar and mouse input. In the browser, through Kotlin/Wasm, the app is a static site: components, frame, documents and WebGPU viewports all run there, without pop-out drawers, pen tilt or a native title bar. See [Using Stretch from an app](docs/using-stretch.md).
 
 ## License
 

@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import kotlinx.coroutines.runBlocking
 import kotlin.concurrent.thread
 
 /** How long closing waits for the render thread to detach its renderer. */
@@ -60,7 +61,7 @@ internal class SurfaceLoop<S>(
 
     private fun run() {
         try {
-            renderer.attach(handle)
+            runBlocking { renderer.attach(handle) }
             try {
                 loop()
             } finally {
@@ -89,18 +90,7 @@ internal class SurfaceLoop<S>(
                 animating = !currentSize.isEmpty && renderer.render(current, currentSize)
                 if (!currentSize.isEmpty) drawn = currentSize
             }
-            picks?.let { runPicks(it, drawn) }
-        }
-    }
-
-    private fun runPicks(queue: SurfacePickQueue<*>, drawn: SurfaceSize) {
-        @Suppress("UNCHECKED_CAST")
-        val picker = renderer as? SurfacePicker<Any?>
-        @Suppress("UNCHECKED_CAST")
-        (queue as SurfacePickQueue<Any?>).drain { at ->
-            val x = at.x.toInt()
-            val y = at.y.toInt()
-            if (picker == null || drawn.isEmpty || x !in 0 until drawn.width || y !in 0 until drawn.height) null else picker.pick(x, y)
+            picks?.let { runBlocking { it.answerWith(renderer, drawn) } }
         }
     }
 }

@@ -100,7 +100,7 @@ fun Modifier.viewportNavigation(camera: ViewportCamera): Modifier =
                         event.changes.all { it.isConsumed } -> Unit
                         event.type == PointerEventType.Scroll -> {
                             val change = event.changes.first()
-                            val delta = change.scrollDelta
+                            val delta = change.wheelNotches
                             if (event.keyboardModifiers.isCtrlPressed || event.keyboardModifiers.isMetaPressed) {
                                 camera.zoomBy(exp(-delta.y * WHEEL_ZOOM), change.position)
                             } else {

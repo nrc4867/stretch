@@ -99,13 +99,13 @@ class GalleryHost {
 
 val LocalGalleryHost = staticCompositionLocalOf { GalleryHost() }
 
-/** Every component and the app frame in every theme, and [gpuPage] when there is one. Labels here are examples, not app text. */
+/** Every component and the app frame in every theme, and [gpuPage] when there is one, opening on it with [startOnGpu]. Labels here are examples, not app text. */
 @Composable
-fun Gallery(gpuPage: (@Composable () -> Unit)? = null, bar: GalleryBar = plainBar) {
+fun Gallery(gpuPage: (@Composable () -> Unit)? = null, startOnGpu: Boolean = false, bar: GalleryBar = plainBar) {
     var themeChoice by remember { mutableStateOf<StretchTheme?>(StretchThemes.Ink) }
     val theme = themeChoice ?: StretchThemes.system()
     var scale by remember { mutableFloatStateOf(1f) }
-    var page by remember { mutableStateOf(if (gpuPage != null) Page.Gpu else Page.Components) }
+    var page by remember { mutableStateOf(if (startOnGpu) Page.Gpu else Page.Components) }
     StretchTheme(theme, scale) {
         val switcher: @Composable () -> Unit = {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
