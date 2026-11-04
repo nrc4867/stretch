@@ -2,6 +2,8 @@ package dev.chieppa.stretch.gpu.webgpu
 
 /** Records commands for one submission. [finish] turns them into a [GpuCommandBuffer]; the encoder is spent then. */
 expect class GpuCommandEncoder : AutoCloseable {
+    override fun close()
+
     fun beginRenderPass(colors: List<ColorAttachment>, depth: DepthAttachment? = null, label: String? = null): GpuRenderPass
 
     /**

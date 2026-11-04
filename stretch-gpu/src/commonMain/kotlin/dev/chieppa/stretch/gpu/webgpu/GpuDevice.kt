@@ -5,6 +5,8 @@ package dev.chieppa.stretch.gpu.webgpu
  * commands. Made by a [dev.chieppa.stretch.gpu.GpuContext]'s session; use it from one thread at a time.
  */
 expect class GpuDevice : AutoCloseable {
+    override fun close()
+
     val queue: GpuQueue
 
     fun createBuffer(size: Long, usage: BufferUsage, label: String? = null): GpuBuffer

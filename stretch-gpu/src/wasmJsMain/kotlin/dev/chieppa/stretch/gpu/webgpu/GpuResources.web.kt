@@ -16,7 +16,7 @@ abstract class GpuJsHandle internal constructor(internal val handle: JsAny) : Au
 }
 
 actual class GpuBuffer internal constructor(handle: JsAny, actual val size: Long) : GpuJsHandle(handle) {
-    override fun close() = destroyBuffer(handle)
+    actual override fun close() = destroyBuffer(handle)
 }
 
 /** With [owned] false the texture belongs to a canvas, which destroys it itself. */
@@ -29,7 +29,7 @@ actual class GpuTexture internal constructor(
 ) : GpuJsHandle(handle) {
     actual fun createView(): GpuTextureView = GpuTextureView(textureView(handle))
 
-    override fun close() {
+    actual override fun close() {
         if (owned) destroyTexture(handle)
     }
 }

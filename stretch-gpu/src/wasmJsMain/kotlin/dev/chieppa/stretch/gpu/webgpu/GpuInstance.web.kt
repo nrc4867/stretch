@@ -61,7 +61,7 @@ internal actual class GpuSurface(private val context: JsAny) : AutoCloseable {
 
     actual fun present(): Boolean = true
 
-    override fun close() = contextUnconfigure(context)
+    actual override fun close() = contextUnconfigure(context)
 }
 
 /** WebGPU as the browser offers it: the browser picks the API underneath, so a backend choice has no effect. */
@@ -80,7 +80,7 @@ internal actual class GpuInstance private constructor(
         return TextureFormat.entries.filter { it.webName == preferred }
     }
 
-    override fun close() {
+    actual override fun close() {
         surface?.close()
         device.close()
     }

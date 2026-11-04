@@ -4,6 +4,8 @@ import dev.chieppa.stretch.frame.SurfaceHandle
 
 /** A surface frames are presented to. */
 internal expect class GpuSurface : AutoCloseable {
+    override fun close()
+
     fun configure(device: GpuDevice, format: TextureFormat, width: Int, height: Int, presentMode: PresentMode)
 
     /**
@@ -18,6 +20,8 @@ internal expect class GpuSurface : AutoCloseable {
 
 /** A WebGPU instance with the adapter and device it picked, and the surface it presents to when it has one. */
 internal expect class GpuInstance : AutoCloseable {
+    override fun close()
+
     val surface: GpuSurface?
     val device: GpuDevice
 

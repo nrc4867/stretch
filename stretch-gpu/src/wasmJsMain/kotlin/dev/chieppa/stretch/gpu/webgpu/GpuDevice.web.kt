@@ -109,7 +109,7 @@ actual class GpuDevice internal constructor(handle: JsAny) : GpuJsHandle(handle)
         return ByteArray(bytes.length) { bytes[it] }
     }
 
-    override fun close() = deviceDestroy(handle)
+    actual override fun close() = deviceDestroy(handle)
 }
 
 private fun pipelineDescriptor(spec: RenderPipelineSpec): JsAny = jsObject {

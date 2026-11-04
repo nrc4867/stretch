@@ -38,7 +38,7 @@ internal actual class GpuInstance private constructor(
 
     actual fun surfaceFormats(): List<TextureFormat> = surface?.formats(adapter).orEmpty()
 
-    override fun close() {
+    actual override fun close() {
         device.close()
         surface?.close()
         wgpu_h.wgpuAdapterRelease(adapter)

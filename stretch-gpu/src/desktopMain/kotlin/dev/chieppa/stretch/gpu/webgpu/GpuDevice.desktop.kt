@@ -107,7 +107,7 @@ actual class GpuDevice internal constructor(handle: MemorySegment, private val i
         bytes
     }
 
-    override fun close() {
+    actual override fun close() {
         queue.close()
         super.close()
     }
