@@ -52,7 +52,7 @@ IntelliJ IDEA: open the folder; the Gallery and Check run configurations are inc
 
 ## macOS
 
-No one develops on a Mac at the moment, so the `macos` CI job is how macOS gets seen: it runs `check`, the engine tests and packaging, and uploads pictures of the diff viewer, editor and HTML view as the `macos-engine-pictures` artifact. What only a person can check there: trackpad scrolling in an `HtmlView`, which goes through AWT's whole wheel steps, and a packaged app, where `restoreEngineFiles` in the Gradle plugin places the runtime's `Frameworks` by its best reading of the layout, unsigned.
+No one develops on a Mac at the moment, so the `macos` CI job is how macOS gets seen: it runs `check`, the engine tests and packaging, and uploads pictures of the diff viewer, editor and HTML view as the `macos-engine-pictures` artifact. What only a person can check there: how scrolling in an `HtmlView` feels, since the page scrolls by AWT's wheel events (fine steps included, at the rate Compose uses on macOS) rather than native gestures, and a packaged app, where `restoreEngineFiles` in the Gradle plugin places the runtime's `Frameworks` by its best reading of the layout, unsigned.
 
 ## Publishing
 

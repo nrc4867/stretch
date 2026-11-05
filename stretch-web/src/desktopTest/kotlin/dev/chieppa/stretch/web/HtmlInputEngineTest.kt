@@ -27,7 +27,7 @@ class HtmlInputEngineTest {
         <input id=i style="position:absolute;left:0;top:120px;width:200px;height:40px" oninput="if(this.value==='ok')location='https://result/typed'">
         <a id=a style="position:absolute;left:0;top:180px" href="https://result/link">link</a>
         <script>
-          addEventListener('scroll', () => { if (scrollY > 0) location = 'https://result/scrolled'; });
+          addEventListener('scroll', () => { if (scrollY > 50) location = 'https://result/scrolled'; });
           window.open('https://result/popup');
           alert('this must not stop the page');
           location.hash = 'still-here';

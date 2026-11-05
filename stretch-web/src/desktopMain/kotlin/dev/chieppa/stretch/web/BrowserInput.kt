@@ -18,6 +18,7 @@ import kotlin.math.roundToInt
 internal fun Modifier.browserPointerInput(density: Density, browser: () -> CefBrowser?, onPress: () -> Unit): Modifier =
     pointerInput(density) {
         awaitPointerEventScope {
+            val wheel = WheelPixels()
             while (true) {
                 val event = awaitPointerEvent(PointerEventPass.Main)
                 val page = browser() ?: continue
@@ -26,7 +27,7 @@ internal fun Modifier.browserPointerInput(density: Density, browser: () -> CefBr
                 val x = (at.x / density.density).roundToInt()
                 val y = (at.y / density.density).roundToInt()
                 if (event.type == PointerEventType.Press) onPress()
-                if (awt is MouseWheelEvent) page.sendMouseWheelEvent(wheelAt(awt, x, y)) else page.sendMouseEvent(mouseAt(awt, x, y))
+                if (awt is MouseWheelEvent) wheel.eventFor(awt, x, y)?.let(page::sendMouseWheelEvent) else page.sendMouseEvent(mouseAt(awt, x, y))
                 event.changes.forEach { it.consume() }
             }
         }
@@ -35,10 +36,6 @@ internal fun Modifier.browserPointerInput(density: Density, browser: () -> CefBr
 private fun mouseAt(event: MouseEvent, x: Int, y: Int) =
     MouseEvent(event.component, event.id, event.`when`, event.modifiersEx, x, y, event.xOnScreen, event.yOnScreen, event.clickCount, event.isPopupTrigger, event.button)
 
-private fun wheelAt(event: MouseWheelEvent, x: Int, y: Int) = MouseWheelEvent(
-    event.component, event.id, event.`when`, event.modifiersEx, x, y, event.xOnScreen, event.yOnScreen, event.clickCount, event.isPopupTrigger,
-    event.scrollType, event.scrollAmount, event.wheelRotation, event.preciseWheelRotation,
-)
 
 /**
  * Passes a key to [browser], whose own code picks the OS's key codes out of the AWT event. The page keeps what it is
