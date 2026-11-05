@@ -87,7 +87,7 @@ import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 
 /** Places a popup under its anchor, flipping above or shifting left when it would leave the window. */
-internal class BelowAnchor(private val gap: Int) : PopupPositionProvider {
+class BelowAnchor(private val gap: Int) : PopupPositionProvider {
     override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
         val x = anchorBounds.left.coerceAtMost(windowSize.width - popupContentSize.width).coerceAtLeast(0)
         val below = anchorBounds.bottom + gap
@@ -124,7 +124,7 @@ fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnSc
 
 /** The floating list a menu or context menu shows: as wide as its widest item, 200 to 360dp. */
 @Composable
-internal fun MenuPanel(content: @Composable ColumnScope.() -> Unit) {
+fun MenuPanel(content: @Composable ColumnScope.() -> Unit) {
     Column(
         Modifier
             .width(IntrinsicSize.Max)

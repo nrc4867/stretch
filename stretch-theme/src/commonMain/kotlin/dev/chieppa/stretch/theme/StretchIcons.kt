@@ -14,6 +14,12 @@ object StretchIcons {
             stroke("M8 12.5v-9M4.5 7L8 3.5 11.5 7")
         }
     }
+    val Bold: ImageVector by lazy {
+        icon("bold") {
+            stroke("M4.5 2.5h4.25a2.75 2.75 0 0 1 0 5.5H4.5z")
+            stroke("M4.5 8h5a2.75 2.75 0 0 1 0 5.5h-5z")
+        }
+    }
     val Calendar: ImageVector by lazy {
         icon("calendar") {
             stroke("M4 3.5h8a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1 -1.5 1.5h-8a1.5 1.5 0 0 1 -1.5 -1.5v-7a1.5 1.5 0 0 1 1.5 -1.5z")
@@ -60,10 +66,32 @@ object StretchIcons {
             stroke("M4 4l8 8M12 4l-8 8")
         }
     }
+    val Code: ImageVector by lazy {
+        icon("code") {
+            stroke("M5.5 4.500L2 8l3.5 3.5")
+            stroke("M10.5 4.500L14 8l-3.5 3.5")
+        }
+    }
     val Command: ImageVector by lazy {
         icon("command") {
             stroke("M3.5 3.5h9a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1 -1.5 1.5h-9a1.5 1.5 0 0 1 -1.5 -1.5v-6a1.5 1.5 0 0 1 1.5 -1.5z")
             stroke("M5 6.5L6.5 8 5 9.5M8 9.5h3")
+        }
+    }
+    val Diagram: ImageVector by lazy {
+        icon("diagram") {
+            stroke("M5.5 2h5v3.500h-5z")
+            stroke("M1.5 10.500h5V14h-5z")
+            stroke("M9.5 10.500h5V14h-5z")
+            stroke("M8 5.500V8")
+            stroke("M4 10.500V8h8v2.5")
+        }
+    }
+    val Divider: ImageVector by lazy {
+        icon("divider") {
+            stroke("M2 8h12")
+            stroke("M5 4h6")
+            stroke("M5 12h6")
         }
     }
     val DockBottom: ImageVector by lazy {
@@ -166,11 +194,25 @@ object StretchIcons {
             stroke("M2.5 6.2h11M2.5 9.8h11M6.2 2.5v11M9.8 2.5v11")
         }
     }
+    val Heading: ImageVector by lazy {
+        icon("heading") {
+            stroke("M3.5 2.500v11")
+            stroke("M12.5 2.500v11")
+            stroke("M3.5 8h9")
+        }
+    }
     val Help: ImageVector by lazy {
         icon("help") {
             stroke("M1.5 8a6.5 6.5 0 1 0 13 0a6.5 6.5 0 1 0 -13 0z")
             stroke("M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4")
             fill("M7.3 11.6a0.7 0.7 0 1 0 1.4 0a0.7 0.7 0 1 0 -1.4 0z")
+        }
+    }
+    val Image: ImageVector by lazy {
+        icon("image") {
+            stroke("M2.5 3h11v10h-11z")
+            stroke("M2.5 11l3-3 2.5 2.5 2-2 3.5 3.5")
+            stroke("M9.5 5.75a1 1 0 1 0 2 0a1 1 0 1 0 -2 0z")
         }
     }
     val Import: ImageVector by lazy {
@@ -186,6 +228,13 @@ object StretchIcons {
             fill("M7.3 5a0.7 0.7 0 1 0 1.4 0a0.7 0.7 0 1 0 -1.4 0z")
         }
     }
+    val Italic: ImageVector by lazy {
+        icon("italic") {
+            stroke("M6.5 2.5h5")
+            stroke("M4.5 13.5h5")
+            stroke("M9.5 2.5l-3 11")
+        }
+    }
     val Keyframe: ImageVector by lazy {
         icon("keyframe") {
             stroke("M8 2.5L13.5 8 8 13.5 2.5 8z")
@@ -196,6 +245,40 @@ object StretchIcons {
             stroke("M8 2.5l6 3-6 3-6-3z")
             stroke("M2 8l6 3 6-3")
             stroke("M2 10.5l6 3 6-3")
+        }
+    }
+    val Link: ImageVector by lazy {
+        icon("link") {
+            stroke("M6.5 9.500a2.5 2.5 0 0 0 3.5 0l2.5-2.500a2.5 2.5 0 0 0-3.5-3.500l-.8.8")
+            stroke("M9.5 6.500a2.5 2.5 0 0 0-3.5 0L3.5 9a2.5 2.5 0 0 0 3.5 3.500l.8-.8")
+        }
+    }
+    val ListBullet: ImageVector by lazy {
+        icon("list-bullet") {
+            stroke("M6 4h7.5")
+            stroke("M6 8h7.5")
+            stroke("M6 12h7.5")
+            stroke("M2.750 4h.01")
+            stroke("M2.750 8h.01")
+            stroke("M2.750 12h.01")
+        }
+    }
+    val ListOrdered: ImageVector by lazy {
+        icon("list-ordered") {
+            stroke("M7 4h6.5")
+            stroke("M7 8h6.5")
+            stroke("M7 12h6.5")
+            stroke("M2.5 3l1-.5v3")
+            stroke("M2.5 10.500c.3-.5 1.8-.6 1.8.3 0 .8-1.8 1.5-1.8 2.700h2")
+        }
+    }
+    val ListTask: ImageVector by lazy {
+        icon("list-task") {
+            stroke("M2.5 3h3v3h-3z")
+            stroke("M2.5 10h3v3h-3z")
+            stroke("M8 4.500h5.5")
+            stroke("M8 11.500h5.5")
+            stroke("M3.3 11.500l.8.8 1.4-1.8")
         }
     }
     val Lock: ImageVector by lazy {
@@ -267,6 +350,14 @@ object StretchIcons {
             stroke("M8 5.5v5M5.5 8h5")
         }
     }
+    val Quote: ImageVector by lazy {
+        icon("quote") {
+            stroke("M3 3.500v9")
+            stroke("M6.5 5h7")
+            stroke("M6.5 8h7")
+            stroke("M6.5 11h4.5")
+        }
+    }
     val Redo: ImageVector by lazy {
         icon("redo") {
             stroke("M10.5 3.5l3 3-3 3")
@@ -310,6 +401,12 @@ object StretchIcons {
             stroke("M1.5 9.5c2.2-3.3 4.3-3.3 6.5 0s4.3 3.3 6.5 0")
         }
     }
+    val SplitView: ImageVector by lazy {
+        icon("split-view") {
+            stroke("M2.5 3h11v10h-11z")
+            stroke("M8 3v10")
+        }
+    }
     val StepBack: ImageVector by lazy {
         icon("step-back") {
             stroke("M4 3.5v9")
@@ -322,6 +419,21 @@ object StretchIcons {
             stroke("M4 3.5v9l6.5-4.5z")
         }
     }
+    val Strikethrough: ImageVector by lazy {
+        icon("strikethrough") {
+            stroke("M2.5 8h11")
+            stroke("M11.5 4.5c-.5-1.3-1.8-2-3.5-2-2 0-3.5 1-3.5 2.7 0 .7.3 1.3.8 1.8")
+            stroke("M4.5 11.500c.5 1.3 1.8 2 3.5 2 2 0 3.5-1 3.5-2.7 0-.4-.1-.8-.3-1.1")
+        }
+    }
+    val Table: ImageVector by lazy {
+        icon("table") {
+            stroke("M2.5 3h11v10h-11z")
+            stroke("M2.5 6.500h11")
+            stroke("M2.5 9.750h11")
+            stroke("M8 3v10")
+        }
+    }
     val Theme: ImageVector by lazy {
         icon("theme") {
             stroke("M13 9.5A5.5 5.5 0 1 1 6.5 3a4.5 4.5 0 0 0 6.5 6.5z")
@@ -331,6 +443,13 @@ object StretchIcons {
         icon("undo") {
             stroke("M5.5 3.5l-3 3 3 3")
             stroke("M2.5 6.5H10a3.5 3.5 0 0 1 0 7H7")
+        }
+    }
+    val UnifiedView: ImageVector by lazy {
+        icon("unified-view") {
+            stroke("M2.5 3h11v10h-11z")
+            stroke("M5 6.500h6")
+            stroke("M5 9.500h6")
         }
     }
     val Warn: ImageVector by lazy {

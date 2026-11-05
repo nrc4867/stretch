@@ -28,6 +28,34 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew compileKotlinWasmJs
 
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew check
+      # The browser engine and packaging, on the OS no one here develops on. Their pictures are the way to see the result.
+      - name: Engine tests
+        run: ./gradlew :stretch-web:desktopTest :stretch-mermaid:desktopTest :gallery:desktopTest -Pcef --continue
+      - name: Package an app with the engine
+        if: always()
+        run: |
+          ./gradlew :gallery:createDistributable
+          ls "gallery/build/compose/binaries/main/app/Stretch Gallery.app/Contents/runtime/Contents/Frameworks"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-engine-pictures
+          path: |
+            gallery/build/documents-pages
+            stretch-web/build/engine-test
+            stretch-mermaid/build/engine-test
+            **/build/reports/tests/desktopTest
+
   windows:
     runs-on: windows-latest
     steps:

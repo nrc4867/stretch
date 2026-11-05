@@ -119,7 +119,7 @@ internal fun Modifier.focusRing(state: ControlState, shape: Shape, fill: Color? 
 }
 
 @Composable
-internal fun Label(text: String, style: TextStyle, color: Color, modifier: Modifier = Modifier) {
+fun Label(text: String, style: TextStyle, color: Color, modifier: Modifier = Modifier) {
     BasicText(
         text = text,
         modifier = modifier,

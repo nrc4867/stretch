@@ -27,7 +27,7 @@ fun main() {
             state = state,
         ) {
             CompositionLocalProvider(LocalGalleryHost provides host) {
-                Gallery(gpuPage = if (gpu) ({ GpuPage() }) else null, startOnGpu = gpu) { document, edited, menus, modes, actions ->
+                Gallery(gpuPage = if (gpu) ({ GpuPage() }) else null, startOnGpu = gpu, startOnDocuments = System.getProperty("stretch.documents").toBoolean()) { document, edited, menus, modes, actions ->
                     WindowTopBar("Stretch", document, edited = edited, menus = menus, modes = modes, actions = actions)
                 }
             }

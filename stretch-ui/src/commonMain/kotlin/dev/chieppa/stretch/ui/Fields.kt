@@ -116,7 +116,7 @@ fun TextField(
 }
 
 @Composable
-internal fun ErrorMark(message: String) {
+fun ErrorMark(message: String) {
     Tooltip(message) { Icon(StretchIcons.Error, Stretch.colors.errorInk, contentDescription = message) }
 }
 

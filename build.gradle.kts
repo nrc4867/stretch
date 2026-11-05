@@ -22,6 +22,11 @@ val publishedModules = setOf(
     "stretch-gpu",
     "stretch-gpu-native",
     "stretch-test",
+    "stretch-code",
+    "stretch-diff",
+    "stretch-markdown",
+    "stretch-web",
+    "stretch-mermaid",
 )
 
 subprojects {

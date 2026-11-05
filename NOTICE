@@ -10,3 +10,6 @@ wherever the software displays its legal notices.
 Bundled fonts:
 - IBM Plex Sans and IBM Plex Mono, copyright IBM Corp., SIL Open Font License 1.1 (licenses/OFL-IBM-Plex.txt)
 - Fredoka, copyright The Fredoka Project Authors, SIL Open Font License 1.1 (licenses/OFL-Fredoka.txt)
+
+Bundled scripts:
+- Mermaid 11.17.2, copyright Knut Sveidqvist and contributors, MIT License (licenses/MIT-Mermaid.txt)

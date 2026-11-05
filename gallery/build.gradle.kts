@@ -33,6 +33,10 @@ kotlin {
             implementation(project(":stretch-document"))
             implementation(project(":stretch-core"))
             implementation(project(":stretch-gpu"))
+            implementation(project(":stretch-diff"))
+            implementation(project(":stretch-markdown"))
+            implementation(project(":stretch-web"))
+            implementation(project(":stretch-mermaid"))
         }
         val desktopMain by getting {
             resources.srcDir(tasks.named<GenerateAppIdentity>("generateAppIdentity").flatMap { it.resources })
@@ -53,6 +57,18 @@ kotlin {
 
 tasks.withType<Test>().configureEach {
     jvmArgs("--enable-native-access=ALL-UNNAMED")
+    // -Pcef draws the documents page with the real engine, which needs the JetBrains Runtime and a while.
+    if (providers.gradleProperty("cef").isPresent) {
+        javaLauncher.set(javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(libs.versions.jvmToolchain.get().toInt()))
+            vendor.set(JvmVendorSpec.JETBRAINS)
+        })
+        exclude("**/*EnginelessTest*")
+    } else {
+        exclude("**/*EngineTest*")
+        jvmArgs("--limit-modules", providers.gradleProperty("stretch.modulesWithoutEngine").get())
+    }
+    systemProperty("stretch.web.output", layout.buildDirectory.dir("documents-pages").get().asFile.path)
 }
 
 compose.desktop {
@@ -65,8 +81,13 @@ compose.desktop {
         }.get().metadata.installationPath.asFile.absolutePath
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
         // -Pdevtools=<port> serves screenshots of the gallery's windows on 127.0.0.1 (see DevTools).
-        providers.gradleProperty("devtools").orNull?.let { jvmArgs += "-Dstretch.devtools=$it" }
+        providers.gradleProperty("devtools").orNull?.let {
+            jvmArgs += "-Dstretch.devtools=$it"
+            nativeDistributions.modules("jdk.httpserver")
+        }
         // -Pgpu adds the WebGPU viewport page and opens on it.
         if (providers.gradleProperty("gpu").isPresent) jvmArgs += "-Dstretch.gpu=true"
+        // -Pdocuments opens on the diff viewer, markdown editor and HTML view.
+        if (providers.gradleProperty("documents").isPresent) jvmArgs += "-Dstretch.documents=true"
     }
 }

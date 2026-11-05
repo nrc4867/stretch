@@ -66,6 +66,16 @@ data class StretchColors(
     val errorWash: Color,
     val errorEdge: Color,
     val errorInk: Color,
+    val diffAddWash: Color,
+    val diffAddStrong: Color,
+    val diffDelWash: Color,
+    val diffDelStrong: Color,
+    val syntaxKeyword: Color,
+    val syntaxString: Color,
+    val syntaxNumber: Color,
+    val syntaxComment: Color,
+    val syntaxType: Color,
+    val syntaxFunction: Color,
 )
 
 @Immutable
@@ -133,6 +143,16 @@ internal val InkColors = StretchColors(
     errorWash = Color(0xFFFDE0DE),
     errorEdge = Color(0xFFB3261E),
     errorInk = Color(0xFF9B1C1C),
+    diffAddWash = Color(0xFFE0EFCF),
+    diffAddStrong = Color(0xFFBFE0A3),
+    diffDelWash = Color(0xFFFAE2DC),
+    diffDelStrong = Color(0xFFF3BFB5),
+    syntaxKeyword = Color(0xFF7F2A63),
+    syntaxString = Color(0xFF2B6010),
+    syntaxNumber = Color(0xFF8C4700),
+    syntaxComment = Color(0xFF5E5048),
+    syntaxType = Color(0xFF17587F),
+    syntaxFunction = Color(0xFF6F3A00),
 )
 
 internal val InkShadows = StretchShadows(
@@ -199,6 +219,16 @@ internal val InkDarkColors = StretchColors(
     errorWash = Color(0xFF3B1A1C),
     errorEdge = Color(0xFFE5706D),
     errorInk = Color(0xFFF6A8A4),
+    diffAddWash = Color(0xFF25321D),
+    diffAddStrong = Color(0xFF3F5E30),
+    diffDelWash = Color(0xFF3D2320),
+    diffDelStrong = Color(0xFF6A3831),
+    syntaxKeyword = Color(0xFFE8ABD4),
+    syntaxString = Color(0xFFAEDC94),
+    syntaxNumber = Color(0xFFF0B97A),
+    syntaxComment = Color(0xFFB4A58C),
+    syntaxType = Color(0xFF93CFF1),
+    syntaxFunction = Color(0xFFF2CF8A),
 )
 
 internal val InkDarkShadows = StretchShadows(
@@ -265,6 +295,16 @@ internal val WorkshopDarkColors = StretchColors(
     errorWash = Color(0xFF2F1A1D),
     errorEdge = Color(0xFFC4504F),
     errorInk = Color(0xFFF39D9B),
+    diffAddWash = Color(0xFF1B2A1E),
+    diffAddStrong = Color(0xFF2F4F36),
+    diffDelWash = Color(0xFF2E1C1E),
+    diffDelStrong = Color(0xFF57322F),
+    syntaxKeyword = Color(0xFFD6A6F0),
+    syntaxString = Color(0xFF9FDC9F),
+    syntaxNumber = Color(0xFFF0B27A),
+    syntaxComment = Color(0xFF9BA0A8),
+    syntaxType = Color(0xFF7FC9EE),
+    syntaxFunction = Color(0xFFF0D080),
 )
 
 internal val WorkshopDarkShadows = StretchShadows(
@@ -331,6 +371,16 @@ internal val WorkshopLightColors = StretchColors(
     errorWash = Color(0xFFFDE5E4),
     errorEdge = Color(0xFFC4403C),
     errorInk = Color(0xFF9B1C1C),
+    diffAddWash = Color(0xFFE1F1DA),
+    diffAddStrong = Color(0xFFBFE3B4),
+    diffDelWash = Color(0xFFFCE5E3),
+    diffDelStrong = Color(0xFFF6C4C0),
+    syntaxKeyword = Color(0xFF7B2FA8),
+    syntaxString = Color(0xFF27620F),
+    syntaxNumber = Color(0xFF8A4800),
+    syntaxComment = Color(0xFF565A62),
+    syntaxType = Color(0xFF17618A),
+    syntaxFunction = Color(0xFF6E4A00),
 )
 
 internal val WorkshopLightShadows = StretchShadows(

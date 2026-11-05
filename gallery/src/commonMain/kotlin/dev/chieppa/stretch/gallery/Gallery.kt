@@ -82,7 +82,7 @@ import dev.chieppa.stretch.ui.Tooltip
 import dev.chieppa.stretch.ui.ToolButton
 import kotlin.math.roundToInt
 
-private enum class Page(val label: String) { Components("Components"), Data("Data"), Tools("Tools"), Frame("App frame"), Gpu("3D") }
+private enum class Page(val label: String) { Components("Components"), Data("Data"), Tools("Tools"), Frame("App frame"), Documents("Documents"), Gpu("3D") }
 
 /** The window's top bar: the plain [TopBar] in tests, the title bar when the gallery owns its window. */
 typealias GalleryBar = @Composable (document: String, edited: Boolean, menus: @Composable () -> Unit, modes: @Composable () -> Unit, actions: @Composable RowScope.() -> Unit) -> Unit
@@ -99,13 +99,13 @@ class GalleryHost {
 
 val LocalGalleryHost = staticCompositionLocalOf { GalleryHost() }
 
-/** Every component and the app frame in every theme, and [gpuPage] when there is one, opening on it with [startOnGpu]. Labels here are examples, not app text. */
+/** Every component and the app frame in every theme, and [gpuPage] when there is one, opening on it with [startOnGpu] or on the documents with [startOnDocuments]. Labels here are examples, not app text. */
 @Composable
-fun Gallery(gpuPage: (@Composable () -> Unit)? = null, startOnGpu: Boolean = false, bar: GalleryBar = plainBar) {
+fun Gallery(gpuPage: (@Composable () -> Unit)? = null, startOnGpu: Boolean = false, startOnDocuments: Boolean = false, bar: GalleryBar = plainBar) {
     var themeChoice by remember { mutableStateOf<StretchTheme?>(StretchThemes.Ink) }
     val theme = themeChoice ?: StretchThemes.system()
     var scale by remember { mutableFloatStateOf(1f) }
-    var page by remember { mutableStateOf(if (startOnGpu) Page.Gpu else Page.Components) }
+    var page by remember { mutableStateOf(if (startOnGpu) Page.Gpu else if (startOnDocuments) Page.Documents else Page.Components) }
     StretchTheme(theme, scale) {
         val switcher: @Composable () -> Unit = {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -127,6 +127,10 @@ fun Gallery(gpuPage: (@Composable () -> Unit)? = null, startOnGpu: Boolean = fal
                 ToolsPage()
             }
             Page.Frame -> FrameDemo(switcher, bar, scale) { scale = it }
+            Page.Documents -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
+                bar("Gallery", false, {}, switcher) {}
+                DocumentsPage()
+            }
             Page.Gpu -> Column(Modifier.fillMaxSize().background(Stretch.colors.surfaceCanvas)) {
                 bar("Gallery", false, {}, switcher) {}
                 gpuPage?.invoke()

@@ -11,6 +11,7 @@ Stretch holds no domain logic. It never knows what a document, a layer or a char
 - **An app frame.** Top bar, modes, rails, resizable side and bottom drawers, a status bar and a viewport with rulers, guides, selection handles and a marquee.
 - **Components for tools.** The everyday controls, plus the ones creative tools need: a color picker, shading ramp, curve editor, angle dial, timeline, vector field and key capture field.
 - **App plumbing.** Commands, undo with gestures, a keymap with an opt-in editor, a command palette, a session log, and one open document with save prompts, recent files and crash recovery.
+- **Documents.** Three optional modules: a rich diff viewer, a markdown editor with diagrams and every common block, and an HTML view with a real browser engine.
 - **Pen and touch.** Pressure and tilt through Windows Ink, and two-finger pan, pinch and twist in the viewport.
 - **One identity.** A Gradle plugin gives an app one name, id and icon across its installer, launcher, taskbar and windows.
 
@@ -48,6 +49,17 @@ An app can put a native GPU surface inside the frame, with the rulers, toolbars 
 
 ![A WebGPU cube in a Stretch viewport, with rulers, a guide, a floating toolbar and a camera readout](docs/images/viewport-3d.png)
 
+## Documents
+
+A diff viewer, a markdown editor and an HTML view, each in a module of its own, so an app only carries what it asks for.
+
+- **`stretch-diff`.** One or many files from two texts or a unified patch, unified or side by side, with code colored, changed words marked, unchanged runs folded, and slots for comments and hunk actions.
+- **`stretch-markdown`.** Headings, lists, tasks, quotes, callouts, code, tables, images, dividers and diagrams, in live preview, in rich text, or with a switch between them. Blocks no one edits stay byte for byte as they were in the file.
+- **`stretch-mermaid`.** Draws `mermaid` blocks with Mermaid itself, in the colors of the current theme.
+- **`stretch-web`.** A real web page in the app, with full CSS and scripts, drawn into Compose so popups show over it.
+
+`stretch-web` and `stretch-mermaid` use the Chromium in the JetBrains Runtime. A packaged app carries it only when it depends on one of them, which adds about 370 MB on Windows.
+
 ## Try it
 
 You need JDK 25 for Gradle. Gradle fetches the rest, including the JetBrains Runtime the gallery runs on.
@@ -55,6 +67,7 @@ You need JDK 25 for Gradle. Gradle fetches the rest, including the JetBrains Run
 ```
 ./gradlew :gallery:run         # every component in every theme, and an app frame demo
 ./gradlew :gallery:run -Pgpu   # adds the 3D page (Windows, needs a GPU)
+./gradlew :gallery:run -Pdocuments   # opens on the diff viewer, markdown editor and HTML view
 ./gradlew :gallery:wasmJsBrowserProductionRun   # the gallery in a browser, with the 3D page where WebGPU is available
 ```
 
@@ -121,6 +134,11 @@ fun main() = application {
 | `stretch-frame` | The app frame, overlays and viewport |
 | `stretch-document` | One open document: saving, recent files and crash recovery |
 | `stretch-input` | Pointer and pen samples |
+| `stretch-diff` | Optional diff viewer |
+| `stretch-markdown` | Optional markdown editor |
+| `stretch-web` | Optional HTML view, on a browser engine |
+| `stretch-mermaid` | Optional Mermaid diagrams for the markdown editor, on the same engine |
+| `stretch-code` | Syntax coloring, shared by the diff viewer and the markdown editor |
 | `stretch-gpu`, `stretch-gpu-native` | Optional WebGPU viewports and their wgpu-native bindings |
 | `stretch-gradle-plugin` | App name, id and icon |
 | `stretch-test` | Command scenarios and Compose UI test helpers |
@@ -130,7 +148,7 @@ To work on Stretch itself, see [Developing Stretch](docs/development.md).
 
 ## Platforms
 
-Stretch runs on the desktop JVM and in the browser. Windows has everything: the custom title bar, pen, touch and GPU surfaces. macOS has the custom title bar, the native menu bar and Mac key symbols. Linux has the app and its components with the system title bar and mouse input. In the browser, through Kotlin/Wasm, the app is a static site: components, frame, documents and WebGPU viewports all run there, without pop-out drawers, pen tilt or a native title bar. See [Using Stretch from an app](docs/using-stretch.md).
+Stretch runs on the desktop JVM and in the browser. Windows has everything: the custom title bar, pen, touch and GPU surfaces. macOS has the custom title bar, the native menu bar and Mac key symbols. Linux has the app and its components with the system title bar and mouse input. In the browser, through Kotlin/Wasm, the app is a static site: components, frame, documents and WebGPU viewports all run there, without pop-out drawers, pen tilt or a native title bar. The diff viewer, markdown editor and HTML view share their code on every platform; on macOS only CI checks them, with the browser engine's packaging the part most likely to need work. See [Using Stretch from an app](docs/using-stretch.md).
 
 ## License
 

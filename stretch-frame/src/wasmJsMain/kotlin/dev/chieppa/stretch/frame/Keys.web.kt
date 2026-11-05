@@ -63,7 +63,7 @@ private val namedKeys: Map<Key, String> = buildMap {
     put(Key.Insert, "Insert")
 }
 
-internal actual fun KeyEvent.chord(): KeyChord? {
+actual fun KeyEvent.chord(): KeyChord? {
     if (type != KeyEventType.KeyDown) return null
     val name = namedKeys[key] ?: return null
     return KeyChord(

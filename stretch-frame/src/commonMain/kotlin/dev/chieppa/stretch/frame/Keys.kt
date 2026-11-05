@@ -9,7 +9,7 @@ import dev.chieppa.stretch.core.KeyChord
 import dev.chieppa.stretch.core.Keymap
 
 /** The chord a key-down event spells, or null for a modifier on its own or a key-up. */
-internal expect fun KeyEvent.chord(): KeyChord?
+expect fun KeyEvent.chord(): KeyChord?
 
 /**
  * Runs the action bound to a pressed chord in [mode]. Attach it near the root: it sees keys only after focused

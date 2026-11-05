@@ -26,6 +26,13 @@ abstract class StretchAppExtension {
 
     /** Who makes it, shown in installers and file properties. */
     abstract val vendor: Property<String>
+
+    /**
+     * Whether packages carry Chromium, for `stretch-web`. It follows whether the app depends on `stretch-web` or
+     * `stretch-mermaid` itself; set it when it reaches them through a library of its own. The app must package with a
+     * JetBrains Runtime that has JCEF.
+     */
+    abstract val webEngine: Property<Boolean>
 }
 
 /**
@@ -71,10 +78,24 @@ class StretchAppPlugin : Plugin<Project> {
                 dist.macOS.dockName = dist.macOS.dockName ?: name
                 dist.linux.iconFile.convention(packaging.map { it.file("icon.png") })
                 dist.linux.packageName = dist.linux.packageName ?: name.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+                // Chromium is hundreds of megabytes, so only an app that depends on stretch-web takes it along.
+                if (app.webEngine.getOrElse(declaresWebEngine(project))) {
+                    dist.modules(WEB_ENGINE_MODULE)
+                    desktop.application.javaHome.let { restoreEngineFiles(project, it) }
+                }
             }
         }
     }
 }
+
+private const val WEB_ENGINE_MODULE = "jcef"
+private val webModules = setOf("stretch-web", "stretch-mermaid")
+
+/** Whether [project] declares a module that draws with the engine, on any target. It looks before anything resolves, so the app can still add dependencies. */
+private fun declaresWebEngine(project: Project): Boolean =
+    project.configurations.any { configuration ->
+        configuration.dependencies.any { dependency -> webModules.any { dependency.name == it || dependency.name.startsWith("$it-") } }
+    }
 
 /** The leading `1.2.3` of a project version, or 1.0.0 when it has none. */
 internal fun packageVersion(version: String): String =

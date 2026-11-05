@@ -28,6 +28,10 @@ class ContrastTest {
                 Triple(c.inkMuted, c.surfaceControlHi, 4.5),
                 Triple(c.inkStrong, c.neutralOn, 4.5),
             )
+            val syntax = listOf(c.ink, c.syntaxKeyword, c.syntaxString, c.syntaxNumber, c.syntaxComment, c.syntaxType, c.syntaxFunction)
+            val code = syntax.flatMap { fg ->
+                listOf(c.surfacePanel, c.surfaceFloat, c.diffAddWash, c.diffDelWash).map { bg -> Triple(fg, bg, 4.5) }
+            } + listOf(Triple(c.ink, c.diffAddStrong, 4.5), Triple(c.ink, c.diffDelStrong, 4.5))
             val marks = listOf(
                 Triple(c.focus, c.surfacePanel, 3.0),
                 Triple(c.focus, c.surfaceCanvas, 3.0),
@@ -39,7 +43,7 @@ class ContrastTest {
                 Triple(c.inkStrong, c.surfaceWell, 3.0),
             )
             val knob = max(ratio(c.knob, c.track), ratio(c.knobEdge, c.track))
-            (text + marks).filter { (fg, bg, min) -> ratio(fg, bg) < min }.map { "${theme.id}: $it" } +
+            (text + code + marks).filter { (fg, bg, min) -> ratio(fg, bg) < min }.map { "${theme.id}: $it" } +
                 listOfNotNull(if (knob < 3.0) "${theme.id}: slider knob" else null)
         }
         assertTrue(failures.isEmpty(), failures.joinToString("\n"))

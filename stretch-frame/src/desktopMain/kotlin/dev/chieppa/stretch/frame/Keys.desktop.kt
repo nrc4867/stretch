@@ -16,7 +16,7 @@ private val modifierCodes = setOf(
     AwtKeyEvent.VK_SHIFT, AwtKeyEvent.VK_CONTROL, AwtKeyEvent.VK_ALT, AwtKeyEvent.VK_META, AwtKeyEvent.VK_ALT_GRAPH,
 )
 
-internal actual fun KeyEvent.chord(): KeyChord? {
+actual fun KeyEvent.chord(): KeyChord? {
     if (type != KeyEventType.KeyDown) return null
     val code = key.nativeKeyCode
     if (code in modifierCodes) return null
@@ -28,6 +28,15 @@ internal actual fun KeyEvent.chord(): KeyChord? {
         AwtKeyEvent.VK_SPACE -> "Space"
         AwtKeyEvent.VK_TAB -> "Tab"
         AwtKeyEvent.VK_SLASH -> "/"
+        // AWT names these with symbols on macOS, and chords have one spelling everywhere.
+        AwtKeyEvent.VK_UP -> "Up"
+        AwtKeyEvent.VK_DOWN -> "Down"
+        AwtKeyEvent.VK_LEFT -> "Left"
+        AwtKeyEvent.VK_RIGHT -> "Right"
+        AwtKeyEvent.VK_HOME -> "Home"
+        AwtKeyEvent.VK_END -> "End"
+        AwtKeyEvent.VK_PAGE_UP -> "Page Up"
+        AwtKeyEvent.VK_PAGE_DOWN -> "Page Down"
         else -> AwtKeyEvent.getKeyText(code)
     }
     return KeyChord(

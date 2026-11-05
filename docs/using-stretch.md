@@ -14,6 +14,30 @@
 
 `stretch-document` keeps one open document: `DocumentSession(format, initial, documentStorage)` wraps its undo history and knows when it has unsaved changes (`rememberEdited`), even after undoing back to the save. `session.whenSaved { close() }` asks with `UnsavedChangesDialog` first when there are changes; `save`, `saveAs` and `open` use `rememberFileChooser()`, the platform's own dialogs. `Autosave(session, Recovery.forApp())` keeps a recovery copy while there are changes, and `Recovery.pending()` with `RecoveryDialog` offers them after a crash; storage, choosers and recovery are all `suspend`, since browsers answer later. `LeaveGuard(edited)` makes the browser ask before a tab with changes closes, and does nothing on the desktop. In a browser, documents live in files the person picks through the File System Access API, which also brings recent files back on a later visit once they allow it again; where a browser lacks that API, opening uses a file input and saving downloads the file. Recovery copies stay in IndexedDB, in that browser only. `RecentFiles` and `RecentFilesMenuItems` list recent files; keeping the list between runs is the app's job, like all its settings.
 
+## Diffs
+
+`stretch-diff`'s `DiffViewer(files)` shows `List<FileDiff>`: make them with `diffTexts(old, new, path)` from two whole texts, where a null path means that side has no file, or `parseUnifiedDiff(patch)` from `git diff` or `diff -u` output. Only rows on screen are built, so large diffs stay smooth. `rememberDiffViewerState(split, wrap)` holds the layout and scrolling, with `nextChange()` and `previousChange()`; `showBar = false` hides the built-in bar for an app with its own controls. `DiffSlots` adds `onLineClick`, `lineAnnotation` under a line for comment threads, and `fileActions` and `hunkActions` for buttons like Stage. Text is in `DiffStrings`. A file's language comes from its path.
+
+## Markdown
+
+`stretch-markdown`'s `MarkdownEditor(state)` edits `rememberMarkdownEditorState(text)`; read `state.text` for the markdown, and `state.setText` to replace it. `state.history` is a Stretch `History`, so a `DocumentSession` given that history tracks unsaved changes, and typing in one go is one undo step.
+
+`MarkdownMode.LivePreview` shows the markers of the block with the caret, and `MarkdownMode.Wysiwyg` never shows them; in both, typing `## ` or `**word**` becomes formatting. Set the mode with `state.mode`. `modes` lists what the app offers: `modes = MarkdownMode.entries` puts a switch in the toolbar, one mode shows none. `readOnly = true` makes it a viewer.
+
+A block is one heading, paragraph, list item, quote, GitHub alert (`> [!NOTE]`), fenced code, table, image or divider. Anything else, like HTML and front matter, stays as source. Blocks no one edits stay byte for byte, line endings included; an edited table is padded so its columns line up in the file. Cmd or Ctrl with B, I, E and K format the selection, Ctrl Shift X strikes through, Tab nests a list item, `/` in an empty block lists the block types, and Ctrl A twice or Shift with an arrow at a block's edge selects whole blocks to copy, cut or delete. Text selections stay within one block.
+
+Pass `images` to load pictures, since Stretch has no network of its own, and `diagrams` to draw diagrams; without them pictures show as a marked placeholder and diagrams as code. `DiagramRenderer` can draw any language. `onLinkClick` gets a link clicked with Cmd or Ctrl held, or any click in a viewer. Text is in `MarkdownStrings`.
+
+## Web pages and Mermaid
+
+`stretch-web`'s `HtmlView(HtmlContent.Inline(html))` or `HtmlContent.Url(url)` shows a page. Pages cannot open windows, download files, show dialogs or ask for permissions. Links go to `navigation`, which keeps the view where it is unless it returns true, so an app can open them in the person's browser. `HtmlPolicy(scripts, network)` limits an inline document, and nothing in the document can lift that. An inline document with no background shows the theme behind it, and starts from the theme's text color and light or dark. `ScriptPage` runs a JavaScript library in a hidden page.
+
+`stretch-mermaid`'s `MermaidDiagrams()` draws `mermaid` blocks: pass one, kept with `remember`, as the editor's `diagrams`. The first diagram takes a few seconds to start the engine and shows its code until then.
+
+On the desktop the engine is the JCEF in the JetBrains Runtime. Run and package the app with one (see `gallery/build.gradle.kts` for the toolchain line), and apply the `dev.chieppa.stretch.app` plugin: it adds Chromium to the package when the app depends on `stretch-web` or `stretch-mermaid`, and leaves it out otherwise. On Windows that takes a package from about 145 MB to about 515 MB. Set `stretchApp { webEngine = true }` if they arrive through another library of the app's. `WebEngine.available` is false on a runtime without JCEF, where `HtmlView` shows `unavailable` and diagrams show as code. Input methods, such as those for CJK languages, do not reach a page.
+
+In the browser `HtmlView` is a sandboxed iframe. It sits above the Compose canvas, so popups cannot cover it, a `Url` page's links stay in the frame, and with `scripts = false` links in an inline document do too. A site can refuse to be framed.
+
 ## App identity
 
 The `dev.chieppa.stretch.app` Gradle plugin (in `stretch-gradle-plugin/`) gives the app one name, id and icon everywhere: the packaged launcher and installers, the taskbar, dock and Start menu, and Task Manager, which shows the launcher's name instead of "OpenJDK Platform binary". It's published with the modules, so add the same GitHub Packages repository to the app's `pluginManagement`, then apply it in the app module, next to the Compose plugin:
