@@ -49,4 +49,10 @@ class AppIconsTest {
         assertEquals("2.3", packageVersion("2.3"))
         assertEquals("1.0.0", packageVersion("unspecified"))
     }
+
+    @Test
+    fun macPackageVersionsStartAboveZero() {
+        assertEquals("2.3.1", macPackageVersion("2.3.1"))
+        assertEquals("1.0.0", macPackageVersion("0.8.0"))
+    }
 }

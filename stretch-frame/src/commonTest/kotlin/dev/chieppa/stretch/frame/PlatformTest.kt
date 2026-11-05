@@ -90,9 +90,9 @@ class PlatformTest {
         runOnIdle { focus.requestFocus() }
         waitForIdle()
         assertTrue(router.active)
-        onNodeWithTag("layers").performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.C) } }
+        onNodeWithTag("layers").performKeyInput { withKeyDown(shortcutKey) { pressKey(Key.C) } }
         assertEquals("Body", clipboard.content?.custom?.get("test/layer"))
-        onNodeWithTag("layers").performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.V) } }
+        onNodeWithTag("layers").performKeyInput { withKeyDown(shortcutKey) { pressKey(Key.V) } }
         assertEquals(listOf("Body", "Body pasted"), layers.names)
 
         clipboard.write(ClipData(text = "Plain"))
@@ -103,8 +103,9 @@ class PlatformTest {
     }
 
     @Test
-    fun keyCapsKeepTheirNamesOffMacOs() {
-        assertEquals(listOf("Ctrl", "Shift", "Z"), KeyChord.parse("Ctrl Shift Z").caps())
+    fun keyCapsFollowThePlatform() {
+        val expected = if (isMac) listOf("⌘", "⇧", "Z") else listOf("Ctrl", "Shift", "Z")
+        assertEquals(expected, KeyChord.parse("Ctrl Shift Z").caps())
     }
 
     @Test

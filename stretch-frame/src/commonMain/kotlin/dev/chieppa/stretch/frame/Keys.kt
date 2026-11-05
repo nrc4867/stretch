@@ -36,3 +36,6 @@ fun Keymap.capsFor(action: Action): List<String>? = keysFor(action.id).firstOrNu
 fun KeyChord.caps(): List<String> = toString().split(' ').map { if (it == key) it else modifierCap(it) }
 
 internal expect fun modifierCap(name: String): String
+
+/** Whether shortcuts follow macOS, where a chord's Ctrl is the Command key. */
+internal expect val isMac: Boolean

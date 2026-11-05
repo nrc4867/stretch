@@ -20,6 +20,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
+private fun capsOf(chord: String) = KeyChord.parse(chord).caps().joinToString(" ")
+
 @OptIn(ExperimentalTestApi::class)
 class ShortcutFieldTest {
     @Test
@@ -27,13 +29,13 @@ class ShortcutFieldTest {
         var chord by mutableStateOf<KeyChord?>(KeyChord.parse("Ctrl E"))
         setStretchContent { ShortcutField(chord, { chord = it }, "Export shortcut") }
         val field = onNodeWithContentDescription("Export shortcut")
-        field.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Ctrl E"))
+        field.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, capsOf("Ctrl E")))
 
         field.performClick()
         field.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Press keys"))
-        field.performKeyInput { withKeyDown(Key.CtrlLeft) { withKeyDown(Key.ShiftLeft) { pressKey(Key.K) } } }
+        field.performKeyInput { withKeyDown(shortcutKey) { withKeyDown(Key.ShiftLeft) { pressKey(Key.K) } } }
         assertEquals(KeyChord.parse("Ctrl Shift K"), chord)
-        field.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Ctrl Shift K"))
+        field.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, capsOf("Ctrl Shift K")))
 
         field.performClick()
         field.performKeyInput { pressKey(Key.Escape) }

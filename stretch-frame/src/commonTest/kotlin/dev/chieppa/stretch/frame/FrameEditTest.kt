@@ -15,6 +15,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
+import dev.chieppa.stretch.core.KeyChord
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -453,11 +454,11 @@ class FrameEditTest {
         }
         onNodeWithTag("target").requestFocus()
         onNodeWithTag("target").performKeyInput {
-            withKeyDown(Key.CtrlLeft) { pressKey(Key.Z) }
-            withKeyDown(Key.CtrlLeft) { pressKey(Key.Z) }
+            withKeyDown(shortcutKey) { pressKey(Key.Z) }
+            withKeyDown(shortcutKey) { pressKey(Key.Z) }
             pressKey(Key.B)
         }
-        assertEquals(listOf(KeyCastEntry(listOf("Ctrl", "Z"), 2), KeyCastEntry(listOf("B"))), cast.entries.toList())
+        assertEquals(listOf(KeyCastEntry(KeyChord.parse("Ctrl Z").caps(), 2), KeyCastEntry(listOf("B"))), cast.entries.toList())
         onNodeWithText("×2").assertExists()
     }
 

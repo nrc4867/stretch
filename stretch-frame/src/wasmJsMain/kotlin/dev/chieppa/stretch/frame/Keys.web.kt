@@ -15,7 +15,7 @@ import dev.chieppa.stretch.core.KeyChord
 
 private fun browserIsOnMac(): Boolean = js("navigator.platform.startsWith('Mac')")
 
-internal val isMac = browserIsOnMac()
+internal actual val isMac = browserIsOnMac()
 
 private val letterKeys = listOf(
     Key.A, Key.B, Key.C, Key.D, Key.E, Key.F, Key.G, Key.H, Key.I, Key.J, Key.K, Key.L, Key.M,

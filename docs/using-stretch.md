@@ -54,4 +54,4 @@ stretchApp {
 
 The plugin covers desktop packaging. In a multiplatform module, add its generated resources to the desktop source set, as `gallery/build.gradle.kts` does.
 
-It fills in Compose's `nativeDistributions` (name, description, numeric version, icons, macOS bundle id, Windows upgrade id) unless the app set them, and puts the icon and identity on the classpath so `StretchWindow` badges its windows at every size. `./gradlew :app:runDistributable` runs through the real launcher; plain `run` is still `java.exe` to Task Manager, but the window, taskbar button and taskbar grouping carry the app's icon and id.
+It fills in Compose's `nativeDistributions` (name, description, numeric version, which on macOS is 1.0.0 until the app reaches 1.0 since macOS takes no version starting with 0, icons, macOS bundle id, Windows upgrade id) unless the app set them, and puts the icon and identity on the classpath so `StretchWindow` badges its windows at every size. `./gradlew :app:runDistributable` runs through the real launcher; plain `run` is still `java.exe` to Task Manager, but the window, taskbar button and taskbar grouping carry the app's icon and id.

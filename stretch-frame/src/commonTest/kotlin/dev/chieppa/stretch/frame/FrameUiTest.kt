@@ -156,7 +156,7 @@ class FrameUiTest {
             Box(Modifier.size(100.dp).actionKeys(Keymap(registry), null).focusRequester(focus).focusable().testTag("root"))
         }
         runOnIdle { focus.requestFocus() }
-        onNodeWithTag("root").performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.K) } }
+        onNodeWithTag("root").performKeyInput { withKeyDown(shortcutKey) { pressKey(Key.K) } }
         assertEquals(1, commands)
     }
 
@@ -177,7 +177,7 @@ class FrameUiTest {
         field.performKeyInput { pressKey(Key.T) }
         field.performKeyInput { withKeyDown(Key.ShiftLeft) { pressKey(Key.T) } }
         assertEquals(0, types)
-        field.performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.K) } }
+        field.performKeyInput { withKeyDown(shortcutKey) { pressKey(Key.K) } }
         assertEquals(1, commands)
     }
 

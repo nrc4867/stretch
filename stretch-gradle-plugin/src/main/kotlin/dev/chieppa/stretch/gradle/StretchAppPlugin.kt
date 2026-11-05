@@ -67,6 +67,7 @@ class StretchAppPlugin : Plugin<Project> {
                 dist.packageName = dist.packageName ?: name
                 // Installers want a plain dotted number; a snapshot version like 0.1.0-SNAPSHOT becomes 0.1.0.
                 dist.packageVersion = dist.packageVersion ?: packageVersion(project.version.toString())
+                dist.macOS.packageVersion = dist.macOS.packageVersion ?: macPackageVersion(dist.packageVersion!!)
                 // Windows shows this as the launcher's file description: the name in Task Manager.
                 dist.description = dist.description ?: name
                 dist.vendor = dist.vendor ?: app.vendor.orNull
@@ -96,6 +97,10 @@ private fun declaresWebEngine(project: Project): Boolean =
     project.configurations.any { configuration ->
         configuration.dependencies.any { dependency -> webModules.any { dependency.name == it || dependency.name.startsWith("$it-") } }
     }
+
+/** A version macOS takes for an app, whose first number cannot be 0: [version] itself, or 1.0.0 before a 1.0. */
+internal fun macPackageVersion(version: String): String =
+    if ((version.substringBefore('.').toIntOrNull() ?: 0) > 0) version else "1.0.0"
 
 /** The leading `1.2.3` of a project version, or 1.0.0 when it has none. */
 internal fun packageVersion(version: String): String =
