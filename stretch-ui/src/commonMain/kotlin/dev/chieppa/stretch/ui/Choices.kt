@@ -37,9 +37,6 @@ import dev.chieppa.stretch.theme.Stretch
 fun Checkbox(checked: Boolean?, onCheckedChange: (Boolean) -> Unit, label: String, modifier: Modifier = Modifier) {
     val c = Stretch.colors
     val state = rememberControlState()
-    val shape = RoundedCornerShape(4.dp)
-    val on = checked != false
-    val markInk = listOf(c.inkStrong, c.surfaceFloat).maxBy { contrast(it, c.toggleOn) }
     Row(
         modifier
             .focusRing(state, Stretch.shapes.rowShape)
@@ -60,31 +57,41 @@ fun Checkbox(checked: Boolean?, onCheckedChange: (Boolean) -> Unit, label: Strin
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier
-                .size(16.dp)
-                .clip(shape)
-                .background(if (on) c.toggleOn else state.fill(c.surfaceFloat, c.surfaceControlHi, c.surfaceControlPress))
-                .border(Stretch.stroke, if (on) c.toggleOnEdge else c.toggleOffEdge, shape),
-        ) {
-            if (checked != false) {
-                Canvas(Modifier.size(16.dp)) {
-                    val ink = markInk
-                    val w = 1.75.dp.toPx()
-                    if (checked == true) {
-                        val path = Path().apply {
-                            moveTo(size.width * 0.25f, size.height * 0.52f)
-                            lineTo(size.width * 0.43f, size.height * 0.70f)
-                            lineTo(size.width * 0.76f, size.height * 0.32f)
-                        }
-                        drawPath(path, ink, style = Stroke(w, cap = StrokeCap.Round, join = StrokeJoin.Round))
-                    } else {
-                        drawLine(ink, Offset(size.width * 0.28f, size.height / 2), Offset(size.width * 0.72f, size.height / 2), w, StrokeCap.Round)
+        CheckBoxFace(checked, state)
+        Label(label, Stretch.type.body, c.ink)
+    }
+}
+
+/** The box of a checkbox, with a tick when [checked] and a dash when it is null, the mixed state. */
+@Composable
+internal fun CheckBoxFace(checked: Boolean?, state: ControlState) {
+    val c = Stretch.colors
+    val shape = RoundedCornerShape(4.dp)
+    val on = checked != false
+    val markInk = listOf(c.inkStrong, c.surfaceFloat).maxBy { contrast(it, c.toggleOn) }
+    Box(
+        Modifier
+            .size(16.dp)
+            .clip(shape)
+            .background(if (on) c.toggleOn else state.fill(c.surfaceFloat, c.surfaceControlHi, c.surfaceControlPress))
+            .border(Stretch.stroke, if (on) c.toggleOnEdge else c.toggleOffEdge, shape),
+    ) {
+        if (checked != false) {
+            Canvas(Modifier.size(16.dp)) {
+                val ink = markInk
+                val w = 1.75.dp.toPx()
+                if (checked == true) {
+                    val path = Path().apply {
+                        moveTo(size.width * 0.25f, size.height * 0.52f)
+                        lineTo(size.width * 0.43f, size.height * 0.70f)
+                        lineTo(size.width * 0.76f, size.height * 0.32f)
                     }
+                    drawPath(path, ink, style = Stroke(w, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                } else {
+                    drawLine(ink, Offset(size.width * 0.28f, size.height / 2), Offset(size.width * 0.72f, size.height / 2), w, StrokeCap.Round)
                 }
             }
         }
-        Label(label, Stretch.type.body, c.ink)
     }
 }
 

@@ -86,6 +86,26 @@ class HtmlViewEngineTest {
         }
     }
 
+    @Test
+    fun aBridgeCarriesMessagesBothWaysAndThePageSeesTheTheme() = runComposeUiTest {
+        val heard = java.util.concurrent.CopyOnWriteArrayList<String>()
+        val bridge = HtmlBridge { heard += it }
+        bridge.post("ping")
+        val document = """<!doctype html><body><script>
+            stretch.listen((m) => stretch.post('echo:' + m));
+            stretch.post('canvas:' + getComputedStyle(document.documentElement).getPropertyValue('--stretch-surface-canvas').trim());
+            </script>"""
+        setContent {
+            StretchTheme(StretchThemes.Ink) {
+                HtmlView(HtmlContent.Inline(document), Modifier.size(100.dp), bridge = bridge)
+            }
+        }
+        waitUntil(timeoutMillis = timeout) { "echo:ping" in heard }
+        assertTrue(heard.any { it.startsWith("canvas:#") }, "got $heard")
+        runOnIdle { bridge.post("pong") }
+        waitUntil(timeoutMillis = timeout) { "echo:pong" in heard }
+    }
+
     private fun isRed(rgb: Int): Boolean {
         val r = rgb shr 16 and 255
         val g = rgb shr 8 and 255

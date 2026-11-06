@@ -74,8 +74,10 @@ internal fun ToolsPage() {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Section("Tree") { TreeDemo() }
+        Section("Tree with checkboxes") { CheckedTreeDemo() }
         Section("Choices") { ChoicesDemo() }
         Section("Tabs, badges and empty states") { TabsDemo() }
+        Section("Panes") { PanesDemo() }
         Section("Context menu and sections") { ContextDemo() }
         Section("Color") { ColorDemo() }
         Section("Shading ramp") { RampDemo() }

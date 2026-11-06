@@ -370,7 +370,10 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
     val layersFocus = remember { FocusRequester() }
     val sceneFocus = remember { FocusRequester() }
 
-    val drawers = listOf(
+    // A drawer offered only while the app wants it, to show drawers coming and going as it runs.
+    var notesOffered by remember { mutableStateOf(false) }
+    val notes = if (notesOffered) listOf(DrawerSpec("notes", "Notes", StretchIcons.ListBullet) { RowText("Notes come and go with the app") }) else emptyList()
+    val drawers = notes + listOf(
         DrawerSpec("layers", "Layers", StretchIcons.Layers, count = doc.layers.size.toString(), keys = listOf("L")) {
             Column(
                 Modifier
@@ -447,6 +450,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
                         Swatch(c, name, color == name, { color = name })
                     }
                 }
+                Button(if (notesOffered) "Take the notes drawer away" else "Offer a notes drawer", { notesOffered = !notesOffered })
             }
         },
     )
@@ -456,6 +460,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
         onLayoutChange = { layouts = layouts.update(mode.name) { _ -> it } },
         drawers = drawers,
         onResetLayout = { layouts = layouts.reset(mode.name) },
+        placeNewDrawer = { DrawerPlacement(it.id, Side.Right, open = true) },
         modifier = Modifier.actionKeys(keymap, mode.name),
         keyCast = if (showKeys) keyCast else null,
         statusBar = {

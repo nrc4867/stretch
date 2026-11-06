@@ -57,9 +57,12 @@ data class FrameLayout(
     val drawers: List<DrawerPlacement>,
     val bottomHeight: Float = DEFAULT_BOTTOM_HEIGHT,
     val bottomSplit: Float = 0.5f,
+    /** Where drawers taken out with [removeDrawer] were, by id, so one that comes back returns there. */
+    val removed: Map<String, DrawerPlacement> = emptyMap(),
 ) {
     init {
         require(drawers.map { it.id }.toSet().size == drawers.size) { "Drawer ids must be unique" }
+        require(drawers.none { it.id in removed }) { "A drawer in the layout is not also removed" }
         require(drawers.none { it.detached && it.open }) { "A popped-out drawer is not open in the frame" }
         require(Side.entries.all { side -> drawers.count { it.side == side && it.bottom && it.open } <= 1 }) {
             "Only one bottom drawer per side can be open"
@@ -165,7 +168,7 @@ data class FrameLayout(
         return if (sides <= room || sides <= 0f) 1f else (room / sides).coerceAtLeast(0f)
     }
 
-    private fun withDrawers(list: List<DrawerPlacement>) = copy(drawers = list)
+    internal fun withDrawers(list: List<DrawerPlacement>) = copy(drawers = list)
 
     private fun update(id: String, change: (DrawerPlacement) -> DrawerPlacement): FrameLayout =
         withDrawers(drawers.map { if (it.id == id) change(it) else it })
@@ -194,4 +197,12 @@ data class ModeLayouts(val defaults: Map<String, FrameLayout>, val current: Map<
         copy(current = current + (mode to change(get(mode))))
 
     fun reset(mode: String): ModeLayouts = copy(current = current + (mode to defaults.getValue(mode)))
+
+    /** Adds a drawer to every mode, and to their defaults so a reset keeps it. See [FrameLayout.addDrawer]. */
+    fun addDrawer(placement: DrawerPlacement): ModeLayouts =
+        ModeLayouts(defaults.mapValues { (_, l) -> l.addDrawer(placement) }, current.mapValues { (_, l) -> l.addDrawer(placement) })
+
+    /** Takes a drawer out of every mode, each remembering where it was. See [FrameLayout.removeDrawer]. */
+    fun removeDrawer(id: String): ModeLayouts =
+        ModeLayouts(defaults.mapValues { (_, l) -> l.removeDrawer(id) }, current.mapValues { (_, l) -> l.removeDrawer(id) })
 }

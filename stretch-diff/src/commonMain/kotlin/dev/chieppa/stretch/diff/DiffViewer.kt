@@ -23,10 +23,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.onGloballyPositioned
+import dev.chieppa.stretch.code.CodeMetrics
+import dev.chieppa.stretch.code.LineTone
+import dev.chieppa.stretch.code.longestLine
+import dev.chieppa.stretch.code.rememberCodeMetrics
+import dev.chieppa.stretch.theme.StretchSpacing
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.ui.IconButton
@@ -40,14 +44,25 @@ import kotlinx.coroutines.withContext
 
 /** What the app can add to a [DiffViewer]. Everything is optional. */
 class DiffSlots(
-    /** Called when someone clicks a line's number, to start a comment or set a breakpoint. */
+    /** Called when someone clicks a line's number, with the side of the number clicked. */
     val onLineClick: ((DiffLineRef) -> Unit)? = null,
-    /** Shown under a line, across the viewer, such as a comment thread. Emit nothing for a line with none. */
+    /** Shown under a line, across the viewer, such as a thread of notes. Emit nothing for a line with none. */
     val lineAnnotation: (@Composable (DiffLineRef) -> Unit)? = null,
     /** Shown at the end of a file's header, such as Stage or Revert. */
     val fileActions: (@Composable RowScope.(FileDiff) -> Unit)? = null,
     /** Shown at the end of a hunk's header, such as Stage hunk. */
     val hunkActions: (@Composable RowScope.(FileDiff, DiffHunk) -> Unit)? = null,
+    /**
+     * Turns on selecting lines over their numbers: press and drag, or Shift-click, along one side of one file. Called
+     * with the range when the pointer lets go; [DiffViewerState.lineSelection] holds it until cleared.
+     */
+    val onLineRangeSelect: ((DiffLineRange) -> Unit)? = null,
+    /** Drawn in a column before each side's line numbers, such as a dot for a line with notes. Emit nothing for none. */
+    val gutterMark: (@Composable (DiffLineRef) -> Unit)? = null,
+    /** How wide the [gutterMark] column is. */
+    val gutterWidth: Dp = StretchSpacing.space16,
+    /** A wash for a line in place of the added or removed one, such as to set apart lines already seen. Null keeps it. */
+    val lineTone: ((DiffLineRef) -> LineTone?)? = null,
 )
 
 /**
@@ -72,14 +87,16 @@ fun DiffViewer(
     }
     SideEffect { state.rows = rows }
     val tokens by produceState(DiffTokens.None, files) { value = withContext(Dispatchers.Default) { tokenizeDiff(files) } }
-    val metrics = rememberDiffMetrics(files)
+    val longest = remember(files) { files.maxOfOrNull { file -> file.hunks.maxOfOrNull { hunk -> longestLine(hunk.lines.map { it.text }) } ?: 0 } ?: 0 }
+    val highest = remember(files) { files.maxOfOrNull { file -> file.hunks.maxOfOrNull { hunk -> hunk.lines.maxOfOrNull { maxOf(it.oldNumber ?: 0, it.newNumber ?: 0) } ?: 0 } ?: 0 } ?: 0 }
+    val metrics = rememberCodeMetrics(longest, highest)
     val look = rememberLineLook()
     Column(modifier.background(c.surfacePanel)) {
         if (showBar) DiffBar(files, state, strings)
         Row(Modifier.weight(1f).fillMaxWidth()) {
             Box(Modifier.weight(1f).fillMaxHeight()) {
                 SelectionContainer {
-                    LazyColumn(Modifier.fillMaxSize(), state.list) {
+                    LazyColumn(Modifier.fillMaxSize().onGloballyPositioned { state.listCoordinates = it }, state.list) {
                         for (row in rows) {
                             when (row) {
                                 is DiffRow.FileHeader -> stickyHeader(row.key, "file") { FileHeaderRow(row, state, strings, slots) }
@@ -102,7 +119,7 @@ private fun DiffRowContent(
     row: DiffRow,
     files: List<FileDiff>,
     tokens: DiffTokens,
-    metrics: DiffMetrics,
+    metrics: CodeMetrics,
     look: LineLook,
     state: DiffViewerState,
     strings: DiffStrings,
@@ -114,23 +131,63 @@ private fun DiffRowContent(
         is DiffRow.Binary -> Label(strings.binary, Stretch.type.bodySm, Stretch.colors.inkMuted, Modifier.padding(12.dp))
         is DiffRow.Unified -> {
             val file = files[row.fileIndex]
-            val hunk = file.hunks[row.hunkIndex]
-            UnifiedLine(row.line, tokens.of(row.fileIndex, row.line), metrics, look, state.wrap, state.leftScroll, slots.onLineClick?.let { { it(DiffLineRef(file, hunk, row.line)) } })
-            slots.lineAnnotation?.invoke(DiffLineRef(file, hunk, row.line))
+            val line = row.line
+            val ref = DiffLineRef(file, file.hunks[row.hunkIndex], line)
+            val extras = LineExtras(
+                tone = lineToneOf(state, slots, ref, row.fileIndex, line.oldNumber, line.newNumber),
+                gutter = slots.gutterMark?.let { mark -> { mark(ref) } },
+                gutterWidth = slots.gutterWidth,
+                oldNumber = numberInput(state, files, row.fileIndex, ref.copy(side = DiffSide.Old), line.oldNumber, strings, slots),
+                newNumber = numberInput(state, files, row.fileIndex, ref.copy(side = DiffSide.New), line.newNumber, strings, slots),
+            )
+            UnifiedLine(line, tokens.of(row.fileIndex, line), metrics, look, state.wrap, state.leftScroll, extras)
+            slots.lineAnnotation?.invoke(ref)
         }
         is DiffRow.Split -> {
             val file = files[row.fileIndex]
             val hunk = file.hunks[row.hunkIndex]
-            Row(Modifier.fillMaxWidth().then(if (state.wrap) Modifier else Modifier.height(metrics.lineHeight))) {
-                SplitSide(row.left, row.left?.let { tokens.of(row.fileIndex, it) }.orEmpty(), metrics, look, state.wrap, state.leftScroll, file, hunk, slots)
-                Box(Modifier.width(Stretch.stroke).fillMaxHeight().background(Stretch.colors.linePanel))
-                SplitSide(row.right, row.right?.let { tokens.of(row.fileIndex, it) }.orEmpty(), metrics, look, state.wrap, state.rightScroll, file, hunk, slots)
+            val left = row.left?.let { DiffLineRef(file, hunk, it, DiffSide.Old) }
+            val right = row.right?.let { DiffLineRef(file, hunk, it, DiffSide.New) }
+            fun extrasOf(ref: DiffLineRef?): LineExtras {
+                if (ref == null) return LineExtras()
+                val number = ref.number
+                val input = numberInput(state, files, row.fileIndex, ref, number, strings, slots)
+                val old = if (ref.side == DiffSide.Old) number else null
+                val new = if (ref.side == DiffSide.New) number else null
+                return LineExtras(
+                    tone = lineToneOf(state, slots, ref, row.fileIndex, old, new),
+                    gutter = slots.gutterMark?.let { mark -> { mark(ref) } },
+                    gutterWidth = slots.gutterWidth,
+                    oldNumber = input,
+                    newNumber = input,
+                )
             }
-            val annotated = row.right ?: row.left
-            if (annotated != null) slots.lineAnnotation?.invoke(DiffLineRef(file, hunk, annotated))
+            Row(Modifier.fillMaxWidth().then(if (state.wrap) Modifier else Modifier.height(metrics.lineHeight))) {
+                SplitSide(DiffSide.Old, row.left, row.left?.let { tokens.of(row.fileIndex, it) }.orEmpty(), metrics, look, state.wrap, state.leftScroll, extrasOf(left))
+                Box(Modifier.width(Stretch.stroke).fillMaxHeight().background(Stretch.colors.linePanel))
+                SplitSide(DiffSide.New, row.right, row.right?.let { tokens.of(row.fileIndex, it) }.orEmpty(), metrics, look, state.wrap, state.rightScroll, extrasOf(right))
+            }
+            (right ?: left)?.let { slots.lineAnnotation?.invoke(it) }
         }
         is DiffRow.FileHeader -> Unit
     }
+}
+
+/** The wash for a line: the selection's when it holds the line, else the app's [DiffSlots.lineTone]. */
+private fun lineToneOf(state: DiffViewerState, slots: DiffSlots, ref: DiffLineRef, fileIndex: Int, oldNumber: Int?, newNumber: Int?): LineTone? {
+    val selection = state.lineSelection
+    if (selection != null && selection.fileIndex == fileIndex) {
+        val number = if (selection.side == DiffSide.Old) oldNumber else newNumber
+        if (number != null && number in selection) return LineTone.Selected
+    }
+    return slots.lineTone?.invoke(ref)
+}
+
+/** Pointer input for the number of [ref] on its side, when there is a number there. */
+private fun numberInput(state: DiffViewerState, files: List<FileDiff>, fileIndex: Int, ref: DiffLineRef, number: Int?, strings: DiffStrings, slots: DiffSlots): Modifier {
+    if (number == null) return Modifier
+    val click = slots.onLineClick
+    return Modifier.lineNumberInput(state, files, fileIndex, ref.side, number, strings.selectLine, click?.let { { it(ref) } }, slots.onLineRangeSelect)
 }
 
 @Composable
@@ -154,28 +211,4 @@ private fun DiffBar(files: List<FileDiff>, state: DiffViewerState, strings: Diff
         Segmented(listOf(false, true), state.split, { state.split = it }, { if (it) strings.split else strings.unified })
     }
     Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
-}
-
-/** Room for the code: how wide its longest line is, and how wide the line numbers are. */
-internal class DiffMetrics(val codeWidth: Dp, val numberWidth: Dp, val lineHeight: Dp)
-
-@Composable
-private fun rememberDiffMetrics(files: List<FileDiff>): DiffMetrics {
-    val measurer = rememberTextMeasurer()
-    val style = Stretch.type.valueSm
-    val density = LocalDensity.current
-    return remember(files, style, density) {
-        val digit = measurer.measure("0", style).size
-        val longest = files.maxOfOrNull { file -> file.hunks.maxOfOrNull { hunk -> hunk.lines.maxOfOrNull { expandTabs(it.text).length } ?: 0 } ?: 0 } ?: 0
-        val highest = files.maxOfOrNull { file ->
-            file.hunks.maxOfOrNull { hunk -> hunk.lines.maxOfOrNull { maxOf(it.oldNumber ?: 0, it.newNumber ?: 0) } ?: 0 } ?: 0
-        } ?: 0
-        with(density) {
-            DiffMetrics(
-                codeWidth = (digit.width * (longest + 2)).toDp(),
-                numberWidth = (digit.width * highest.toString().length).toDp() + 12.dp,
-                lineHeight = digit.height.toDp() + 2.dp,
-            )
-        }
-    }
 }

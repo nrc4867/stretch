@@ -26,7 +26,8 @@ private val LocalNativeTitleBar = staticCompositionLocalOf<NativeTitleBar?> { nu
  * A system window whose title bar the app draws: put a [WindowTopBar] at the top of [content]. The OS still owns the
  * frame, so maximize, snapping, resizing, the shadow, rounded corners and the window buttons behave like every other
  * window. Needs the JetBrains Runtime on Windows or macOS; elsewhere the system title bar stays above the top bar.
- * Drawers in a [StretchApp] inside it can pop out into windows of their own. Clicking empty space takes focus off
+ * Drawers in a [StretchApp] inside it can pop out into windows of their own, and tabs of a [PaneGrid] can tear out
+ * into full windows of the app. Clicking empty space takes focus off
  * fields and buttons. Without an [icon] it uses the app's icon from the `dev.chieppa.stretch.app` Gradle plugin, at
  * every size, so the taskbar and Alt+Tab stay sharp; the process is identified to the OS before the window opens.
  */
@@ -46,7 +47,8 @@ fun StretchWindow(
         NativePointerInput(window)
         val titleBar = remember(window) { NativeTitleBar(window) }
         val drawerWindows = remember(window) { DesktopDrawerWindows(window) }
-        CompositionLocalProvider(LocalNativeTitleBar provides titleBar, LocalDrawerWindows provides drawerWindows) {
+        val paneWindows = remember(window) { DesktopPaneWindows(window) }
+        CompositionLocalProvider(LocalNativeTitleBar provides titleBar, LocalDrawerWindows provides drawerWindows, LocalPaneWindows provides paneWindows) {
             Box(Modifier.fillMaxSize().focusHome()) { content() }
         }
     }

@@ -42,7 +42,13 @@ abstract class GenerateTokens : GeneratedSource() {
         out.appendLine("@Immutable")
         out.appendLine("data class StretchColors(")
         colors.forEach { out.appendLine("    val ${(it["name"] as String).camelCase()}: Color,") }
-        out.appendLine(")")
+        out.appendLine(") {")
+        out.appendLine("    /** Every color by its name in the design tokens, such as `surface-canvas`. */")
+        out.appendLine("    val byName: Map<String, Color>")
+        out.appendLine("        get() = mapOf(")
+        colors.forEach { out.appendLine("            \"${it["name"]}\" to ${(it["name"] as String).camelCase()},") }
+        out.appendLine("        )")
+        out.appendLine("}")
         out.appendLine()
         out.appendLine("@Immutable")
         out.appendLine("data class StretchShadows(")

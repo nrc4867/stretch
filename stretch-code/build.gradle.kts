@@ -13,6 +13,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":stretch-theme"))
+            api(project(":stretch-ui"))
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

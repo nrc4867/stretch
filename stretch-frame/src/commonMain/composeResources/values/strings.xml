@@ -45,4 +45,9 @@
     <string name="time_invalid">Not a time</string>
     <string name="time_hour">Hour</string>
     <string name="time_minute">Minute</string>
+    <string name="close_tab">Close %1$s</string>
+    <string name="tab_close">Close</string>
+    <string name="resize_panes">Resize panes</string>
+    <string name="move_to_window">Move to new window</string>
+    <string name="move_back">Move back to the main window</string>
 </resources>

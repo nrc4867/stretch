@@ -84,11 +84,14 @@ private class PageFrames {
     }
 }
 
+/** The page's side of an [HtmlBridge]: messages go out through JCEF's message router. */
+private val desktopBridgeScript = bridgeScript("window.${OffscreenBrowser.QUERY_FUNCTION}({request:m})")
+
 /** What to load for [content]: an address, with inline documents carried in the address itself. */
-private fun addressOf(content: HtmlContent, policy: HtmlPolicy, look: HtmlLook): String = when (content) {
+private fun addressOf(content: HtmlContent, policy: HtmlPolicy, look: HtmlLook, bridged: Boolean): String = when (content) {
     is HtmlContent.Url -> content.url
     is HtmlContent.Inline -> {
-        val document = prepareDocument(content.html, policy, content.baseUrl, look)
+        val document = prepareDocument(content.html, policy, content.baseUrl, look, if (bridged) desktopBridgeScript else null)
         "data:text/html;charset=utf-8;base64," + Base64.getEncoder().encodeToString(document.toByteArray())
     }
 }
@@ -107,6 +110,7 @@ actual fun HtmlView(
     modifier: Modifier,
     policy: HtmlPolicy,
     navigation: HtmlNavigation,
+    bridge: HtmlBridge?,
     unavailable: @Composable () -> Unit,
 ) {
     if (!WebEngine.available) {
@@ -117,10 +121,13 @@ actual fun HtmlView(
     val look = currentHtmlLook
     val frames = remember { PageFrames() }
     val currentNavigation by rememberUpdatedState(navigation)
+    val currentBridge by rememberUpdatedState(bridge)
+    val currentLook by rememberUpdatedState(look)
+    val isUrl = content is HtmlContent.Url
     var size by remember { mutableStateOf(IntSize.Zero) }
     var browser by remember { mutableStateOf<OffscreenBrowser?>(null) }
     val focus = remember { FocusRequester() }
-    val address = remember(content, policy, look) { addressOf(content, policy, look) }
+    val address = remember(content, policy, look, bridge != null) { addressOf(content, policy, look, bridge != null) }
     val ready = size.width > 0 && size.height > 0
 
     // The first picture needs a size, so the browser starts after the first layout.
@@ -130,11 +137,21 @@ actual fun HtmlView(
             override fun onPopup(bounds: Rectangle?) = SwingUtilities.invokeLater { frames.popupBounds = bounds }
             override fun onCursor(type: Int) = SwingUtilities.invokeLater { frames.cursor = type }
             override fun onNavigate(url: String) = currentNavigation.onNavigate(url)
+            override fun onMessage(message: String) = SwingUtilities.invokeLater { currentBridge?.receive(message) }
+            override fun onLoaded() = SwingUtilities.invokeLater {
+                val page = browser?.browser ?: return@invokeLater
+                if (isUrl) page.executeJavaScript(themeScript(currentLook), "", 0)
+                val messages = currentBridge ?: return@invokeLater
+                if (!policy.scripts && !isUrl) return@invokeLater
+                page.executeJavaScript(desktopBridgeScript, "", 0)
+                messages.attach { message -> onEventThread { page.executeJavaScript("window.stretch&&window.stretch._receive(${jsString(message)})", "", 0) } }
+            }
         }
         if (ready) {
             onEventThread { browser = OffscreenBrowser(address, pointsOf(size.width, density), pointsOf(size.height, density), density.density, events) }
         }
         onDispose {
+            currentBridge?.detach()
             val closing = browser
             browser = null
             onEventThread {
@@ -145,7 +162,16 @@ actual fun HtmlView(
     }
     LaunchedEffect(browser, address) {
         val page = browser?.browser ?: return@LaunchedEffect
-        onEventThread { if (page.url != null && page.url != address) page.loadURL(address) }
+        onEventThread {
+            if (page.url != null && page.url != address) {
+                currentBridge?.detach()
+                page.loadURL(address)
+            }
+        }
+    }
+    LaunchedEffect(browser, look) {
+        val page = browser?.browser ?: return@LaunchedEffect
+        if (isUrl) onEventThread { page.executeJavaScript(themeScript(look), "", 0) }
     }
     LaunchedEffect(browser, size, density) {
         val current = browser ?: return@LaunchedEffect

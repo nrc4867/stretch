@@ -24,6 +24,7 @@ val publishedModules = setOf(
     "stretch-test",
     "stretch-code",
     "stretch-diff",
+    "stretch-console",
     "stretch-markdown",
     "stretch-web",
     "stretch-mermaid",

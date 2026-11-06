@@ -135,10 +135,11 @@ fun main() = application {
 | `stretch-document` | One open document: saving, recent files and crash recovery |
 | `stretch-input` | Pointer and pen samples |
 | `stretch-diff` | Optional diff viewer |
+| `stretch-console` | Optional console for a process's output |
 | `stretch-markdown` | Optional markdown editor |
 | `stretch-web` | Optional HTML view, on a browser engine |
 | `stretch-mermaid` | Optional Mermaid diagrams for the markdown editor, on the same engine |
-| `stretch-code` | Syntax coloring, shared by the diff viewer and the markdown editor |
+| `stretch-code` | Syntax coloring and a code viewer, shared by the diff viewer and the markdown editor |
 | `stretch-gpu`, `stretch-gpu-native` | Optional WebGPU viewports and their wgpu-native bindings |
 | `stretch-gradle-plugin` | App name, id and icon |
 | `stretch-test` | Command scenarios and Compose UI test helpers |

@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.dp
 import com.jetbrains.JBR
 import com.jetbrains.WindowDecorations
 import dev.chieppa.stretch.theme.Stretch
@@ -85,6 +86,19 @@ internal fun NativeTitleBar.installed(): TitleBarInsets {
         onDispose {}
     }
     return insets
+}
+
+/**
+ * The custom title bar of a [window] whose header the app draws, kept installed while this is composed, as the
+ * header's [LocalTitleBar] binding; null where the system title bar stays.
+ */
+@Composable
+internal fun rememberTitleBarBinding(window: Window): TitleBarBinding? {
+    val titleBar = remember(window) { NativeTitleBar(window) }
+    if (!titleBar.supported) return null
+    val insets = titleBar.installed()
+    val regions = remember { TitleBarRegions() }
+    return TitleBarBinding(regions, titleBar::hitTest, insets.start.dp, insets.end.dp)
 }
 
 private fun Color.awt() = java.awt.Color(toArgb(), true)

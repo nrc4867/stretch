@@ -36,6 +36,8 @@ kotlin {
             implementation(project(":stretch-core"))
             implementation(project(":stretch-gpu"))
             implementation(project(":stretch-diff"))
+            implementation(project(":stretch-code"))
+            implementation(project(":stretch-console"))
             implementation(project(":stretch-markdown"))
             implementation(project(":stretch-web"))
             implementation(project(":stretch-mermaid"))

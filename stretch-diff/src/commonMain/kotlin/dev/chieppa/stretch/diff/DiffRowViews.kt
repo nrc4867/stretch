@@ -5,7 +5,6 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.runtime.Composable
@@ -24,7 +22,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -33,12 +30,17 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import dev.chieppa.stretch.code.CodeColors
+import dev.chieppa.stretch.code.CodeLineBody
+import dev.chieppa.stretch.code.CodeLineNumber
+import dev.chieppa.stretch.code.CodeLook
+import dev.chieppa.stretch.code.CodeMetrics
 import dev.chieppa.stretch.code.CodeToken
-import dev.chieppa.stretch.code.codeColors
+import dev.chieppa.stretch.code.LineTone
+import dev.chieppa.stretch.code.rememberCodeLook
+import dev.chieppa.stretch.theme.StretchSpacing
 import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
@@ -46,23 +48,22 @@ import dev.chieppa.stretch.ui.Label
 import kotlinx.coroutines.launch
 
 /** The colors lines draw with, gathered once for all the rows. */
-internal class LineLook(val code: CodeColors, val style: TextStyle, val ink: Color, val muted: Color, val addWash: Color, val addStrong: Color, val delWash: Color, val delStrong: Color, val blank: Color)
+internal class LineLook(val code: CodeLook, val addStrong: Color, val delStrong: Color, val blank: Color)
 
 @Composable
 internal fun rememberLineLook(): LineLook {
     val c = Stretch.colors
-    val code = codeColors
-    val style = Stretch.type.valueSm
-    return remember(c, style) {
-        LineLook(code, style.merge(TextStyle(color = c.ink)), c.ink, c.inkSubtle, c.diffAddWash, c.diffAddStrong, c.diffDelWash, c.diffDelStrong, c.surfaceCanvas)
-    }
+    val code = rememberCodeLook()
+    return remember(c, code) { LineLook(code, c.diffAddStrong, c.diffDelStrong, c.surfaceCanvas) }
 }
 
-private fun LineLook.wash(kind: LineKind?) = when (kind) {
-    LineKind.Added -> addWash
-    LineKind.Removed -> delWash
-    LineKind.Context -> Color.Transparent
-    null -> blank
+/** The wash behind a line: [tone] when an app or the selection gives one, otherwise by what changed. */
+private fun LineLook.wash(kind: LineKind?, tone: LineTone?): Color = when {
+    tone != null -> code.wash(tone)
+    kind == LineKind.Added -> code.wash(LineTone.Added)
+    kind == LineKind.Removed -> code.wash(LineTone.Removed)
+    kind == LineKind.Context -> Color.Transparent
+    else -> blank
 }
 
 private fun LineLook.strong(kind: LineKind) = if (kind == LineKind.Added) addStrong else delStrong
@@ -73,54 +74,57 @@ private fun signOf(kind: LineKind) = when (kind) {
     LineKind.Context -> " "
 }
 
+/** What an app and the viewer add to one line: its wash, its gutter mark and how its numbers answer the pointer. */
+internal class LineExtras(
+    val tone: LineTone? = null,
+    val gutter: (@Composable () -> Unit)? = null,
+    val gutterWidth: Dp = StretchSpacing.space16,
+    val oldNumber: Modifier = Modifier,
+    val newNumber: Modifier = Modifier,
+)
+
 @Composable
-private fun Number(value: Int?, metrics: DiffMetrics, look: LineLook, modifier: Modifier = Modifier) {
-    BasicText(
-        value?.toString().orEmpty(),
-        modifier.width(metrics.numberWidth).padding(horizontal = 6.dp),
-        style = look.style.merge(TextStyle(color = look.muted, textAlign = TextAlign.End)),
-        maxLines = 1,
-    )
+private fun Gutter(extras: LineExtras, metrics: CodeMetrics) {
+    val gutter = extras.gutter ?: return
+    Box(Modifier.width(extras.gutterWidth).heightIn(min = metrics.lineHeight), contentAlignment = Alignment.Center) { gutter() }
 }
 
 @Composable
-private fun Code(line: DiffLine, tokens: List<CodeToken>, metrics: DiffMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, modifier: Modifier) {
-    val text = remember(line, tokens, look) { lineText(line, tokens, look.code, look.strong(line.kind)) }
-    if (wrap) {
-        BasicText(text, modifier, style = look.style)
-    } else {
-        Box(modifier.clipToBounds().horizontalScroll(scroll)) {
-            BasicText(text, Modifier.width(metrics.codeWidth), style = look.style, softWrap = false, overflow = TextOverflow.Clip)
-        }
-    }
+private fun Sign(kind: LineKind, look: LineLook) {
+    BasicText(signOf(kind), Modifier.width(StretchSpacing.space16), style = look.code.style.merge(TextStyle(color = look.code.muted, textAlign = TextAlign.Center)))
 }
 
 @Composable
-internal fun UnifiedLine(line: DiffLine, tokens: List<CodeToken>, metrics: DiffMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, onNumberClick: (() -> Unit)?) {
-    Row(Modifier.fillMaxWidth().heightIn(min = metrics.lineHeight).background(look.wash(line.kind)).semantics { stateDescription = line.kind.name }) {
+private fun LineCode(line: DiffLine, tokens: List<CodeToken>, metrics: CodeMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, modifier: Modifier) {
+    val text = remember(line, tokens, look) { lineText(line, tokens, look.code.code, look.strong(line.kind)) }
+    CodeLineBody(text, metrics, look.code, wrap, scroll, modifier)
+}
+
+@Composable
+internal fun UnifiedLine(line: DiffLine, tokens: List<CodeToken>, metrics: CodeMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, extras: LineExtras) {
+    Row(Modifier.fillMaxWidth().heightIn(min = metrics.lineHeight).background(look.wash(line.kind, extras.tone)).semantics { stateDescription = line.kind.name }) {
         DisableSelection {
-            val click = if (onNumberClick != null) Modifier.clickable(role = Role.Button, onClick = onNumberClick) else Modifier
-            Row(click) {
-                Number(line.oldNumber, metrics, look)
-                Number(line.newNumber, metrics, look)
-            }
-            BasicText(signOf(line.kind), Modifier.width(16.dp), style = look.style.merge(TextStyle(color = look.muted, textAlign = TextAlign.Center)))
+            Gutter(extras, metrics)
+            val selected = extras.tone == LineTone.Selected
+            CodeLineNumber(line.oldNumber, metrics, look.code, extras.oldNumber, strong = selected)
+            CodeLineNumber(line.newNumber, metrics, look.code, extras.newNumber, strong = selected)
+            Sign(line.kind, look)
         }
-        Code(line, tokens, metrics, look, wrap, scroll, Modifier.weight(1f))
+        LineCode(line, tokens, metrics, look, wrap, scroll, Modifier.weight(1f))
     }
 }
 
 @Composable
-internal fun RowScope.SplitSide(line: DiffLine?, tokens: List<CodeToken>, metrics: DiffMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, file: FileDiff, hunk: DiffHunk, slots: DiffSlots) {
-    Row(Modifier.weight(1f).fillMaxHeight().background(look.wash(line?.kind)).semantics { if (line != null) stateDescription = line.kind.name }) {
+internal fun RowScope.SplitSide(side: DiffSide, line: DiffLine?, tokens: List<CodeToken>, metrics: CodeMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, extras: LineExtras) {
+    Row(Modifier.weight(1f).fillMaxHeight().background(look.wash(line?.kind, extras.tone)).semantics { if (line != null) stateDescription = line.kind.name }) {
         if (line == null) return@Row
         DisableSelection {
-            val click = slots.onLineClick
-            val modifier = if (click != null) Modifier.clickable(role = Role.Button) { click(DiffLineRef(file, hunk, line)) } else Modifier
-            Number(if (line.kind == LineKind.Removed) line.oldNumber else line.newNumber, metrics, look, modifier)
-            BasicText(signOf(line.kind), Modifier.width(16.dp), style = look.style.merge(TextStyle(color = look.muted, textAlign = TextAlign.Center)))
+            Gutter(extras, metrics)
+            val number = if (side == DiffSide.Old) line.oldNumber else line.newNumber
+            CodeLineNumber(number, metrics, look.code, if (side == DiffSide.Old) extras.oldNumber else extras.newNumber, strong = extras.tone == LineTone.Selected)
+            Sign(line.kind, look)
         }
-        Code(line, tokens, metrics, look, wrap, scroll, Modifier.weight(1f))
+        LineCode(line, tokens, metrics, look, wrap, scroll, Modifier.weight(1f))
     }
 }
 

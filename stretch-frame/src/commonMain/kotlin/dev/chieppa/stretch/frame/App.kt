@@ -2,10 +2,6 @@ package dev.chieppa.stretch.frame
 
 import dev.chieppa.stretch.ui.opensOnPress
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
@@ -30,15 +27,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
@@ -99,6 +92,11 @@ class DrawerSpec(
  * opens the window there; its rail button stays lit and brings the window to the front, and docking or closing the
  * window puts it back, as does dragging the window onto either rail. The layout is the app's state: every change comes back through
  * [onLayoutChange]. Pass a [keyCast] to show key presses over the viewport and a [statusBar] for the window's foot.
+ *
+ * With [placeNewDrawer], [drawers] can change while the app runs: the layout follows the list, through
+ * [onLayoutChange]. A drawer new to it goes where [placeNewDrawer] says, one that left and comes back returns where it
+ * was, and one no longer listed leaves the rail, its window closing. Without it, the layout lists the drawers and specs
+ * it has no placement for do not show.
  */
 @Composable
 fun StretchApp(
@@ -109,6 +107,7 @@ fun StretchApp(
     modifier: Modifier = Modifier,
     keyCast: KeyCastState? = null,
     statusBar: (@Composable () -> Unit)? = null,
+    placeNewDrawer: ((DrawerSpec) -> DrawerPlacement)? = null,
     topBar: @Composable () -> Unit,
     viewport: @Composable BoxScope.() -> Unit,
 ) {
@@ -120,6 +119,13 @@ fun StretchApp(
     val raises = remember { mutableStateMapOf<String, Int>() }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val railDrag = remember { RailDragState() }
+    if (placeNewDrawer != null) {
+        val ids = drawers.map { it.id }
+        SideEffect {
+            val synced = current.syncDrawers(ids) { id -> placeNewDrawer(specs.getValue(id)) }
+            if (synced != current) change(synced)
+        }
+    }
 
     @Composable
     fun rail(side: Side) = Rail(
@@ -288,61 +294,6 @@ private fun DrawerMenuButton(placement: DrawerPlacement, canPopOut: Boolean, rtl
             MenuDivider()
             MenuItem(stringResource(Res.string.reset_layout), { onReset(); open = false })
         }
-    }
-}
-
-/**
- * Follows a drag on a handle that moves as it resizes things. Positions are taken in the window, so the handle
- * moving under the pointer does not eat the drag. Reports the distance from where the drag started.
- */
-private fun Modifier.windowDrag(vertical: Boolean, onStart: () -> Unit, onEnd: () -> Unit = {}, onDrag: (Float) -> Unit): Modifier = composed {
-    var origin by remember { mutableStateOf(Offset.Zero) }
-    var startAt by remember { mutableFloatStateOf(0f) }
-    val start by rememberUpdatedState(onStart)
-    val drag by rememberUpdatedState(onDrag)
-    val end by rememberUpdatedState(onEnd)
-    onGloballyPositioned { origin = it.positionInWindow() }.pointerInput(vertical) {
-        fun along(local: Offset) = if (vertical) origin.y + local.y else origin.x + local.x
-        detectDragGestures(
-            onDragStart = { at ->
-                startAt = along(at)
-                start()
-            },
-            onDragEnd = { end() },
-            onDragCancel = { end() },
-        ) { change, _ ->
-            change.consume()
-            drag(along(change.position) - startAt)
-        }
-    }
-}
-
-/**
- * The drag strip on a panel's inner edge: across the panel when [vertical] (dragged up and down), along it
- * otherwise. Reports the distance dragged in pixels since [onStart].
- */
-@Composable
-private fun EdgeHandle(vertical: Boolean, description: String, onStart: () -> Unit, onDrag: (Float) -> Unit) {
-    val c = Stretch.colors
-    val drag by rememberUpdatedState(onDrag)
-    var dragging by remember { mutableStateOf(false) }
-    val source = remember { MutableInteractionSource() }
-    val hovered by source.collectIsHoveredAsState()
-    val active = hovered || dragging
-    val line = if (active) 2.dp else Stretch.stroke
-    Box(
-        (if (vertical) Modifier.fillMaxWidth().height(6.dp) else Modifier.width(6.dp).fillMaxHeight())
-            .background(c.surfacePanel)
-            .hoverable(source)
-            .pointerHoverIcon(if (vertical) resizeUpDown else resizeSideways)
-            .windowDrag(vertical, onStart = { onStart(); dragging = true }, onEnd = { dragging = false }) { drag(it) }
-            .semantics { contentDescription = description },
-    ) {
-        Box(
-            (if (vertical) Modifier.fillMaxWidth().height(line) else Modifier.width(line).fillMaxHeight())
-                .align(Alignment.Center)
-                .background(if (active) c.ringSelected else c.linePanel),
-        )
     }
 }
 

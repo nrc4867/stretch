@@ -39,15 +39,19 @@ private val doctype = Regex("^\\s*<!doctype[^>]*>", RegexOption.IGNORE_CASE)
 private fun escapeAttribute(value: String) = value.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;")
 
 /**
- * [html] with its policy, base address and page look added at the very start of its head. A browser applies the first
+ * [html] with its policy, base address, page look and [script] (when scripts may run) added at the very start of its head. A browser applies the first
  * policy it reads and a later one can only tighten it, so nothing in the document can undo this.
  */
-internal fun prepareDocument(html: String, policy: HtmlPolicy, baseUrl: String? = null, look: HtmlLook? = null): String {
+internal fun prepareDocument(html: String, policy: HtmlPolicy, baseUrl: String? = null, look: HtmlLook? = null, script: String? = null): String {
     val head = buildString {
         append("<meta charset=\"utf-8\">")
         contentSecurityPolicy(policy)?.let { append("<meta http-equiv=\"Content-Security-Policy\" content=\"${escapeAttribute(it)}\">") }
         baseUrl?.let { append("<base href=\"${escapeAttribute(it)}\">") }
-        look?.let { append("<style>:root{color-scheme:${if (it.dark) "dark" else "light"};color:${it.ink}}</style>") }
+        look?.let { l ->
+            val variables = l.variables.entries.joinToString("") { (name, value) -> ";$name:$value" }
+            append("<style>:root{color-scheme:${if (l.dark) "dark" else "light"};color:${l.ink}$variables}</style>")
+        }
+        if (script != null && policy.scripts) append("<script>$script</script>")
     }
     headOpen.find(html)?.let { return html.replaceRange(it.range.last + 1, it.range.last + 1, head) }
     htmlOpen.find(html)?.let { return html.replaceRange(it.range.last + 1, it.range.last + 1, "<head>$head</head>") }
@@ -55,8 +59,11 @@ internal fun prepareDocument(html: String, policy: HtmlPolicy, baseUrl: String? 
     return html.replaceRange(prologue, prologue, "<head>$head</head>")
 }
 
-/** The theme a document starts from until its own styles say otherwise. Its background is the view itself, behind the page. */
-internal data class HtmlLook(val dark: Boolean, val ink: String)
+/**
+ * The theme a document starts from until its own styles say otherwise. Its background is the view itself, behind the
+ * page. [variables] are CSS custom properties, by name, for the page's own styles to use.
+ */
+internal data class HtmlLook(val dark: Boolean, val ink: String, val variables: Map<String, String> = emptyMap())
 
 /** Whether going to [target] from [current] stays on the page, as a jump to an anchor does. */
 internal fun isSamePage(current: String, target: String): Boolean = current.substringBefore('#') == target.substringBefore('#')

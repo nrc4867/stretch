@@ -31,7 +31,7 @@ import dev.chieppa.stretch.web.HtmlContent
 import dev.chieppa.stretch.web.HtmlView
 import dev.chieppa.stretch.web.WebEngine
 
-private enum class DocumentTab(val label: String) { Markdown("Markdown"), Diff("Diff"), Html("HTML") }
+private enum class DocumentTab(val label: String) { Markdown("Markdown"), Diff("Diff"), Code("Code"), Html("HTML"), Bridge("Page messages"), Console("Console") }
 
 /** The rich document components: a markdown editor, a diff viewer and an HTML view. */
 @Composable
@@ -47,7 +47,10 @@ internal fun DocumentsPage() {
             when (tab) {
                 DocumentTab.Markdown -> MarkdownDemo()
                 DocumentTab.Diff -> DiffDemo()
+                DocumentTab.Code -> CodeDemo()
                 DocumentTab.Html -> HtmlDemo()
+                DocumentTab.Bridge -> HtmlBridgeDemo()
+                DocumentTab.Console -> ConsoleDemo()
             }
         }
     }
@@ -65,7 +68,7 @@ private fun DiffDemo() {
     val files = remember {
         parseUnifiedDiff(SampleDocuments.patch) + diffTexts(SampleDocuments.oldCode, SampleDocuments.newCode, "src/Greeter.kt")
     }
-    DiffViewer(files, Modifier.fillMaxSize(), rememberDiffViewerState(split = true))
+    DiffViewer(files, Modifier.fillMaxSize(), rememberDiffViewerState(split = true), slots = rememberDiffNotes())
 }
 
 @Composable

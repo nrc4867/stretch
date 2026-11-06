@@ -4,6 +4,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -25,5 +26,31 @@ fun ScrollColumn(modifier: Modifier = Modifier, state: ScrollState = rememberScr
     Box(modifier) {
         Column(Modifier.verticalScroll(state), content = content)
         Scrollbar(state, Modifier.align(Alignment.CenterEnd))
+    }
+}
+
+/**
+ * Scrolls the least distance that shows item [index] whole: up to it when it is above the view, down until it is the
+ * last one showing when it is below. Does nothing when it already shows.
+ */
+suspend fun LazyListState.reveal(index: Int) {
+    val visible = layoutInfo.visibleItemsInfo
+    if (visible.isEmpty()) {
+        scrollToItem(index)
+        return
+    }
+    val first = visible.first()
+    val last = visible.last()
+    val end = layoutInfo.viewportEndOffset - layoutInfo.afterContentPadding
+    when {
+        index < first.index || (index == first.index && first.offset < layoutInfo.viewportStartOffset) -> scrollToItem(index)
+        index == last.index && last.offset + last.size > end -> scrollBy((last.offset + last.size - end).toFloat())
+        index > last.index -> {
+            scrollToItem(index)
+            // The item now sits at the top, or lower when the list ran out; bring its bottom up to the view's end.
+            val item = layoutInfo.visibleItemsInfo.firstOrNull { it.index == index } ?: return
+            val gap = layoutInfo.viewportEndOffset - layoutInfo.afterContentPadding - (item.offset + item.size)
+            if (gap > 0) scrollBy(-gap.toFloat())
+        }
     }
 }
