@@ -65,6 +65,8 @@ import org.jetbrains.compose.resources.stringResource
  * is told where the drawer is showing: a tall side column or the wide bottom panel, so it can lay out for either.
  * [headerIcon] is the icon in its header and [railLabel] the name on its rail button, when those differ from the
  * [icon] and [title], as when a drawer's title follows the armed tool. A drawer not [enabled] shows on the rail, faint, and does not open: a place kept for what is not built yet.
+ * With [scrolls] false the drawer's contents, docked or in their own window, get the height under the header and do
+ * their own scrolling, so a `LazyColumn` or `Tree` in them builds only the rows on screen.
  */
 class DrawerSpec(
     val id: String,
@@ -77,6 +79,7 @@ class DrawerSpec(
     val railLabel: String = title,
     val enabled: Boolean = true,
     val actions: @Composable RowScope.() -> Unit = {},
+    val scrolls: Boolean = true,
     val content: @Composable ColumnScope.(DrawerPosition) -> Unit,
 )
 
@@ -175,6 +178,7 @@ fun StretchApp(
                     IconButton(StretchIcons.Minus, stringResource(Res.string.close), { change(current.close(placement.id)) }, size = StretchSizes.seg)
                 }
             },
+            scrolls = spec.scrolls,
             content = { spec.content(this, placement.position) },
         )
     }

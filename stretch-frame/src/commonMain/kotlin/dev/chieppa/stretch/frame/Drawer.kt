@@ -96,7 +96,9 @@ fun DrawerHeader(title: String, icon: ImageVector?, count: String? = null, actio
 
 /**
  * Every panel is a drawer: a header, then sections of settings rows or list rows. Contents are labels, values,
- * controls and icons; explanations go in tooltips.
+ * controls and icons; explanations go in tooltips. The contents scroll under the header; with [scrolls] false they
+ * get the height below the header instead and scroll themselves, so a `LazyColumn` or `Tree` there builds only the
+ * rows on screen (give it `Modifier.weight(1f)` to fill what other contents leave).
  */
 @Composable
 fun Drawer(
@@ -106,6 +108,7 @@ fun Drawer(
     style: DrawerStyle = DrawerStyle.Card,
     count: String? = null,
     actions: @Composable RowScope.() -> Unit = {},
+    scrolls: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = Stretch.colors
@@ -116,7 +119,7 @@ fun Drawer(
     }
     Column(base) {
         DrawerHeader(title, icon, count, actions)
-        ScrollColumn(Modifier.weight(1f, fill = false), content = content)
+        if (scrolls) ScrollColumn(Modifier.weight(1f, fill = false), content = content) else Column(Modifier.weight(1f, fill = false), content = content)
     }
 }
 

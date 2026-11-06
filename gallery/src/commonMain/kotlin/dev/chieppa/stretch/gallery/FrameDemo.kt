@@ -372,7 +372,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
 
     // A drawer offered only while the app wants it, to show drawers coming and going as it runs.
     var notesOffered by remember { mutableStateOf(false) }
-    val notes = if (notesOffered) listOf(DrawerSpec("notes", "Notes", StretchIcons.ListBullet) { RowText("Notes come and go with the app") }) else emptyList()
+    val notes = if (notesOffered) listOf(notesDrawer()) else emptyList()
     val drawers = notes + listOf(
         DrawerSpec("layers", "Layers", StretchIcons.Layers, count = doc.layers.size.toString(), keys = listOf("L")) {
             Column(
