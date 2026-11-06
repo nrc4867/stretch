@@ -13,15 +13,21 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import dev.chieppa.stretch.code.CodeMetrics
 import dev.chieppa.stretch.code.longestLine
 import dev.chieppa.stretch.code.rememberCodeMetrics
 import dev.chieppa.stretch.theme.Stretch
+import dev.chieppa.stretch.theme.StretchSpacing
+import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.ui.Scrollbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -34,7 +40,9 @@ import kotlinx.coroutines.withContext
  * from outside, by whole file per side (see [FileTokens]); files and sides without them are tokenized hunk by hunk by
  * the language of their path. Tokens may arrive after the files; the view keeps its place when they do. [matches] are
  * find matches the app finds, drawn in place with [currentMatch] set apart; [DiffViewerState.scrollToMatch] brings one
- * into view, opening its file and fold when they hide it.
+ * into view, opening its file and fold when they hide it. With [ruler] on, a strip beside the scrollbar marks removed
+ * and added lines, find matches and the app's [marks] along the whole diff, where wrapped rows take their real share;
+ * pressing or dragging on it scrolls there.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -48,6 +56,8 @@ fun DiffViewer(
     tokens: Map<FileDiff, FileTokens> = emptyMap(),
     matches: List<DiffMatch> = emptyList(),
     currentMatch: DiffMatch? = null,
+    marks: List<DiffMark> = emptyList(),
+    ruler: Boolean = true,
 ) {
     val c = Stretch.colors
     val rows = remember(files, state.split, state.unfolded, state.collapsedFiles) {
@@ -67,11 +77,13 @@ fun DiffViewer(
         state.charWidth = charWidth
     }
     val finds = remember(matches, currentMatch) { DiffFinds(matches, currentMatch) }
+    var listWidth by remember { mutableIntStateOf(0) }
+    val columns = wrapColumns(listWidth, state.split, metrics, slots, charWidth)
     val context = DiffRowContext(files, lineTokens, finds, metrics, look, state, strings, slots)
     Column(modifier.background(c.surfacePanel)) {
         if (showBar) DiffBar(files, state, strings)
         Row(Modifier.weight(1f).fillMaxWidth()) {
-            Box(Modifier.weight(1f).fillMaxHeight()) {
+            Box(Modifier.weight(1f).fillMaxHeight().onSizeChanged { listWidth = it.width }) {
                 SelectionContainer {
                     LazyColumn(Modifier.fillMaxSize().onGloballyPositioned { state.listCoordinates = it }, state.list) {
                         for (row in rows) {
@@ -86,7 +98,16 @@ fun DiffViewer(
                 }
                 Scrollbar(state.list, Modifier.align(Alignment.CenterEnd))
             }
-            ChangeRuler(rows, state)
+            if (ruler) DiffRuler(rows, files, matches, currentMatch, marks, state, state.wrap, columns)
         }
     }
+}
+
+/** How many characters a wrapped line has room for in a list [width] pixels wide, beside its gutter, numbers and sign. */
+@Composable
+private fun wrapColumns(width: Int, split: Boolean, metrics: CodeMetrics, slots: DiffSlots, charWidth: Float): Int {
+    val gutter = if (slots.gutterMark != null) slots.gutterWidth else 0.dp
+    val beside = with(LocalDensity.current) { (gutter + metrics.numberWidth * (if (split) 1 else 2) + StretchSpacing.space16).toPx() }
+    val room = if (split) width / 2f else width.toFloat()
+    return if (charWidth > 0f) ((room - beside) / charWidth).toInt() else 0
 }

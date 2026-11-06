@@ -3,6 +3,8 @@ package dev.chieppa.stretch.code
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,8 +21,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.Stretch
+import dev.chieppa.stretch.theme.StretchSpacing
 import dev.chieppa.stretch.ui.FindBar
 import dev.chieppa.stretch.ui.Scrollbar
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +40,8 @@ import kotlinx.coroutines.withContext
  * splits a whole text's spans). Null colors it by [language] with the built-in tokenizer. Tokens may arrive after the
  * text; the view keeps its place when they do. [matches] are find matches the app finds itself, such as by a regular
  * expression, drawn in place of the find bar's with [currentMatch] set apart; [CodeViewerState.scrollToMatch] brings
- * one into view.
+ * one into view. With [ruler] on, a strip beside the scrollbar marks toned lines, find matches and the app's [marks]
+ * along the whole text, where wrapped lines take their real share; pressing or dragging on it scrolls there.
  */
 @Composable
 fun CodeViewer(
@@ -49,6 +55,8 @@ fun CodeViewer(
     tokens: List<List<CodeToken>>? = null,
     matches: List<CodeRange>? = null,
     currentMatch: CodeRange? = null,
+    marks: List<CodeMark> = emptyList(),
+    ruler: Boolean = true,
 ) {
     val builtIn by produceState(emptyList<List<CodeToken>>(), text, language, tokens == null) {
         value = if (tokens != null) emptyList() else withContext(Dispatchers.Default) { tokenizeLines(text.lines, language) }
@@ -72,22 +80,30 @@ fun CodeViewer(
     val scope = rememberCoroutineScope()
     val findFocus = remember { FocusRequester() }
     var opened by remember { mutableIntStateOf(0) }
+    var listWidth by remember { mutableIntStateOf(0) }
+    // Room a wrapped line has, in characters, beside its gutter, number and padding.
+    val beside = metrics.numberWidth + StretchSpacing.space8 + if (slots.gutterMark != null) slots.gutterWidth else 0.dp
+    val besidePx = with(LocalDensity.current) { beside.toPx() }
+    val columns = if (charWidth > 0f) ((listWidth - besidePx) / charWidth).toInt() else 0
 
     Column(modifier.background(Stretch.colors.surfacePanel).codeFindKeys(state, scope) { opened++ }) {
         if (state.findOpen) FindBar(state, strings.find, findFocus, opened)
-        Box(Modifier.weight(1f).fillMaxWidth()) {
-            SelectionContainer {
-                LazyColumn(Modifier.fillMaxSize(), state.list) {
-                    items(text.lineCount, key = { it }) { index ->
-                        val number = index + 1
-                        CodeViewerLine(
-                            number, text.lines[index], lineTokens.getOrNull(index).orEmpty(), matchesByLine[number].orEmpty(), current,
-                            tones(number), metrics, look, state, slots,
-                        )
+        Row(Modifier.weight(1f).fillMaxWidth()) {
+            Box(Modifier.weight(1f).fillMaxHeight().onSizeChanged { listWidth = it.width }) {
+                SelectionContainer {
+                    LazyColumn(Modifier.fillMaxSize(), state.list) {
+                        items(text.lineCount, key = { it }) { index ->
+                            val number = index + 1
+                            CodeViewerLine(
+                                number, text.lines[index], lineTokens.getOrNull(index).orEmpty(), matchesByLine[number].orEmpty(), current,
+                                tones(number), metrics, look, state, slots,
+                            )
+                        }
                     }
                 }
+                Scrollbar(state.list, Modifier.align(Alignment.CenterEnd))
             }
-            Scrollbar(state.list, Modifier.align(Alignment.CenterEnd))
+            if (ruler) CodeRuler(text, tones, shownMatches, current, marks, state, columns)
         }
     }
 }

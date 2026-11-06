@@ -42,6 +42,9 @@ class CodeLook(
 fun CodeLook.matchHighlight(start: Int, end: Int, current: Boolean): CodeHighlight =
     if (current) CodeHighlight(start, end, currentMatch, onCurrentMatch) else CodeHighlight(start, end, match)
 
+/** How much of the accent a find match other than the current one shows, so it reads over a line's wash too. */
+private const val MATCH_ALPHA = 0.4f
+
 @Composable
 fun rememberCodeLook(): CodeLook {
     val c = Stretch.colors
@@ -54,7 +57,7 @@ fun rememberCodeLook(): CodeLook {
             ink = c.ink,
             muted = c.inkSubtle,
             strong = c.inkStrong,
-            match = c.warnWash,
+            match = c.accent.copy(alpha = MATCH_ALPHA),
             currentMatch = c.accent,
             onCurrentMatch = c.onAccent,
             washes = mapOf(

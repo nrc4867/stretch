@@ -1,10 +1,8 @@
 package dev.chieppa.stretch.diff
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -19,13 +17,9 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -46,7 +40,6 @@ import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.ui.Label
-import kotlinx.coroutines.launch
 
 /** The colors lines draw with, gathered once for all the rows. */
 internal class LineLook(val code: CodeLook, val addStrong: Color, val delStrong: Color, val blank: Color)
@@ -180,57 +173,5 @@ internal fun FoldRow(row: DiffRow.Fold, strings: DiffStrings, onUnfold: () -> Un
             Icon(StretchIcons.More, c.inkSubtle, size = 12.dp)
             Label(strings.unfold(row.lineCount), Stretch.type.bodySm, c.inkSubtle)
         }
-    }
-}
-
-/** A thin strip beside the list marking where changes are in the whole diff. Clicking jumps there. */
-@Composable
-internal fun ChangeRuler(rows: List<DiffRow>, state: DiffViewerState) {
-    val c = Stretch.colors
-    val scope = rememberCoroutineScope()
-    val marks = remember(rows) { rulerMarks(rows) }
-    Canvas(
-        Modifier
-            .width(10.dp)
-            .fillMaxHeight()
-            .background(c.surfaceCanvas)
-            .pointerInput(rows) {
-                detectTapGestures { at ->
-                    val row = (at.y / size.height * rows.size).toInt().coerceIn(0, (rows.size - 1).coerceAtLeast(0))
-                    scope.launch { state.list.scrollToItem(row) }
-                }
-            },
-    ) {
-        if (rows.isEmpty()) return@Canvas
-        val rowHeight = size.height / rows.size
-        for (mark in marks) {
-            drawRect(
-                if (mark.added) c.deltaUp else c.deltaDown,
-                Offset(if (mark.added) size.width / 2 else 0f, mark.row * rowHeight),
-                Size(size.width / 2, maxOf(rowHeight * mark.rows, 2f)),
-            )
-        }
-    }
-}
-
-private class RulerMark(val row: Int, val rows: Int, val added: Boolean)
-
-private fun rulerMarks(rows: List<DiffRow>): List<RulerMark> = buildList {
-    fun scan(added: Boolean, on: (DiffRow) -> Boolean) {
-        var start = -1
-        for (index in 0..rows.size) {
-            val hit = index < rows.size && on(rows[index])
-            if (hit && start < 0) start = index
-            if (!hit && start >= 0) {
-                add(RulerMark(start, index - start, added))
-                start = -1
-            }
-        }
-    }
-    scan(true) { row ->
-        (row is DiffRow.Unified && row.line.kind == LineKind.Added) || (row is DiffRow.Split && row.right?.kind == LineKind.Added)
-    }
-    scan(false) { row ->
-        (row is DiffRow.Unified && row.line.kind == LineKind.Removed) || (row is DiffRow.Split && row.left?.kind == LineKind.Removed)
     }
 }
