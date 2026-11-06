@@ -36,8 +36,8 @@ private fun showFileInput(accept: String, multiple: Boolean): Promise<FileList?>
     input.click();
 })""")
 
-/** The chosen files' paths in [BrowserFiles], with [extensions] listed in the picker; empty when cancelled. */
-actual suspend fun pickFiles(title: String, extensions: Set<String>, multiple: Boolean): List<String> {
+/** The chosen files' paths in [BrowserFiles], with [extensions] listed in the picker, which names no kinds; empty when cancelled. */
+actual suspend fun pickFiles(title: String, extensions: Set<String>, multiple: Boolean, kindName: String): List<String> {
     val accept = extensions.joinToString(",") { ".$it" }
     val files = showFileInput(accept, multiple).await<FileList?>() ?: return emptyList()
     return (0 until files.length).mapNotNull { files[it]?.let(BrowserFiles::add) }

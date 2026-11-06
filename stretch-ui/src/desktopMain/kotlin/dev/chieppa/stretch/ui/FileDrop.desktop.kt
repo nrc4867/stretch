@@ -10,8 +10,6 @@ import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.DragData
 import androidx.compose.ui.draganddrop.dragData
-import java.awt.FileDialog
-import java.awt.Frame
 import java.io.File
 import java.net.URI
 
@@ -36,10 +34,8 @@ internal actual fun Modifier.fileDropTarget(onHover: (HoveredFiles?) -> Unit, on
     return dragAndDropTarget(shouldStartDragAndDrop = { true }, target = target)
 }
 
-actual suspend fun pickFiles(title: String, extensions: Set<String>, multiple: Boolean): List<String> {
-    val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD)
-    dialog.isMultipleMode = multiple
-    if (extensions.isNotEmpty()) dialog.setFilenameFilter { _, name -> fileExtension(name) in extensions }
-    dialog.isVisible = true
-    return dialog.files.map { it.path }
+/** The chosen files' paths, through [SystemFileDialogs]. */
+actual suspend fun pickFiles(title: String, extensions: Set<String>, multiple: Boolean, kindName: String): List<String> {
+    val kinds = if (extensions.isEmpty()) emptyList() else listOf(FileKind(kindName.ifBlank { extensionsName(extensions) }, extensions))
+    return SystemFileDialogs.open(title, kinds, multiple)
 }

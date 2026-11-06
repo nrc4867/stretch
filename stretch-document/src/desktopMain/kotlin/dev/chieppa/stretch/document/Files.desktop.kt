@@ -4,13 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.LocalAwtWindow
-import java.awt.FileDialog
 import java.awt.Frame
-import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import org.jetbrains.compose.resources.stringResource
+import dev.chieppa.stretch.ui.FileKind
+import dev.chieppa.stretch.ui.SystemFileDialogs
+import dev.chieppa.stretch.ui.extensionsName
 import dev.chieppa.stretch.document.generated.Res
 import dev.chieppa.stretch.document.generated.choose_open
 import dev.chieppa.stretch.document.generated.choose_save
@@ -43,26 +44,17 @@ object FileStorage : DocumentStorage {
 }
 
 /**
- * The OS's own open and save dialogs, over [owner]. On Windows and macOS these are the system dialogs, with the
- * format's files listed and its extension added to a name typed without one.
+ * The OS's own open and save dialogs, over [owner], through [SystemFileDialogs]: the format's files listed under its description, and
+ * its extension added to a name typed without one.
  */
 class SystemFileChooser(private val owner: Frame?, private val openTitle: String, private val saveTitle: String) : FileChooser {
-    override suspend fun chooseOpen(format: DocumentFormat<*>): String? = show(FileDialog.LOAD, openTitle, format, "*.${format.extension}")
+    override suspend fun chooseOpen(format: DocumentFormat<*>): String? =
+        SystemFileDialogs.open(openTitle, listOf(kindOf(format)), multiple = false, owner = owner).firstOrNull()
 
-    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? {
-        val name = suggestedName.ifBlank { "*" } + ".${format.extension}"
-        val chosen = show(FileDialog.SAVE, saveTitle, format, name) ?: return null
-        return if (chosen.endsWith(".${format.extension}", ignoreCase = true)) chosen else "$chosen.${format.extension}"
-    }
+    override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? =
+        SystemFileDialogs.save(saveTitle, listOf(kindOf(format)), suggestedName, format.extension, owner)
 
-    private fun show(mode: Int, title: String, format: DocumentFormat<*>, file: String): String? {
-        val dialog = FileDialog(owner, title, mode)
-        dialog.file = file
-        dialog.setFilenameFilter { _, name -> name.endsWith(".${format.extension}", ignoreCase = true) }
-        dialog.isVisible = true
-        val chosen = dialog.file ?: return null
-        return File(dialog.directory, chosen).path
-    }
+    private fun kindOf(format: DocumentFormat<*>) = FileKind(format.description.ifBlank { extensionsName(setOf(format.extension)) }, setOf(format.extension))
 }
 
 actual val documentStorage: DocumentStorage = FileStorage

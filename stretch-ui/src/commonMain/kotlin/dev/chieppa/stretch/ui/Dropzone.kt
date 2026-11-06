@@ -40,8 +40,14 @@ fun fileExtension(path: String): String = path.substringAfterLast('/').substring
 /** A file's name with its extension, without its folder. */
 fun fileName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\')
 
-/** Opens the system file picker and returns the chosen paths, empty when cancelled. */
-expect suspend fun pickFiles(title: String, extensions: Set<String>, multiple: Boolean = true): List<String>
+/**
+ * Opens the system file picker and returns the chosen paths, empty when cancelled. It lists files with one of [extensions] (any
+ * when empty) under [kindName], such as "Images", or under the extensions themselves when that is blank.
+ */
+expect suspend fun pickFiles(title: String, extensions: Set<String>, multiple: Boolean = true, kindName: String = ""): List<String>
+
+/** What a picker calls files with [extensions] when it has no name for them: the extensions in capitals, such as "PNG, JPG". */
+fun extensionsName(extensions: Set<String>): String = extensions.joinToString(", ") { it.uppercase() }
 
 /** Whether a drop of [paths] is accepted: at least one file, all with one of [extensions] (any when empty). */
 fun acceptsFiles(paths: List<String>, extensions: Set<String>): Boolean =

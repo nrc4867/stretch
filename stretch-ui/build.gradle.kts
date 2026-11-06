@@ -30,6 +30,12 @@ kotlin {
             implementation(kotlin("test"))
             implementation(libs.compose.ui.test)
         }
+        val desktopMain by getting {
+            dependencies {
+                implementation(libs.jna)
+                implementation(libs.jna.platform)
+            }
+        }
         val desktopTest by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
