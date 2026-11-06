@@ -15,12 +15,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import dev.chieppa.stretch.theme.StretchSpacing
+
+/** How wide the bar down a changed line's start edge is: wide enough to read at a glance beside the numbers. */
+val ChangeBarWidth: Dp = StretchSpacing.space4
 
 /** A line number, right-aligned in the numbers' column, or a blank column when [value] is null. [strong] inks it darker. */
 @Composable
@@ -50,7 +57,8 @@ fun CodeLineBody(text: AnnotatedString, metrics: CodeMetrics, look: CodeLook, wr
 
 /**
  * One line of a code view: the [gutter] column [gutterWidth] wide for marks, the line number (which [numberModifier]
- * can make clickable) and the code, all on the wash of [tone]. Only the code can be selected as text.
+ * can make clickable) and the code, all on the wash of [tone]. A specified [changeBar] draws a bar of that color down
+ * the start edge, as tall as the line however it wraps, for a changed line. Only the code can be selected as text.
  */
 @Composable
 fun CodeLineRow(
@@ -65,8 +73,10 @@ fun CodeLineRow(
     gutterWidth: Dp = StretchSpacing.space16,
     gutter: (@Composable () -> Unit)? = null,
     numberModifier: Modifier = Modifier,
+    changeBar: Color = Color.Unspecified,
 ) {
-    Row(modifier.fillMaxWidth().heightIn(min = metrics.lineHeight).background(look.wash(tone))) {
+    val bar = Modifier.drawBehind { if (changeBar.isSpecified) drawRect(changeBar, size = Size(ChangeBarWidth.toPx(), size.height)) }
+    Row(modifier.fillMaxWidth().heightIn(min = metrics.lineHeight).background(look.wash(tone)).then(bar)) {
         DisableSelection {
             if (gutter != null) Box(Modifier.width(gutterWidth).heightIn(min = metrics.lineHeight), contentAlignment = Alignment.Center) { gutter() }
             CodeLineNumber(number, metrics, look, numberModifier, strong = tone == LineTone.Selected)

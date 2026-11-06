@@ -6,9 +6,10 @@ import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 
-/** Line [number] of a [CodeViewer] with its find [matches] drawn in place, [current] the current one, and the app's slots. */
+/** Line [number] of a [CodeViewer] with its find [matches] drawn in place, [current] the current one, the app's slots and a [changeBar]. */
 @Composable
 internal fun CodeViewerLine(
     number: Int,
@@ -21,6 +22,7 @@ internal fun CodeViewerLine(
     look: CodeLook,
     state: CodeViewerState,
     slots: CodeViewerSlots,
+    changeBar: Color,
 ) {
     val highlights = matches.map { look.matchHighlight(it.start, it.end, it == current) }
     val annotated = remember(line, tokens, highlights, look) { codeLineText(line, tokens, look.code, highlights) }
@@ -32,6 +34,7 @@ internal fun CodeViewerLine(
             gutterWidth = slots.gutterWidth,
             gutter = slots.gutterMark?.let { mark -> { mark(number) } },
             numberModifier = if (click != null) Modifier.clickable(role = Role.Button) { click(number) } else Modifier,
+            changeBar = changeBar,
         )
         slots.lineAnnotation?.let { annotation -> DisableSelection { annotation(number) } }
     }

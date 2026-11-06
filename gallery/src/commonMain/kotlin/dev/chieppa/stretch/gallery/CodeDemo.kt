@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.code.CodeLanguages
+import dev.chieppa.stretch.code.CodeMark
 import dev.chieppa.stretch.code.CodeText
 import dev.chieppa.stretch.code.CodeViewer
 import dev.chieppa.stretch.code.CodeViewerSlots
@@ -38,7 +39,7 @@ import dev.chieppa.stretch.ui.Label
 import dev.chieppa.stretch.ui.Toggle
 import kotlinx.coroutines.launch
 
-/** Two code viewers, old and new, with changed lines washed, notes under lines and scrolling that can follow. */
+/** Two code viewers, old and new, with changed lines washed and barred, notes under lines and on the ruler, and scrolling that can follow. */
 @Composable
 internal fun CodeDemo() {
     val old = remember { CodeText.of(List(12) { SampleDocuments.oldCode }.joinToString("\n")) }
@@ -87,7 +88,7 @@ internal fun CodeDemo() {
             Button("Go to line 120", { scope.launch { left.scrollToLine(120) } })
         }
         Row(Modifier.weight(1f).fillMaxWidth()) {
-            Viewer(old, left, { if (it in changes.first) LineTone.Removed else null }, slots)
+            Viewer(old, left, { if (it in changes.first) LineTone.Removed else null }, slots, notes.map { CodeMark(it, Stretch.colors.accent) })
             Box(Modifier.width(Stretch.stroke).fillMaxHeight().background(Stretch.colors.linePanel))
             Viewer(new, right, { if (it in changes.second) LineTone.Added else null }, CodeViewerSlots())
         }
@@ -95,6 +96,12 @@ internal fun CodeDemo() {
 }
 
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.Viewer(text: CodeText, state: CodeViewerState, tones: (Int) -> LineTone?, slots: CodeViewerSlots) {
-    CodeViewer(text, Modifier.weight(1f).fillMaxHeight(), state, CodeLanguages.named("kotlin"), tones, slots = slots)
+private fun androidx.compose.foundation.layout.RowScope.Viewer(
+    text: CodeText,
+    state: CodeViewerState,
+    tones: (Int) -> LineTone?,
+    slots: CodeViewerSlots,
+    marks: List<CodeMark> = emptyList(),
+) {
+    CodeViewer(text, Modifier.weight(1f).fillMaxHeight(), state, CodeLanguages.named("kotlin"), tones, slots = slots, marks = marks)
 }

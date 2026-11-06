@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -41,7 +42,8 @@ import kotlinx.coroutines.withContext
  * text; the view keeps its place when they do. [matches] are find matches the app finds itself, such as by a regular
  * expression, drawn in place of the find bar's with [currentMatch] set apart; [CodeViewerState.scrollToMatch] brings
  * one into view. With [ruler] on, a strip beside the scrollbar marks toned lines, find matches and the app's [marks]
- * along the whole text, where wrapped lines take their real share; pressing or dragging on it scrolls there.
+ * along the whole text, where wrapped lines take their real share; pressing or dragging on it scrolls there. With
+ * [changeBars] on, lines toned [LineTone.Added] or [LineTone.Removed] get a strong bar down their start edge.
  */
 @Composable
 fun CodeViewer(
@@ -57,6 +59,7 @@ fun CodeViewer(
     currentMatch: CodeRange? = null,
     marks: List<CodeMark> = emptyList(),
     ruler: Boolean = true,
+    changeBars: Boolean = true,
 ) {
     val builtIn by produceState(emptyList<List<CodeToken>>(), text, language, tokens == null) {
         value = if (tokens != null) emptyList() else withContext(Dispatchers.Default) { tokenizeLines(text.lines, language) }
@@ -72,6 +75,7 @@ fun CodeViewer(
     val longest = remember(text) { longestLine(text.lines) }
     val metrics = rememberCodeMetrics(longest, text.lineCount)
     val look = rememberCodeLook()
+    val bars = rulerColors
     val charWidth = with(LocalDensity.current) { metrics.charWidth.toPx() }
     SideEffect {
         state.charWidth = charWidth
@@ -94,9 +98,10 @@ fun CodeViewer(
                     LazyColumn(Modifier.fillMaxSize(), state.list) {
                         items(text.lineCount, key = { it }) { index ->
                             val number = index + 1
+                            val tone = tones(number)
                             CodeViewerLine(
                                 number, text.lines[index], lineTokens.getOrNull(index).orEmpty(), matchesByLine[number].orEmpty(), current,
-                                tones(number), metrics, look, state, slots,
+                                tone, metrics, look, state, slots, if (changeBars) changeBarOf(tone, bars) else Color.Unspecified,
                             )
                         }
                     }
@@ -106,4 +111,11 @@ fun CodeViewer(
             if (ruler) CodeRuler(text, tones, shownMatches, current, marks, state, columns)
         }
     }
+}
+
+/** The bar down a line in [tone]: the strong added or removed color, or none for other lines. */
+private fun changeBarOf(tone: LineTone?, colors: RulerColors): Color = when (tone) {
+    LineTone.Added -> colors.added
+    LineTone.Removed -> colors.removed
+    else -> Color.Unspecified
 }
