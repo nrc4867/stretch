@@ -14,6 +14,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,11 +28,13 @@ import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
 import dev.chieppa.stretch.theme.StretchSpacing
 import dev.chieppa.stretch.ui.FieldIcon
-import dev.chieppa.stretch.ui.Label
+import dev.chieppa.stretch.ui.Tooltip
 
 /**
  * One tab in a [TabStrip]: its [title], an optional leading [icon], and whether it has [modified] content, shown as a
- * dot that turns into the close button under the pointer. A tab not [closable] has no close button.
+ * dot that turns into the close button under the pointer. A tab not [closable] has no close button. A [subtitle], such
+ * as the project a file is from, shows quieter after the title and is cut short before it; screen readers hear both,
+ * and a tooltip shows them whole when either is cut short.
  */
 data class TabItem(
     val id: String,
@@ -36,6 +42,7 @@ data class TabItem(
     val icon: ImageVector? = null,
     val modified: Boolean = false,
     val closable: Boolean = true,
+    val subtitle: String? = null,
 )
 
 /**
@@ -52,6 +59,22 @@ internal fun TabFace(
     onClose: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
+    var cut by remember { mutableStateOf(false) }
+    val face = @Composable { TabFaceBody(item, active, focused, hovered, closeDescription, onClose, modifier) { cut = it } }
+    if (cut) Tooltip(listOfNotNull(item.title, item.subtitle).joinToString(TITLE_SEPARATOR)) { face() } else face()
+}
+
+@Composable
+private fun TabFaceBody(
+    item: TabItem,
+    active: Boolean,
+    focused: Boolean,
+    hovered: Boolean,
+    closeDescription: String,
+    onClose: (() -> Unit)?,
+    modifier: Modifier,
+    onCut: (Boolean) -> Unit,
+) {
     val c = Stretch.colors
     val ink = if (active) c.inkStrong else c.inkMuted
     Column(modifier.height(StretchSizes.row).widthIn(TabMinWidth, TabMaxWidth).width(IntrinsicSize.Max).background(if (active) c.surfacePanel else Color.Transparent)) {
@@ -61,7 +84,7 @@ internal fun TabFace(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (item.icon != null) Icon(item.icon, if (active) c.inkControl else c.inkMuted)
-            Label(item.title, Stretch.type.control, ink, Modifier.weight(1f, fill = false))
+            TabTitle(item.title, item.subtitle, ink, if (active) c.inkMuted else c.inkSubtle, Modifier.weight(1f, fill = false), onCut)
             if (onClose != null && (!item.modified || hovered)) {
                 FieldIcon(StretchIcons.Close, contentDescription = closeDescription, onClick = onClose)
             } else if (item.modified) {
@@ -78,3 +101,6 @@ internal fun TabFace(
         )
     }
 }
+
+/** Between a tab's title and subtitle in its tooltip. */
+private const val TITLE_SEPARATOR = " · "

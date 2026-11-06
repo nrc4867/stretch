@@ -8,6 +8,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.runComposeUiTest
@@ -68,6 +69,22 @@ class TabStripUiTest {
         val widths = (1..3).map { widthOf("$long $it") }
         assertTrue(widths.all { it == TabMinWidth }, "every tab at the least width: $widths")
         assertTrue(tab("$long 12").getUnclippedBoundsInRoot().right > 600.dp, "the strip scrolls past its width")
+    }
+
+    @Test
+    fun aSubtitleShowsAfterTheTitleAndIsHeard() = runComposeUiTest {
+        showStrip(listOf(TabItem("plain", "App.kt"), TabItem("repo", "Main.kt", subtitle = "arc-review")))
+        val tab = tab("Main.kt")
+        tab.assert(hasText("arc-review"))
+        assertTrue(widthOf("Main.kt") > widthOf("App.kt") + 40.dp, "the subtitle takes room after the title")
+    }
+
+    @Test
+    fun aCrowdedTabStillTellsItsSubtitle() = runComposeUiTest {
+        showStrip((1..8).map { TabItem("t$it", "File$it.kt", subtitle = "a-repository-with-a-long-name") }, width = 400.dp)
+        waitForIdle()
+        tab("File1.kt").assert(hasText("a-repository-with-a-long-name"))
+        assertEquals(TabMinWidth, widthOf("File1.kt"))
     }
 
     @Test
