@@ -34,6 +34,7 @@ import dev.chieppa.stretch.frame.ActionMenuItem
 import dev.chieppa.stretch.frame.BarAction
 import dev.chieppa.stretch.frame.BarMenu
 import dev.chieppa.stretch.frame.BarMenus
+import dev.chieppa.stretch.frame.capsFor
 import dev.chieppa.stretch.frame.BoxTransform
 import dev.chieppa.stretch.frame.ClipData
 import dev.chieppa.stretch.frame.ClipboardHandler
@@ -511,6 +512,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
                         BarAction(StretchIcons.Save, "Save", { save() }, listOf("Ctrl", "S")),
                     ),
                     settingsOpen = settings,
+                    commandsKeys = keymap.capsFor(registry.named("commands")),
                 ) {
                     Popover(settings, { settings = false }, title = "Settings") {
                         SettingRow("Show keys") { Spacer(Modifier.weight(1f)); Toggle(showKeys, { showKeys = it }, "Show key presses") }

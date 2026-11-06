@@ -15,11 +15,13 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
+import dev.chieppa.stretch.core.KeyChord
 import dev.chieppa.stretch.test.setStretchContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -98,5 +100,28 @@ class TopBarSlotsTest {
         val bar = bounds("bar")
         val center = bounds("center")
         assertEquals(((bar.left + bar.right) / 2).value, ((center.left + center.right) / 2).value, 0.5f)
+    }
+
+    @Test
+    fun theCommandsTooltipShowsTheAppsBinding() = runComposeUiTest {
+        setStretchContent {
+            TopBar("App", "Untitled") {
+                TopBarActions(onUndo = null, onRedo = null, onCommands = {}, commandsKeys = KeyChord.parse("Ctrl Shift P").caps())
+            }
+        }
+        onNodeWithContentDescription("Commands").performMouseInput { enter(center) }
+        mainClock.advanceTimeBy(1000)
+        onNodeWithText("P").assertExists()
+        onNodeWithText("K").assertDoesNotExist()
+    }
+
+    @Test
+    fun theCommandsTooltipShowsCtrlKUnlessTold() = runComposeUiTest {
+        setStretchContent {
+            TopBar("App", "Untitled") { TopBarActions(onUndo = null, onRedo = null, onCommands = {}) }
+        }
+        onNodeWithContentDescription("Commands").performMouseInput { enter(center) }
+        mainClock.advanceTimeBy(1000)
+        onNodeWithText("K").assertExists()
     }
 }

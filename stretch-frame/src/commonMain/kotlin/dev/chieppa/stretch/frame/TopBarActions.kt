@@ -2,6 +2,7 @@ package dev.chieppa.stretch.frame
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import dev.chieppa.stretch.core.KeyChord
 import dev.chieppa.stretch.frame.generated.Res
 import dev.chieppa.stretch.frame.generated.commands
 import dev.chieppa.stretch.frame.generated.redo
@@ -29,8 +30,9 @@ class BarAction(
  * The standard top bar actions: undo, redo, the command palette and settings, then the app's [more]. Pass null to
  * leave one out. Put what settings opens, such as a [Popover], in [settingsPopup], so it anchors under the settings
  * button, and whether it is open in [settingsOpen]. [undoEnabled] and [redoEnabled] keep their buttons in place, faint,
- * while there is nothing to take back or bring back. Actions that do not fit fold, last first, into a More menu at the
- * end.
+ * while there is nothing to take back or bring back. [commandsKeys] are the key caps the command palette's tooltip and
+ * menu item show, such as `keymap.capsFor(action)` for the app's own binding; Ctrl K (Cmd K on macOS) unless given,
+ * none when null. Actions that do not fit fold, last first, into a More menu at the end.
  */
 @Composable
 fun TopBarActions(
@@ -42,6 +44,7 @@ fun TopBarActions(
     undoEnabled: Boolean = true,
     redoEnabled: Boolean = true,
     settingsOpen: Boolean? = null,
+    commandsKeys: List<String>? = DEFAULT_COMMANDS_KEYS.caps(),
     settingsPopup: @Composable () -> Unit = {},
 ) {
     val undo = stringResource(Res.string.undo)
@@ -51,8 +54,11 @@ fun TopBarActions(
     val actions = listOfNotNull(
         onUndo?.let { BarAction(StretchIcons.Undo, undo, it, listOf("Ctrl", "Z"), enabled = undoEnabled) },
         onRedo?.let { BarAction(StretchIcons.Redo, redo, it, listOf("Ctrl", "Shift", "Z"), enabled = redoEnabled) },
-        onCommands?.let { BarAction(StretchIcons.Command, commands, it, listOf("Ctrl", "K")) },
+        onCommands?.let { BarAction(StretchIcons.Command, commands, it, commandsKeys.orEmpty()) },
         onSettings?.let { BarAction(StretchIcons.Settings, settings, it, popup = settingsPopup, popupOpen = settingsOpen) },
     ) + more
     OverflowActions(actions)
 }
+
+/** The command palette's usual binding. */
+private val DEFAULT_COMMANDS_KEYS = KeyChord.parse("Ctrl K")
