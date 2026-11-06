@@ -2,6 +2,7 @@ package dev.chieppa.stretch.frame
 
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -20,8 +21,9 @@ import androidx.compose.ui.unit.LayoutDirection
  * half, in the middle it joins the pane, with a preview of where it lands. Borders between panes drag to resize them,
  * down to [PaneLayout.MIN_PANE]. Closing a tab calls [onClose], which closes it in the layout unless the app passes
  * its own, say to ask about unsaved changes first; a pane left empty collapses. A press in a pane focuses it. Each
- * tab's content keeps its saveable state while another tab shows. [tabMenu] adds items to a tab's context menu, and
- * [empty] fills a pane with no tabs. Every change comes back through [onChange].
+ * tab's content keeps its saveable state while another tab shows. [tabMenu] adds items to a tab's context menu,
+ * [empty] fills a pane with no tabs, and [paneActions] goes at the end of each pane's strip, for buttons such as split
+ * or close others that act on the pane whose id it gets. Every change comes back through [onChange].
  *
  * Where the platform has a [LocalPaneWindows] host, a tab let go away from the grid, or sent by its menu's Move to new
  * window, opens in a window of its own under the pointer, which holds panes like the grid's and is a full window of
@@ -37,6 +39,7 @@ fun PaneGrid(
     onClose: ((id: String) -> Unit)? = null,
     tabMenu: (@Composable ColumnScope.(id: String, close: () -> Unit) -> Unit)? = null,
     empty: @Composable BoxScope.() -> Unit = {},
+    paneActions: @Composable RowScope.(paneId: String) -> Unit = {},
     content: @Composable BoxScope.(id: String) -> Unit,
 ) {
     val current by rememberUpdatedState(layout)
@@ -55,6 +58,7 @@ fun PaneGrid(
             close = { id -> close?.invoke(id) ?: change(current.close(id)) },
             menu = null,
             empty = {},
+            actions = {},
             content = {},
             drag = drag,
             holder = holder,
@@ -64,6 +68,7 @@ fun PaneGrid(
     }.also {
         it.menu = tabMenu
         it.empty = empty
+        it.actions = paneActions
         it.content = content
     }
     ForgetClosedTabs(layout.tabs, holder::removeState)

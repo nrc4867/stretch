@@ -2,6 +2,7 @@ package dev.chieppa.stretch.frame
 
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +28,7 @@ internal class PaneGridContext(
     val close: (String) -> Unit,
     var menu: (@Composable ColumnScope.(id: String, close: () -> Unit) -> Unit)?,
     var empty: @Composable BoxScope.() -> Unit,
+    var actions: @Composable RowScope.(String) -> Unit,
     var content: @Composable BoxScope.(String) -> Unit,
     val drag: TabDragState,
     val holder: SaveableStateHolder,

@@ -116,6 +116,7 @@ private fun PaneLeafView(leaf: PaneLeaf, grid: PaneGridContext, modifier: Modifi
             stripKey = leaf.id,
             onDragEnd = grid::finish,
             menu = { id, dismiss -> PaneTabMenu(grid, id, dismiss) },
+            trailing = { grid.actions(this, leaf.id) },
         )
         Box(
             Modifier
