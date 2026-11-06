@@ -1,6 +1,9 @@
 package dev.chieppa.stretch.markdown
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +32,8 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -41,7 +46,11 @@ import dev.chieppa.stretch.ui.holdsTyping
 
 private data class CellAt(val row: Int, val column: Int)
 
-/** A table as a grid of fields. Tab moves on a cell, adding a row at the end; Enter moves down. */
+/**
+ * A table as a grid of fields. Columns take the width their cells need, as on a web page ([columnWidths]); long cells
+ * wrap and their row grows to fit, and only a table whose longest words cannot fit side by side scrolls sideways. Tab
+ * moves on a cell, adding a row at the end; Enter moves down.
+ */
 @Composable
 internal fun TableView(block: MarkdownBlock, context: BlockContext) {
     val c = Stretch.colors
@@ -54,43 +63,64 @@ internal fun TableView(block: MarkdownBlock, context: BlockContext) {
         if (state.focusedBlock == block.id && active == null && !context.readOnly && state.selectedBlocks == null) wanted = CellAt(0, 0)
     }
     val shape = Stretch.shapes.ctlShape
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val body = Stretch.type.body
+    val extents = remember(table, body, density) {
+        with(density) {
+            columnExtents(table, measurer, body, body.copy(fontWeight = FontWeight.SemiBold), (CELL_PADDING * 2).toPx(), MIN_COLUMN_WIDTH.toPx())
+        }
+    }
     Column(Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().clip(shape).border(Stretch.stroke, c.lineControl, shape)) {
-            table.rows.forEachIndexed { rowIndex, row ->
-                key(rowIndex) {
-                    Row(Modifier.fillMaxWidth().then(if (rowIndex == 0) Modifier.background(c.surfaceControl) else Modifier)) {
-                        row.forEachIndexed { columnIndex, cell ->
-                            key(columnIndex) {
-                                val at = CellAt(rowIndex, columnIndex)
-                                TableCell(
-                                    cell,
-                                    table.aligns[columnIndex],
-                                    header = rowIndex == 0,
-                                    context,
-                                    focusNow = wanted == at,
-                                    onFocused = {
-                                        active = at
-                                        wanted = null
-                                        state.noteFocused(block.id)
-                                    },
-                                    onChange = { state.updateTable(block.id, table.withCell(rowIndex, columnIndex, it)) },
-                                    onMove = { chord ->
-                                        val next = nextCell(at, chord, table)
-                                        if (next == null) {
-                                            false
-                                        } else {
-                                            if (next.row >= table.rows.size) state.updateTable(block.id, table.withRow(table.rows.lastIndex))
-                                            wanted = next
-                                            true
-                                        }
-                                    },
-                                    Modifier.weight(1f),
-                                )
-                                if (columnIndex < row.lastIndex) Box(Modifier.width(Stretch.stroke).height(CELL_HEIGHT).background(c.linePanel))
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val widths = columnWidths(extents, constraints.maxWidth.toFloat())
+            val tableWidth = with(density) { widths.sum().toDp() }
+            Column(
+                (if (tableWidth > maxWidth) Modifier.horizontalScroll(rememberScrollState()) else Modifier)
+                    .width(tableWidth)
+                    .clip(shape)
+                    .border(Stretch.stroke, c.lineControl, shape),
+            ) {
+                table.rows.forEachIndexed { rowIndex, row ->
+                    key(rowIndex) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .then(if (rowIndex == 0) Modifier.background(c.surfaceControl) else Modifier)
+                                .columnLines(widths, with(density) { Stretch.stroke.toPx() }, c.linePanel),
+                        ) {
+                            row.forEachIndexed { columnIndex, cell ->
+                                key(columnIndex) {
+                                    val at = CellAt(rowIndex, columnIndex)
+                                    TableCell(
+                                        cell,
+                                        table.aligns[columnIndex],
+                                        header = rowIndex == 0,
+                                        context,
+                                        focusNow = wanted == at,
+                                        onFocused = {
+                                            active = at
+                                            wanted = null
+                                            state.noteFocused(block.id)
+                                        },
+                                        onChange = { state.updateTable(block.id, table.withCell(rowIndex, columnIndex, it)) },
+                                        onMove = { chord ->
+                                            val next = nextCell(at, chord, table)
+                                            if (next == null) {
+                                                false
+                                            } else {
+                                                if (next.row >= table.rows.size) state.updateTable(block.id, table.withRow(table.rows.lastIndex))
+                                                wanted = next
+                                                true
+                                            }
+                                        },
+                                        Modifier.width(with(density) { widths[columnIndex].toDp() }),
+                                    )
+                                }
                             }
                         }
+                        if (rowIndex < table.rows.lastIndex) Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
                     }
-                    if (rowIndex < table.rows.lastIndex) Box(Modifier.fillMaxWidth().height(Stretch.stroke).background(c.linePanel))
                 }
             }
         }
@@ -106,7 +136,8 @@ internal fun TableView(block: MarkdownBlock, context: BlockContext) {
     }
 }
 
-private val CELL_HEIGHT = 30.dp
+/** Space on each side of a cell's text. */
+private val CELL_PADDING = 8.dp
 
 /** The cell a key moves to from [at], one past the last row for a new one, or null when the key moves nothing. */
 private fun nextCell(at: CellAt, chord: String, table: MarkdownTable): CellAt? = when (chord) {
@@ -171,9 +202,8 @@ private fun TableCell(
                     else -> onMove(chord)
                 }
             }
-            .padding(horizontal = 8.dp, vertical = 5.dp),
+            .padding(horizontal = CELL_PADDING, vertical = 5.dp),
         readOnly = context.readOnly,
-        singleLine = true,
         textStyle = Stretch.type.body.merge(
             TextStyle(color = c.ink, textAlign = alignment, fontWeight = if (header) FontWeight.SemiBold else null),
         ),
