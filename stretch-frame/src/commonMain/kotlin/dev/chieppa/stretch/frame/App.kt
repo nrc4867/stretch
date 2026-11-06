@@ -1,6 +1,5 @@
 package dev.chieppa.stretch.frame
 
-import dev.chieppa.stretch.ui.opensOnPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -21,34 +20,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.generated.Res
 import dev.chieppa.stretch.frame.generated.close
 import dev.chieppa.stretch.frame.generated.dock
-import dev.chieppa.stretch.frame.generated.dock_left
-import dev.chieppa.stretch.frame.generated.dock_right
-import dev.chieppa.stretch.frame.generated.drawer_menu
-import dev.chieppa.stretch.frame.generated.pop_out
-import dev.chieppa.stretch.frame.generated.rail_bottom
-import dev.chieppa.stretch.frame.generated.rail_top
-import dev.chieppa.stretch.frame.generated.reset_layout
-import dev.chieppa.stretch.frame.generated.resize
 import dev.chieppa.stretch.frame.generated.resize_panel
 import dev.chieppa.stretch.frame.generated.resize_split
 import dev.chieppa.stretch.theme.Stretch
@@ -95,6 +82,8 @@ class DrawerSpec(
  * opens the window there; its rail button stays lit and brings the window to the front, and docking or closing the
  * window puts it back, as does dragging the window onto either rail. The layout is the app's state: every change comes back through
  * [onLayoutChange]. Pass a [keyCast] to show key presses over the viewport and a [statusBar] for the window's foot.
+ * [topStrip] is a strip across the whole window under the [topBar], above the rails, drawers and viewport, such as a
+ * row of sources the window is showing.
  *
  * With [placeNewDrawer], [drawers] can change while the app runs: the layout follows the list, through
  * [onLayoutChange]. A drawer new to it goes where [placeNewDrawer] says, one that left and comes back returns where it
@@ -111,6 +100,7 @@ fun StretchApp(
     keyCast: KeyCastState? = null,
     statusBar: (@Composable () -> Unit)? = null,
     placeNewDrawer: ((DrawerSpec) -> DrawerPlacement)? = null,
+    topStrip: (@Composable () -> Unit)? = null,
     topBar: @Composable () -> Unit,
     viewport: @Composable BoxScope.() -> Unit,
 ) {
@@ -235,6 +225,7 @@ fun StretchApp(
 
     Column(modifier.focusHome().fillMaxSize().background(c.surfaceCanvas).then(if (keyCast != null) Modifier.keyCast(keyCast) else Modifier)) {
         topBar()
+        topStrip?.invoke()
         BoxWithConstraints(Modifier.weight(1f)) {
             val fit = layout.sideFit(maxWidth.value - 2 * StretchSizes.rail.value, specs.keys)
             Row(Modifier.fillMaxSize()) {
@@ -273,54 +264,4 @@ fun StretchApp(
             }
         }
     }
-}
-
-@Composable
-private fun DrawerMenuButton(placement: DrawerPlacement, canPopOut: Boolean, rtl: Boolean, change: ((FrameLayout) -> FrameLayout) -> Unit, onReset: () -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        IconButton(StretchIcons.More, stringResource(Res.string.drawer_menu), { open = true }, Modifier.opensOnPress(open) { open = true }, size = StretchSizes.seg)
-        Menu(open, { open = false }) {
-            if (canPopOut && !placement.detached) {
-                MenuItem(stringResource(Res.string.pop_out), { change { it.popOut(placement.id) }; open = false })
-                MenuDivider()
-            }
-            // Side.Left is the start side, on the right in a right-to-left layout; the menu names where it shows.
-            val leftSide = if (rtl) Side.Right else Side.Left
-            MenuItem(stringResource(Res.string.dock_left), { change { it.dock(placement.id, leftSide) }; open = false }, icon = StretchIcons.DockLeft)
-            MenuItem(stringResource(Res.string.dock_right), { change { it.dock(placement.id, if (rtl) Side.Left else Side.Right) }; open = false }, icon = StretchIcons.DockRight)
-            val toBottom = !placement.bottom
-            MenuItem(
-                stringResource(if (toBottom) Res.string.rail_bottom else Res.string.rail_top),
-                { change { it.move(placement.id, placement.side, toBottom, Int.MAX_VALUE) }; open = false },
-                icon = if (toBottom) StretchIcons.DockBottom else if ((placement.side == Side.Left) != rtl) StretchIcons.DockLeft else StretchIcons.DockRight,
-            )
-            MenuDivider()
-            MenuItem(stringResource(Res.string.reset_layout), { onReset(); open = false })
-        }
-    }
-}
-
-/** The inner edge of a side column. Reports the new width in dp; [sign] is -1 when dragging left grows it. */
-@Composable
-private fun ResizeHandle(width: Float, sign: Float, onResize: (Float) -> Unit) {
-    val density = LocalDensity.current.density
-    val currentWidth by rememberUpdatedState(width)
-    var start by remember { mutableFloatStateOf(0f) }
-    EdgeHandle(vertical = false, stringResource(Res.string.resize), { start = currentWidth }) { px -> onResize(start + sign * px / density) }
-}
-
-/** The split between two stacked drawers. Reports the layout at the start of the drag and the distance in pixels. */
-@Composable
-private fun SplitHandle(layout: () -> FrameLayout, onResize: (start: FrameLayout, dy: Float) -> Unit) {
-    val description = stringResource(Res.string.resize_split)
-    val resize by rememberUpdatedState(onResize)
-    var start by remember { mutableStateOf<FrameLayout?>(null) }
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .pointerHoverIcon(resizeUpDown)
-            .windowDrag(vertical = true, onStart = { start = layout() }) { dy -> start?.let { resize(it, dy) } }
-            .semantics { contentDescription = description },
-    ) { DrawerSplit() }
 }

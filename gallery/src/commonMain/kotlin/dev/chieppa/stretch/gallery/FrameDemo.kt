@@ -266,6 +266,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
     var color by remember { mutableStateOf("Ochre") }
     var showKeys by remember { mutableStateOf(false) }
     var rulers by remember { mutableStateOf(true) }
+    var layerStrip by remember { mutableStateOf(false) }
     var guides by remember { mutableStateOf(listOf(Guide(vertical = true, position = 0f))) }
     var settings by remember { mutableStateOf(false) }
     var fileMenu by remember { mutableStateOf(false) }
@@ -463,6 +464,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
         placeNewDrawer = { DrawerPlacement(it.id, Side.Right, open = true) },
         modifier = Modifier.actionKeys(keymap, mode.name),
         keyCast = if (showKeys) keyCast else null,
+        topStrip = if (layerStrip) ({ LayerStrip(doc.layers, selected) }) else null,
         statusBar = {
             StatusBar(
                 start = { StatusItem("${doc.layers.size} layers") },
@@ -513,6 +515,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
                     Popover(settings, { settings = false }, title = "Settings") {
                         SettingRow("Show keys") { Spacer(Modifier.weight(1f)); Toggle(showKeys, { showKeys = it }, "Show key presses") }
                         SettingRow("Rulers") { Spacer(Modifier.weight(1f)); Toggle(rulers, { rulers = it }, "Rulers") }
+                        SettingRow("Layer strip") { Spacer(Modifier.weight(1f)); Toggle(layerStrip, { layerStrip = it }, "Layer strip") }
                         SettingRow("Size") {
                             Spacer(Modifier.weight(1f))
                             Segmented(listOf(0.9f, 1f, 1.25f, 1.5f), scale, onScale, { "${(it * 100).roundToInt()}%" })
