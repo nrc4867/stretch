@@ -59,7 +59,7 @@ fun rememberConsolePalette(): ConsolePalette {
         ConsolePalette(
             ansi = listOf(
                 c.inkSubtle, c.errorInk, c.deltaUp, c.warnInk, c.syntaxKeyword, c.syntaxNumber, c.syntaxType, c.inkControl,
-                c.inkMuted, c.deltaDown, c.diffAddStrong, c.syntaxString, c.accent, c.syntaxFunction, c.chart3, c.inkStrong,
+                c.inkMuted, c.deltaDown, c.diffAddInk, c.syntaxString, c.accent, c.syntaxFunction, c.chart3, c.inkStrong,
             ),
             ink = c.ink,
             errorInk = c.errorInk,
