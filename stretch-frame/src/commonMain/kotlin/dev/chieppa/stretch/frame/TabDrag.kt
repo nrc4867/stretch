@@ -33,7 +33,7 @@ class TabDragState {
     var tab by mutableStateOf<String?>(null)
         private set
 
-    /** The strip the dragged tab came from. */
+    /** The strip the dragged tab came from, or null for an item from a [paneDragSource]. */
     internal var from by mutableStateOf<String?>(null)
         private set
 
@@ -52,13 +52,18 @@ class TabDragState {
     internal var toScreen: (Offset) -> Offset = SameWindow
         private set
 
+    /** How the dragged item looks when it comes from a [paneDragSource] rather than a strip. */
+    internal var face: TabItem? = null
+        private set
+
     internal val strips = mutableMapOf<String, Placed>()
     internal val spans = mutableMapOf<String, MutableMap<String, Placed>>()
 
     /** The pointer on screen. */
     internal val screenPointer: Offset get() = toScreen(pointer)
 
-    internal fun begin(tab: String, from: String, grab: Offset, pointer: Offset, size: Size, toScreen: (Offset) -> Offset) {
+    internal fun begin(tab: String, from: String?, grab: Offset, pointer: Offset, size: Size, toScreen: (Offset) -> Offset, face: TabItem? = null) {
+        this.face = face
         this.grab = grab
         this.size = size
         this.toScreen = toScreen
@@ -74,6 +79,7 @@ class TabDragState {
     internal fun end() {
         tab = null
         from = null
+        face = null
     }
 
     /**

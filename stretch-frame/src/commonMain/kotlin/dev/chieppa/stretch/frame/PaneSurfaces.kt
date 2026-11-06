@@ -53,8 +53,7 @@ internal fun PaneSurface(surface: String, root: PaneNode, grid: PaneGridContext,
             PaneNodeView(root, grid, Modifier.fillMaxSize())
             val drag = grid.drag
             val dragged = drag.tab
-            val from = drag.from
-            if (dragged != null && from != null && grid.surfaceOf(from) == surface && overSource(grid)) {
+            if (dragged != null && floatSurface(grid) == surface) {
                 Box(
                     Modifier
                         .zIndex(1f)
@@ -69,6 +68,16 @@ internal fun PaneSurface(surface: String, root: PaneNode, grid: PaneGridContext,
     }
 }
 
+/**
+ * The surface the dragged tab or item draws in, under the pointer, or null where it shows in a window of its own:
+ * the surface a tab came from while the pointer is over it, the grid for an item where there is no pane window host,
+ * and for an item with a host, always a window of its own.
+ */
+internal fun floatSurface(grid: PaneGridContext): String? {
+    val from = grid.drag.from ?: return if (grid.host == null) GRID_SURFACE else null
+    return if (overSource(grid)) grid.surfaceOf(from) else null
+}
+
 /** Whether the dragged tab is over the surface it came from, or there is no other window it could show in. */
 internal fun overSource(grid: PaneGridContext): Boolean {
     val from = grid.drag.from ?: return true
@@ -78,7 +87,7 @@ internal fun overSource(grid: PaneGridContext): Boolean {
 
 @Composable
 internal fun DraggedTab(grid: PaneGridContext, tab: String) {
-    TabFace(grid.item(tab), active = true, focused = true, hovered = false, closeDescription = "", onClose = null)
+    TabFace(grid.drag.face?.takeIf { it.id == tab } ?: grid.item(tab), active = true, focused = true, hovered = false, closeDescription = "", onClose = null)
 }
 
 /**
@@ -126,13 +135,13 @@ internal fun PaneWindows(layout: PaneLayout, host: PaneWindowHost, grid: PaneGri
     }
 }
 
-/** The dragged tab in a window of its own while it is away from the surface it came from. */
+/** The dragged tab in a window of its own while it is away from the surface it came from, or an item from outside. */
 @Composable
 internal fun PaneDragFloat(host: PaneWindowHost, grid: PaneGridContext) {
     val drag = grid.drag
     val dragged = drag.tab ?: return
     val size = with(LocalDensity.current) { drag.size.width.toDp() }
-    val at = if (overSource(grid)) null else drag.toScreen(drag.pointer - drag.grab)
+    val at = if (floatSurface(grid) != null) null else drag.toScreen(drag.pointer - drag.grab)
     host.DragFloat(at, size) {
         Box(Modifier.floating(Stretch.shapes.segShape, Stretch.shadows.pop)) { DraggedTab(grid, dragged) }
     }

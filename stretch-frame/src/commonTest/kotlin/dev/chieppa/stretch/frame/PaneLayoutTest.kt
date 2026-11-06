@@ -177,4 +177,19 @@ class PaneLayoutTest {
         assertEquals(3, stripIndex(spans, 290f, rtl = false))
         assertEquals(3, stripIndex(spans, 10f, rtl = true))
     }
+
+    @Test
+    fun placingAnItemOpensItWhereItWasLetGo() {
+        val start = PaneLayout().open("a").open("b")
+        assertEquals(listOf("a", "c", "b"), start.place("c", PaneItemDrop.InPane(PaneDrop.Strip(PaneLayout.FIRST_LEAF, 1))).tabs)
+        val split = start.place("c", PaneItemDrop.InPane(PaneDrop.Edge(PaneLayout.FIRST_LEAF, PaneEdge.Bottom)))
+        assertEquals(listOf(listOf("a", "b"), listOf("c")), split.leaves.map { it.tabs })
+        val shown = start.place("a", PaneItemDrop.InPane(PaneDrop.Center(PaneLayout.FIRST_LEAF)))
+        assertEquals(listOf("a", "b"), shown.tabs, "an open tab is not opened twice")
+        assertEquals("a", shown.activeTab)
+        val window = start.place("c", PaneItemDrop.InWindow(WindowBounds(0f, 0f, 400f, 300f)))
+        assertEquals(listOf("c"), window.windows.single().root.leaves().single().tabs)
+        assertEquals(listOf("a", "b"), window.leaves.single().tabs)
+        assertEquals(listOf("c"), PaneLayout().place("c", PaneItemDrop.InPane(PaneDrop.Edge(PaneLayout.FIRST_LEAF, PaneEdge.End))).leaves.single().tabs)
+    }
 }

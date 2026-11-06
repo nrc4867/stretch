@@ -44,6 +44,9 @@ internal class PaneGridContext(
     /** The pane window being dragged by its title bar, if any. */
     var windowDrag by mutableStateOf<WindowDrag?>(null)
 
+    /** The app's own answer to an item from a [paneDragSource] let go over a place that takes it, if it has one. */
+    var dropItem: ((id: String, drop: PaneItemDrop) -> Unit)? = null
+
     /** The surface holding pane [leaf]: [GRID_SURFACE] or a window id. */
     fun surfaceOf(leaf: String): String =
         layout().windows.firstOrNull { w -> w.root.leaves().any { it.id == leaf } }?.id ?: GRID_SURFACE
@@ -95,6 +98,24 @@ internal class PaneGridContext(
                 change(current.detach(tab, bounds))
             }
         }
+    }
+
+    /**
+     * Where an item from a [paneDragSource], to open as [tab], lands if let go now: on a pane, or, with a host, in a
+     * window of its own when away from the grid. Null where it changes nothing.
+     */
+    fun itemTarget(tab: String): PaneItemDrop? {
+        val at = drag.screenPointer
+        tabTarget(tab, at)?.let { return PaneItemDrop.InPane(it) }
+        if (host == null || !outside(at)) return null
+        val size = bodies[layout().focusedLeaf.id]?.onScreen()
+        return PaneItemDrop.InWindow(windowUnderPointer(at, size?.width ?: DEFAULT_WINDOW_WIDTH, size?.height ?: DEFAULT_WINDOW_HEIGHT))
+    }
+
+    /** Lets go an item from a [paneDragSource] as [tab], through the app's [dropItem] or straight into the layout. */
+    fun finishItem(tab: String) {
+        val drop = itemTarget(tab) ?: return
+        dropItem?.invoke(tab, drop) ?: change(layout().place(tab, drop))
     }
 
     /** The window [tab] opens in from its menu: over its pane, a little in from the pane's corner. */
