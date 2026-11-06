@@ -78,6 +78,7 @@ import dev.chieppa.stretch.core.KeyChord
 import dev.chieppa.stretch.ui.Swatch
 import dev.chieppa.stretch.ui.TextField
 import dev.chieppa.stretch.ui.Toggle
+import dev.chieppa.stretch.ui.ToggleButton
 import dev.chieppa.stretch.ui.Tooltip
 import dev.chieppa.stretch.ui.ToolButton
 import kotlin.math.roundToInt
@@ -193,6 +194,10 @@ private fun ButtonsDemo() {
         Button("Export", {}, kind = ButtonKind.Primary)
         Button("Reset", {}, kind = ButtonKind.Quiet)
         Button("Add layer", {}, icon = StretchIcons.Plus)
+        var pinned by remember { mutableStateOf(false) }
+        ToggleButton("Pin", pinned, { pinned = it }, icon = StretchIcons.Check)
+        var reviewed by remember { mutableStateOf(true) }
+        ToggleButton("Mark reviewed", reviewed, { reviewed = it }, icon = StretchIcons.Check, height = StretchSizes.seg)
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         IconButton(StretchIcons.Undo, "Undo", {}, quiet = false)
