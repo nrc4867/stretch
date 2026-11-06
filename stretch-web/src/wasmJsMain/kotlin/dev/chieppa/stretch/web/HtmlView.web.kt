@@ -12,17 +12,30 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.viewinterop.WebElementView
+import dev.chieppa.stretch.core.Requirement
+import dev.chieppa.stretch.core.RequirementState
 import dev.chieppa.stretch.theme.Stretch
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.JsAny
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import org.w3c.dom.HTMLIFrameElement
 import org.w3c.dom.MessageEvent
 import org.w3c.dom.events.Event
-import kotlin.js.ExperimentalWasmJsInterop
-import kotlin.js.JsAny
 
 actual object WebEngine {
-    actual val available: Boolean get() = true
+    actual val available: Boolean = true
+
+    actual val requirement: Requirement = object : Requirement {
+        override val id = "stretch-web.engine"
+        override val downloadBytes: Long? = null
+        override val state: StateFlow<RequirementState> = MutableStateFlow(RequirementState.Ready)
+        override fun install() = Unit
+        override fun cancel() = Unit
+        override fun restart() = Unit
+    }
 }
 
 private const val NAVIGATE_PREFIX = "stretch-navigate:"

@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import dev.chieppa.stretch.core.Requirement
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.ScrollColumn
 
@@ -28,6 +29,12 @@ fun interface HtmlNavigation {
 /** Whether this runtime has a browser engine: always in a browser; on the desktop, a JetBrains Runtime with JCEF. */
 expect object WebEngine {
     val available: Boolean
+
+    /**
+     * The engine as a [Requirement]: ready where [available], and otherwise something the app can fetch and then
+     * restart onto. On the desktop it is also in [dev.chieppa.stretch.core.Requirements].
+     */
+    val requirement: Requirement
 }
 
 /**

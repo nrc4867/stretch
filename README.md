@@ -58,7 +58,7 @@ A diff viewer, a markdown editor and an HTML view, each in a module of its own, 
 - **`stretch-mermaid`.** Draws `mermaid` blocks with Mermaid itself, in the colors of the current theme.
 - **`stretch-web`.** A real web page in the app, with full CSS and scripts, drawn into Compose so popups show over it.
 
-`stretch-web` and `stretch-mermaid` use the Chromium in the JetBrains Runtime. A packaged app carries it only when it depends on one of them, which adds about 370 MB on Windows.
+`stretch-web` and `stretch-mermaid` use the Chromium in the JetBrains Runtime. A packaged app carries it only when it depends on one of them, which adds about 370 MB on Windows. Or the app fetches it while it runs, once per machine for every Stretch app, which also lets an app run from a jar on any Java.
 
 ## Try it
 

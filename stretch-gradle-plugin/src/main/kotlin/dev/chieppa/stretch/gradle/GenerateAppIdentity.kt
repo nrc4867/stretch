@@ -45,6 +45,8 @@ abstract class GenerateAppIdentity : DefaultTask() {
 
         val res = resources.get().asFile.apply { deleteRecursively() }.resolve(RESOURCE_DIR).apply { mkdirs() }
         AppIcons.windowSizes.forEach { size -> res.resolve("icon-$size.png").writeBytes(AppIcons.png(AppIcons.scaled(source, size))) }
+        // For the launcher an app run from jars makes for itself (AppLauncher in stretch-frame).
+        listOf("icon.ico", "icon.icns", "icon.png").forEach { pack.resolve(it).copyTo(res.resolve(it), overwrite = true) }
         val props = Properties().apply {
             setProperty("name", appName.get())
             setProperty("id", appId.get())

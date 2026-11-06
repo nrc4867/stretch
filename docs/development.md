@@ -10,6 +10,7 @@ Needs JDK 25 for Gradle (`JAVA_HOME`); Gradle provisions the toolchain. Apps run
 ./gradlew :gallery:run -Pdevtools=47811   # also serves screenshots of its windows: curl 127.0.0.1:47811/capture
 ./gradlew :gallery:run -Pgpu              # adds a WebGPU viewport page and opens on it (needs a GPU; Windows)
 ./gradlew :gallery:run -Pdocuments        # opens on the diff viewer, markdown editor and HTML view
+./gradlew :gallery:run -Pdocuments -PjavaHome=<a JDK without JCEF>   # offers to fetch the engine, then runs on it
 ./gradlew :stretch-web:desktopTest :stretch-mermaid:desktopTest :gallery:desktopTest -Pcef   # also tests the real browser engine, opening a window briefly; pictures land in each module's build folder
 ./gradlew compileKotlinWasmJs             # compiles for the browser, which check does not
 ./gradlew :gallery:wasmJsBrowserProductionRun   # the gallery in a browser
@@ -26,7 +27,7 @@ IntelliJ IDEA: open the folder; the Gallery and Check run configurations are inc
 
 | Module | Holds |
 | --- | --- |
-| `stretch-core` | Commands, undo and gestures, session log, actions and keymap, the Settled interface |
+| `stretch-core` | Commands, undo and gestures, session log, actions and keymap, the Settled interface; requirements a module can fetch, and on the desktop starting the app again and the shared user folder |
 | `stretch-theme` | Tokens, the four themes and following the OS's light or dark, interface size, fonts, icons |
 | `stretch-ui` | Components: buttons, toggle, slider, chips, segmented, fields, swatch, key caps, callout, progress, spinner, skeleton, grid, field icons and errors, checkbox, radio, tabs, badge, empty state, scrollbars, tooltip, tree, dropzone, sortable lists and grids, cards, dividers, links, breadcrumbs, text area, stepper, paginator, split button face, calendar, time picker, stats, charts, table, color picker, shading ramp, curve editor, angle dial, timeline, range slider, vector field, key capture field |
 | `stretch-frame` | The app frame: top bar and its in-bar menus, rails (buttons drag between slots and rails, or off them to pop a drawer out, with a bottom group), resizable side and bottom drawers and their layout, menus, context menu, dropdown, searchable dropdown, split button, date and time inputs, popover, palette, dialog, toast, toolbar, viewport, view navigator, status bar, window title bar, action keys, key display, shortcut field, the opt-in keymap editor and history panel, the viewport camera (wheel, middle button, two-finger pan and pinch), rulers and guides, selection handles, marquee, clipboard routing, and the macOS menu bar |

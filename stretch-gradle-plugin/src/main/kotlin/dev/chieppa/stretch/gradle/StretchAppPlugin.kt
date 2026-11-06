@@ -33,6 +33,13 @@ abstract class StretchAppExtension {
      * JetBrains Runtime that has JCEF.
      */
     abstract val webEngine: Property<Boolean>
+
+    /**
+     * With the engine in use, leave Chromium out of packages and let the app fetch it the first time someone wants
+     * it, through `WebEngine.requirement`: a package about 370 MB smaller on Windows, for a download of about 250 MB
+     * later. Off by default, so packages work offline from the start.
+     */
+    abstract val fetchWebEngine: Property<Boolean>
 }
 
 /**
@@ -81,8 +88,13 @@ class StretchAppPlugin : Plugin<Project> {
                 dist.linux.packageName = dist.linux.packageName ?: name.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
                 // Chromium is hundreds of megabytes, so only an app that depends on stretch-web takes it along.
                 if (app.webEngine.getOrElse(declaresWebEngine(project))) {
-                    dist.modules(WEB_ENGINE_MODULE)
-                    desktop.application.javaHome.let { restoreEngineFiles(project, it) }
+                    if (app.fetchWebEngine.getOrElse(false)) {
+                        // Fetching takes the HTTP client, and starting again on the fetched runtime reads this one's options.
+                        dist.modules(*FETCH_MODULES)
+                    } else {
+                        dist.modules(WEB_ENGINE_MODULE)
+                        desktop.application.javaHome.let { restoreEngineFiles(project, it) }
+                    }
                 }
             }
         }
@@ -90,6 +102,7 @@ class StretchAppPlugin : Plugin<Project> {
 }
 
 private const val WEB_ENGINE_MODULE = "jcef"
+private val FETCH_MODULES = arrayOf("java.net.http", "java.management")
 private val webModules = setOf("stretch-web", "stretch-mermaid")
 
 /** Whether [project] declares a module that draws with the engine, on any target. It looks before anything resolves, so the app can still add dependencies. */

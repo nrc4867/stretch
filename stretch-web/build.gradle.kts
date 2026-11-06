@@ -17,6 +17,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":stretch-ui"))
+            api(project(":stretch-core"))
             implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {

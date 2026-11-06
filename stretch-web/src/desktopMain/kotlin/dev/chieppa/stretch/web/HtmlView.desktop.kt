@@ -27,6 +27,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
+import dev.chieppa.stretch.core.AppLaunch
+import dev.chieppa.stretch.core.Requirement
 import dev.chieppa.stretch.theme.Stretch
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Rect
@@ -42,6 +44,18 @@ private const val DISABLED_PROPERTY = "stretch.web.disabled"
 actual object WebEngine {
     actual val available: Boolean by lazy {
         System.getProperty(DISABLED_PROPERTY) == null && runCatching { Class.forName(ENGINE_CLASS, false, javaClass.classLoader) }.isSuccess
+    }
+
+    actual val requirement: Requirement get() = engineRequirement
+
+    /**
+     * Call first in `main`, with its arguments. Where this runtime has no engine but one was installed through
+     * [requirement], it runs the app on that runtime instead, then exits with it; otherwise it returns at once.
+     */
+    fun startOnInstalledRuntime(args: Array<String>) {
+        AppLaunch.remember(args)
+        if (available || AppLaunch.restarted) return
+        AppLaunch.startAgain(engineRequirement.installedHome() ?: return, waitAndExit = true)
     }
 }
 

@@ -12,6 +12,8 @@ stretchApp {
     id = "dev.chieppa.stretch.gallery"
     icon = layout.projectDirectory.file("app-icon.png")
     vendor = "Nicholas Chieppa"
+    // -PfetchEngine packages without Chromium; the app fetches it when the documents page asks.
+    fetchWebEngine = providers.gradleProperty("fetchEngine").isPresent
 }
 
 kotlin {
@@ -79,6 +81,8 @@ compose.desktop {
             languageVersion.set(JavaLanguageVersion.of(libs.versions.jvmToolchain.get().toInt()))
             vendor.set(JvmVendorSpec.JETBRAINS)
         }.get().metadata.installationPath.asFile.absolutePath
+        // -PjavaHome=<folder> runs on another Java, such as one without JCEF, where the documents page offers to fetch the engine.
+        providers.gradleProperty("javaHome").orNull?.let { javaHome = it }
         jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
         // -Pdevtools=<port> serves screenshots of the gallery's windows on 127.0.0.1 (see DevTools).
         providers.gradleProperty("devtools").orNull?.let {

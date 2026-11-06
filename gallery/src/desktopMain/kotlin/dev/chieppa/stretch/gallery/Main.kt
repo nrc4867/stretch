@@ -12,8 +12,11 @@ import dev.chieppa.stretch.frame.NativeSurfaces
 import dev.chieppa.stretch.frame.StretchWindow
 import dev.chieppa.stretch.frame.WindowTopBar
 import dev.chieppa.stretch.gallery.gpu.GpuPage
+import dev.chieppa.stretch.web.WebEngine
 
-fun main() {
+fun main(args: Array<String>) {
+    // On a Java without the browser engine, run on the one the documents page fetched, once there is one.
+    WebEngine.startOnInstalledRuntime(args)
     // -Pgpu on the run task: show the WebGPU page, which needs popups in windows of their own.
     val gpu = System.getProperty("stretch.gpu").toBoolean()
     if (gpu) NativeSurfaces.enable()

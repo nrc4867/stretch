@@ -2,6 +2,7 @@ package dev.chieppa.stretch.frame
 
 import com.sun.jna.WString
 import com.sun.jna.platform.win32.Shell32
+import dev.chieppa.stretch.core.AppLaunch
 import java.awt.Image
 import java.awt.Taskbar
 import java.awt.Toolkit
@@ -32,8 +33,9 @@ class AppIdentity(val name: String, val id: String, val icons: List<Image>) {
         private var applied = false
 
         /**
-         * Tells the OS who this process is, before the first window opens: on Windows, run as plain `java`, a taskbar
-         * id of its own so the app groups and pins apart from other Java apps (a packaged launcher already has one);
+         * Tells the OS who this process is, before the first window opens: on Windows, run as plain `java` or started
+         * again on another runtime, a taskbar id of its own so the app groups and pins apart from other Java apps (a
+         * packaged launcher already has one);
          * the dock icon, app name and screen menu bar on macOS; the window class on Linux, so the desktop matches the
          * app's icon and name.
          */
@@ -45,7 +47,8 @@ class AppIdentity(val name: String, val id: String, val icons: List<Image>) {
             if (os.startsWith("Mac")) System.setProperty("apple.awt.application.name", identity.name)
             runCatching {
                 when {
-                    os.startsWith("Windows") -> if (System.getProperty("jpackage.app-path") == null) {
+                    // A packaged launcher has an id of its own, unless Stretch started the app again on another runtime.
+                    os.startsWith("Windows") -> if (!AppLaunch.packaged || AppLaunch.restarted) {
                         Shell32.INSTANCE.SetCurrentProcessExplicitAppUserModelID(WString(identity.id))
                     }
                     os.startsWith("Mac") -> if (Taskbar.isTaskbarSupported() && Taskbar.getTaskbar().isSupported(Taskbar.Feature.ICON_IMAGE)) {
