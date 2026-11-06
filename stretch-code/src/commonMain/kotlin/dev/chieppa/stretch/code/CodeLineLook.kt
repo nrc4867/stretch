@@ -88,11 +88,17 @@ fun rememberCodeMetrics(longest: Int, highest: Int, style: TextStyle = Stretch.t
                 charWidth = digit.width.toDp(),
                 lineHeight = digit.height.toDp() + 2.dp,
                 numberWidth = (digit.width * highest.toString().length).toDp() + StretchSpacing.space12,
-                codeWidth = (digit.width * (longest + 2)).toDp(),
+                codeWidth = codeWidthPx(digit.width, longest).toDp(),
             )
         }
     }
 }
+
+/** The widest a line of code is laid out, in pixels: a layout cannot be wider. A longer line is cut there unless it wraps. */
+const val MAX_CODE_WIDTH_PX = 32_000
+
+/** The width in pixels for lines up to [longest] characters of [charWidth] pixels each, never past [MAX_CODE_WIDTH_PX]. */
+fun codeWidthPx(charWidth: Int, longest: Int): Int = (charWidth.toLong() * (longest + 2L)).coerceAtMost(MAX_CODE_WIDTH_PX.toLong()).toInt()
 
 /** The longest of [lines] once tabs are expanded, for [rememberCodeMetrics]. */
 fun longestLine(lines: List<String>): Int = lines.maxOfOrNull { expandTabs(it).length } ?: 0
