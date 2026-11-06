@@ -3,11 +3,6 @@ package dev.chieppa.stretch.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
-import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -32,7 +27,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -50,8 +45,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -79,7 +72,8 @@ private const val DRAGGED_ALPHA = 0.4f
 /**
  * One row of a [Tree], for the node keyed [rowKey]. [check] is its checkbox when [checkable], null being mixed. [drag]
  * is null when rows cannot be moved; [onDrop] gets where the pointer let go, down the whole list. [onRenamed] gets the
- * new name, or null when renaming was cancelled.
+ * new name, or null when renaming was cancelled. [onContextPress] gets a right-click or long press, in the row's
+ * pixels, and [modifier] is the app's own for the row, around the tree's handling of the pointer.
  */
 @Composable
 internal fun <T> TreeRowView(
@@ -105,6 +99,8 @@ internal fun <T> TreeRowView(
     onToggleCheck: () -> Unit,
     onDrop: (y: Float) -> Unit,
     onRenamed: (String?) -> Unit,
+    onContextPress: ((Offset) -> Unit)?,
+    modifier: Modifier,
     leading: @Composable RowScope.() -> Unit,
     trailing: @Composable RowScope.() -> Unit,
 ) {
@@ -113,14 +109,8 @@ internal fun <T> TreeRowView(
     val hovered by source.collectIsHoveredAsState()
     val ink = if (selected) c.onInk else c.ink
     val parentRow = row.node.children.isNotEmpty()
-    val click by rememberUpdatedState(onClick)
-    val doubleClick by rememberUpdatedState(onDoubleClick)
-    val drop by rememberUpdatedState(onDrop)
-    val rowIndex by rememberUpdatedState(index)
-    var lastClick by remember { mutableStateOf<Long?>(null) }
-    val dragKey = drag != null
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .height(StretchSizes.ctl)
             .alpha(if (faded) DRAGGED_ALPHA else 1f)
@@ -132,43 +122,8 @@ internal fun <T> TreeRowView(
                 this.selected = selected
                 if (parentRow) stateDescription = stateText(open)
             }
-            .pointerInput(rowKey, dragKey) {
-                awaitEachGesture {
-                    val down = awaitFirstDown()
-                    val mods = currentEvent.keyboardModifiers
-                    onPress()
-                    if (drag != null) {
-                        var overSlop = 0f
-                        val slop = awaitTouchSlopOrCancellation(down.id) { change, over -> change.consume(); overSlop = over.y }
-                        if (slop != null) {
-                            drag.key = rowKey
-                            drag.y = rowIndex * slot + down.position.y + overSlop
-                            drag(slop.id) { change ->
-                                if (drag.key != rowKey) return@drag
-                                drag.y += change.positionChange().y
-                                change.consume()
-                            }
-                            val stillMine = drag.key == rowKey
-                            drag.key = null
-                            if (stillMine) drop(drag.y)
-                            return@awaitEachGesture
-                        }
-                        if (currentEvent.changes.any { it.pressed }) return@awaitEachGesture
-                    } else if (waitForUpOrCancellation() == null) {
-                        return@awaitEachGesture
-                    }
-                    val now = currentEvent.changes.first().uptimeMillis
-                    val twice = doubleClick
-                    val previous = lastClick
-                    if (twice != null && previous != null && now - previous < viewConfiguration.doubleTapTimeoutMillis) {
-                        twice()
-                        lastClick = null
-                    } else {
-                        click(mods)
-                        lastClick = now
-                    }
-                }
-            }
+            .then(if (onContextPress != null) Modifier.onContextPress(onContextPress) else Modifier)
+            .treeRowPointer(rowKey, index, slot, drag, onPress, onClick, onDoubleClick, onDrop)
             .padding(start = TreeIndent * row.depth + StretchSpacing.space4, end = StretchSpacing.space8),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(StretchSpacing.space4),

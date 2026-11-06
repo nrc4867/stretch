@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalDensity
@@ -37,8 +38,15 @@ import dev.chieppa.stretch.theme.StretchSizes
  * With [checkboxes] each row has a box; checking a parent checks everything under it, and a parent whose children
  * differ shows the mixed state. Space checks the row with focus. With [onRename], F2 renames in place (Enter keeps,
  * Esc cancels), as does a double-click when there is no [onActivate]. With [onMove], rows drag to a new place or
- * parent; Esc cancels a drag. [leading] goes before the label, for a swatch or anything [icon] cannot draw, and
- * [trailing] after it, for counts and badges.
+ * parent; Esc cancels a drag, and so does letting go off the tree's sides.
+ *
+ * [onContextMenu] gets a row's item and where to open its menu, in the tree's pixels, on a right-click, a long press
+ * with a pen or finger, or Shift F10 or the Menu key for the focused row; a row outside the selection becomes the
+ * selection first, so the app reads the selection to see what the menu acts on. Show the menu with stretch-frame's
+ * `ContextMenuPopup` composed beside the tree in a box of the same bounds. [rowModifier] adds the app's own modifier
+ * to each row, around the tree's own pointer handling, such as stretch-frame's `paneDragSource` to drag rows out:
+ * with [onMove] too, a row dragged off the tree's sides leaves the tree's own drag for it. [leading] goes before the
+ * label, for a swatch or anything [icon] cannot draw, and [trailing] after it, for counts and badges.
  */
 @Composable
 fun <T> Tree(
@@ -53,6 +61,8 @@ fun <T> Tree(
     onRename: ((T, String) -> Unit)? = null,
     onMove: ((key: Any, drop: TreeDrop) -> Unit)? = null,
     strings: TreeStrings = TreeStrings(),
+    onContextMenu: ((item: T, at: Offset) -> Unit)? = null,
+    rowModifier: (T) -> Modifier = { Modifier },
     leading: @Composable RowScope.(T) -> Unit = {},
     trailing: @Composable RowScope.(T) -> Unit = {},
 ) {
@@ -65,14 +75,14 @@ fun <T> Tree(
             focused = state.focused, onFocusedChange = { state.focused = it },
             list = state.list, onRows = { state.rowKeys = it },
         ),
-        modifier, icon, onActivate, onRename, onMove, strings::state, leading, trailing,
+        modifier, icon, onActivate, onRename, onMove, strings::state, onContextMenu, rowModifier, leading, trailing,
     )
 }
 
 /**
  * A tree whose expansion and selection are the caller's own state, given as sets and changed through the callbacks.
  * It behaves as the [TreeState] form does, without checkboxes; [stateText] gives the words screen readers hear for an
- * open or closed parent.
+ * open or closed parent, and [onContextMenu] and [rowModifier] work as they do there.
  */
 @Composable
 fun <T> Tree(
@@ -88,6 +98,8 @@ fun <T> Tree(
     onRename: ((T, String) -> Unit)? = null,
     onMove: ((key: Any, drop: TreeDrop) -> Unit)? = null,
     stateText: (open: Boolean) -> String = TreeStrings()::state,
+    onContextMenu: ((item: T, at: Offset) -> Unit)? = null,
+    rowModifier: (T) -> Modifier = { Modifier },
     leading: @Composable RowScope.(T) -> Unit = {},
     trailing: @Composable RowScope.(T) -> Unit = {},
 ) {
@@ -98,7 +110,7 @@ fun <T> Tree(
             expanded, onExpandedChange, selection, onSelectionChange, checked = null, onCheckedChange = {},
             focused = focused, onFocusedChange = { focused = it }, list = rememberLazyListState(), onRows = {},
         ),
-        modifier, icon, null, onRename, onMove, stateText, leading, trailing,
+        modifier, icon, null, onRename, onMove, stateText, onContextMenu, rowModifier, leading, trailing,
     )
 }
 
@@ -114,6 +126,8 @@ private fun <T> TreeView(
     onRename: ((T, String) -> Unit)?,
     onMove: ((key: Any, drop: TreeDrop) -> Unit)?,
     stateText: (open: Boolean) -> String,
+    onContextMenu: ((item: T, at: Offset) -> Unit)?,
+    rowModifier: (T) -> Modifier,
     leading: @Composable RowScope.(T) -> Unit,
     trailing: @Composable RowScope.(T) -> Unit,
 ) {
@@ -128,6 +142,7 @@ private fun <T> TreeView(
     control.model = model
     control.slot = with(LocalDensity.current) { StretchSizes.ctl.toPx() }
     control.onActivate = onActivate
+    control.onContextMenu = onContextMenu
     control.canRename = onRename != null
     val drag = control.drag
     var treeFocused by remember { mutableStateOf(false) }
@@ -143,7 +158,7 @@ private fun <T> TreeView(
             .focusable()
             .onKeyEvent(control::onKey),
     ) {
-        val draggedRow = rows.indexOfFirst { key(it.node.item) == drag.key }
+        val draggedRow = if (drag.away) -1 else rows.indexOfFirst { key(it.node.item) == drag.key }
         val draggedDepth = rows.getOrNull(draggedRow)?.depth ?: 0
         val draggedEnd = if (draggedRow < 0) -1 else (draggedRow + 1 until rows.size).firstOrNull { rows[it].depth <= draggedDepth } ?: rows.size
         @Composable
@@ -182,6 +197,11 @@ private fun <T> TreeView(
                     if (name != null && name.isNotBlank() && name != label(item)) onRename?.invoke(item, name.trim())
                     treeFocus.requestFocus()
                 },
+                onContextPress = if (onContextMenu == null) null else { at ->
+                    treeFocus.requestFocus()
+                    control.contextMenu(k, Offset(at.x, index * control.slot - control.scrolled() + at.y))
+                },
+                modifier = rowModifier(item),
                 leading = { leading(item) },
                 trailing = { trailing(item) },
             )
@@ -199,10 +219,9 @@ private fun <T> TreeView(
             }
         }
         val dragged = drag.key
-        val target = dragged?.let { control.dropAt(it, drag.y) }
+        val target = dragged?.takeUnless { drag.away }?.let { control.dropAt(it, drag.y) }
         if (target != null) {
-            val scrolled = model.list.firstVisibleItemIndex * control.slot + model.list.firstVisibleItemScrollOffset
-            TreeDropMark(target, rows, key, dragged, control.slot, scrolled, Modifier.align(Alignment.TopStart))
+            TreeDropMark(target, rows, key, dragged, control.slot, control.scrolled(), Modifier.align(Alignment.TopStart))
         }
     }
 }

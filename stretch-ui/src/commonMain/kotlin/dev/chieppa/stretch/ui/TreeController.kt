@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -46,6 +47,9 @@ internal class TreeModel(
 internal class TreeDragState {
     var key by mutableStateOf<Any?>(null)
     var y by mutableFloatStateOf(0f)
+
+    /** Whether the pointer is off the tree's sides, where letting go drops nothing and a drag source outside may take it. */
+    var away by mutableStateOf(false)
 }
 
 /**
@@ -62,6 +66,7 @@ internal class TreeController<T>(
     lateinit var model: TreeModel
     var slot = 1f
     var onActivate: ((T) -> Unit)? = null
+    var onContextMenu: ((T, Offset) -> Unit)? = null
     var canRename = false
 
     var renaming by mutableStateOf<Any?>(null)
@@ -94,6 +99,24 @@ internal class TreeController<T>(
             else -> model.onSelectionChange(setOf(k)).also { anchor = k }
         }
         model.onFocusedChange(k)
+    }
+
+    /** How far the list has scrolled, in pixels from the top of its first row. */
+    fun scrolled(): Float = model.list.firstVisibleItemIndex * slot + model.list.firstVisibleItemScrollOffset
+
+    /**
+     * Asks for the context menu of row [k] at [at], in the tree's pixels. A row outside the selection becomes the
+     * selection first, so the menu acts on what it was opened on; a row inside it keeps the selection whole.
+     */
+    fun contextMenu(k: Any, at: Offset) {
+        val menu = onContextMenu ?: return
+        val row = rows.firstOrNull { key(it.node.item) == k } ?: return
+        if (k !in model.selection) {
+            model.onSelectionChange(setOf(k))
+            anchor = k
+        }
+        model.onFocusedChange(k)
+        menu(row.node.item, at)
     }
 
     fun toggleCheck(node: TreeNode<T>) {
@@ -141,6 +164,11 @@ internal class TreeController<T>(
         if (event.type != KeyEventType.KeyDown || renaming != null) return false
         val at = rows.indexOfFirst { key(it.node.item) == model.focused }
         val row = rows.getOrNull(at)
+        if (event.opensContextMenu() && onContextMenu != null) {
+            if (row == null) return false
+            contextMenu(key(row.node.item), Offset(0f, (at + 1) * slot - scrolled()))
+            return true
+        }
         val ctrl = event.isCtrlPressed || event.isMetaPressed
         fun go(i: Int) {
             val index = i.coerceIn(0, rows.lastIndex)
