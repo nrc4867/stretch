@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -167,7 +168,8 @@ private fun DiffRowContent(
                     newNumber = input,
                 )
             }
-            Row(Modifier.fillMaxWidth().then(if (state.wrap) Modifier else Modifier.height(metrics.lineHeight))) {
+            // Wrapped, the row is as tall as its taller side, and both sides fill it so their washes and numbers line up.
+            Row(Modifier.fillMaxWidth().then(if (state.wrap) Modifier.height(IntrinsicSize.Min) else Modifier.height(metrics.lineHeight))) {
                 SplitSide(DiffSide.Old, row.left, row.left?.let { tokens.of(row.fileIndex, it) }.orEmpty(), metrics, look, state.wrap, state.leftScroll, extrasOf(left))
                 Box(Modifier.width(Stretch.stroke).fillMaxHeight().background(Stretch.colors.linePanel))
                 SplitSide(DiffSide.New, row.right, row.right?.let { tokens.of(row.fileIndex, it) }.orEmpty(), metrics, look, state.wrap, state.rightScroll, extrasOf(right))
