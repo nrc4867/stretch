@@ -149,7 +149,10 @@ private fun PaneLeafView(leaf: PaneLeaf, grid: PaneGridContext, modifier: Modifi
     }
 }
 
-/** A tab's context menu: close it, move it to a window of its own where there is a host, then the app's items. */
+/**
+ * A tab's context menu: close it, move it to a window of its own where there is a host, then the app's items for
+ * that tab after a divider, which goes when the app adds none.
+ */
 @Composable
 private fun ColumnScope.PaneTabMenu(grid: PaneGridContext, id: String, dismiss: () -> Unit) {
     MenuItem(stringResource(Res.string.tab_close), { dismiss(); grid.close(id) }, icon = StretchIcons.Close)
@@ -160,8 +163,7 @@ private fun ColumnScope.PaneTabMenu(grid: PaneGridContext, id: String, dismiss: 
         }, icon = StretchIcons.ExternalLink)
     }
     val more = grid.menu ?: return
-    MenuDivider()
-    more(id, dismiss)
+    MenuSection(Modifier.fillMaxWidth()) { more(id, dismiss) }
 }
 
 /** How strongly a drop preview tints the pane under it. */

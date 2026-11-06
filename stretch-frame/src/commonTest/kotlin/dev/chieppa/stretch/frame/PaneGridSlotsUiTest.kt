@@ -75,4 +75,46 @@ class PaneGridSlotsUiTest {
         val sketch = tab("Sketch").getUnclippedBoundsInRoot()
         assertTrue(action.left >= sketch.right && action.top < sketch.bottom, "after the tabs, in the strip")
     }
+
+    @Test
+    fun theTabMenuHoldsTheAppsItemsForThatTabAfterStretchsOwn() = runComposeUiTest {
+        var picked: String? = null
+        showGrid(
+            PaneLayout().open("notes").open("sketch"),
+            tabMenu = { id, close -> if (id == "sketch") MenuItem("Copy path of $id", { picked = id; close() }) },
+        )
+        tab("Sketch").performMouseInput { rightClick(center) }
+        onNodeWithText("Close").assertExists()
+        val close = onNodeWithText("Close").getUnclippedBoundsInRoot()
+        val own = onNodeWithText("Copy path of sketch").getUnclippedBoundsInRoot()
+        assertTrue(own.top > close.top, "the app's items follow Stretch's")
+        onNodeWithText("Copy path of sketch").performClick()
+        waitForIdle()
+        assertEquals("sketch", picked)
+        onNodeWithText("Copy path of sketch").assertDoesNotExist()
+    }
+
+    @Test
+    fun aTabTheAppAddsNothingForLeavesNoEmptySection() = runComposeUiTest {
+        setStretchContent {
+            MenuPanel {
+                MenuItem("Close", {})
+                MenuSection(Modifier.testTag("empty")) {}
+                MenuSection(Modifier.testTag("full")) { MenuItem("Copy path", {}) }
+            }
+        }
+        val empty = onNodeWithTag("empty").getUnclippedBoundsInRoot()
+        val full = onNodeWithTag("full").getUnclippedBoundsInRoot()
+        assertEquals(0.dp, empty.bottom - empty.top)
+        assertTrue(full.bottom - full.top > 0.dp)
+    }
+
+    @Test
+    fun shiftF10OpensTheFocusedTabsMenu() = runComposeUiTest {
+        showGrid(PaneLayout().open("notes").open("sketch"), tabMenu = { id, close -> MenuItem("Pin $id", close) })
+        tab("Sketch").requestFocus()
+        tab("Sketch").performKeyInput { withKeyDown(Key.ShiftLeft) { pressKey(Key.F10) } }
+        waitForIdle()
+        onNodeWithText("Pin sketch").assertExists()
+    }
 }
