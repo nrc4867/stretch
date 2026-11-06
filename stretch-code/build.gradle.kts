@@ -18,6 +18,7 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.compose.ui.test)
+            implementation(project(":stretch-test"))
         }
         val desktopTest by getting {
             dependencies {

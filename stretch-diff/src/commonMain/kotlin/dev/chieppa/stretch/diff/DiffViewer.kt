@@ -69,7 +69,9 @@ class DiffSlots(
  * The changes to one or more files, with code colored, the changed words within a line marked, and long runs of
  * unchanged lines folded. Make [files] with [diffTexts] from two texts or [parseUnifiedDiff] from a patch. Only rows on
  * screen are built, so large diffs stay smooth. [showBar] adds a bar with the totals, layout and wrap controls, and
- * moving between changes; an app can drive the same things from [state] with its own controls.
+ * moving between changes; an app can drive the same things from [state] with its own controls. [tokens] colors files
+ * from outside, by whole file per side (see [FileTokens]); files and sides without them are tokenized hunk by hunk by
+ * the language of their path. Tokens may arrive after the files; the view keeps its place when they do.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -80,13 +82,16 @@ fun DiffViewer(
     showBar: Boolean = true,
     strings: DiffStrings = DiffStrings(),
     slots: DiffSlots = remember { DiffSlots() },
+    tokens: Map<FileDiff, FileTokens> = emptyMap(),
 ) {
     val c = Stretch.colors
     val rows = remember(files, state.split, state.unfolded, state.collapsedFiles) {
         diffRows(files, state.split, state.unfolded, state.collapsedFiles)
     }
     SideEffect { state.rows = rows }
-    val tokens by produceState(DiffTokens.None, files) { value = withContext(Dispatchers.Default) { tokenizeDiff(files) } }
+    val builtIn by produceState(DiffTokens.None, files) { value = withContext(Dispatchers.Default) { tokenizeDiff(files) } }
+    val supplied = remember(files, tokens) { files.map { tokens[it] } }
+    val lineTokens = remember(builtIn, supplied) { LineTokens(builtIn, supplied) }
     val longest = remember(files) { files.maxOfOrNull { file -> file.hunks.maxOfOrNull { hunk -> longestLine(hunk.lines.map { it.text }) } ?: 0 } ?: 0 }
     val highest = remember(files) { files.maxOfOrNull { file -> file.hunks.maxOfOrNull { hunk -> hunk.lines.maxOfOrNull { maxOf(it.oldNumber ?: 0, it.newNumber ?: 0) } ?: 0 } ?: 0 } ?: 0 }
     val metrics = rememberCodeMetrics(longest, highest)
@@ -101,7 +106,7 @@ fun DiffViewer(
                             when (row) {
                                 is DiffRow.FileHeader -> stickyHeader(row.key, "file") { FileHeaderRow(row, state, strings, slots) }
                                 else -> item(row.key, row::class.simpleName) {
-                                    DiffRowContent(row, files, tokens, metrics, look, state, strings, slots)
+                                    DiffRowContent(row, files, lineTokens, metrics, look, state, strings, slots)
                                 }
                             }
                         }
@@ -118,7 +123,7 @@ fun DiffViewer(
 private fun DiffRowContent(
     row: DiffRow,
     files: List<FileDiff>,
-    tokens: DiffTokens,
+    tokens: LineTokens,
     metrics: CodeMetrics,
     look: LineLook,
     state: DiffViewerState,

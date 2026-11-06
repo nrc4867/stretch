@@ -14,23 +14,9 @@ fun tokenize(text: String, language: CodeLanguage?): List<CodeToken> =
  * Offsets are relative to the start of their line.
  */
 fun tokenizeLines(lines: List<String>, language: CodeLanguage?): List<List<CodeToken>> {
-    if (language == null) return lines.map { emptyList() }
-    val tokens = tokenize(lines.joinToString("\n"), language)
-    var next = 0
-    var lineStart = 0
-    return lines.map { line ->
-        val lineEnd = lineStart + line.length
-        val here = buildList {
-            while (next < tokens.size && tokens[next].start < lineEnd) {
-                val token = tokens[next]
-                if (token.end > lineStart) add(CodeToken(maxOf(token.start, lineStart) - lineStart, minOf(token.end, lineEnd) - lineStart, token.kind))
-                if (token.end > lineEnd) break
-                next++
-            }
-        }
-        lineStart = lineEnd + 1
-        here
-    }
+    if (language == null || lines.isEmpty()) return lines.map { emptyList() }
+    val joined = lines.joinToString("\n")
+    return tokensByLine(joined, tokenize(joined, language))
 }
 
 private class Tokenizer(private val text: String, private val language: CodeLanguage) {

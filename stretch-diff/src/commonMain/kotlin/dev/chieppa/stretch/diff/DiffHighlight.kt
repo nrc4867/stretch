@@ -8,6 +8,7 @@ import dev.chieppa.stretch.code.CodeToken
 import dev.chieppa.stretch.code.CodeHighlight
 import dev.chieppa.stretch.code.codeLineText
 import dev.chieppa.stretch.code.tokenizeLines
+import dev.chieppa.stretch.code.tokensByLine
 
 /** Tokens of every line of a set of files, found by which file, which side and which line number. */
 class DiffTokens internal constructor(private val byLine: Map<LineKey, List<CodeToken>>) {
@@ -21,6 +22,24 @@ class DiffTokens internal constructor(private val byLine: Map<LineKey, List<Code
 
     companion object {
         val None = DiffTokens(emptyMap())
+    }
+}
+
+/**
+ * Tokens of a whole file from outside, such as from a parser the app runs: [old] for the file as it was and [new] for
+ * the file as it is, each one list per line from line 1 with offsets within the line ([tokensByLine] splits a whole
+ * text's spans). A [DiffViewer] colors each line from the side it shows; a null side is tokenized from the diff itself.
+ */
+class FileTokens(val old: List<List<CodeToken>>? = null, val new: List<List<CodeToken>>? = null)
+
+/** The tokens a line draws with: the app's [FileTokens] for its side when given, else [builtIn]'s. */
+internal class LineTokens(private val builtIn: DiffTokens, private val supplied: List<FileTokens?>) {
+    fun of(file: Int, line: DiffLine): List<CodeToken> {
+        val newSide = line.kind != LineKind.Removed
+        val number = if (newSide) line.newNumber else line.oldNumber
+        val whole = supplied.getOrNull(file)?.let { if (newSide) it.new else it.old }
+        if (whole != null && number != null && number <= whole.size) return whole[number - 1]
+        return builtIn.of(file, line)
     }
 }
 

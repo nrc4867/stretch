@@ -56,7 +56,10 @@ class CodeViewerSlots(
  * A whole text, read-only, with line numbers and code colored by [language]. Only the lines on screen are built, so
  * long files stay smooth. Text selects across lines and copies. [tones] washes whole lines, such as changed ones.
  * Ctrl F (Cmd F on macOS) opens the find bar, F3 and Shift F3 move between matches, Esc closes it. [state] holds
- * wrapping, scrolling and finding; scroll to a line with [CodeViewerState.scrollToLine].
+ * wrapping, scrolling and finding; scroll to a line with [CodeViewerState.scrollToLine]. [tokens] colors the code from
+ * outside, such as from a parser the app runs: one list per line from line 1, offsets within the line ([tokensByLine]
+ * splits a whole text's spans). Null colors it by [language] with the built-in tokenizer. Tokens may arrive after the
+ * text; the view keeps its place when they do.
  */
 @Composable
 fun CodeViewer(
@@ -67,10 +70,12 @@ fun CodeViewer(
     tones: (line: Int) -> LineTone? = { null },
     strings: CodeViewerStrings = CodeViewerStrings(),
     slots: CodeViewerSlots = remember { CodeViewerSlots() },
+    tokens: List<List<CodeToken>>? = null,
 ) {
-    val tokens by produceState(emptyList<List<CodeToken>>(), text, language) {
-        value = withContext(Dispatchers.Default) { tokenizeLines(text.lines, language) }
+    val builtIn by produceState(emptyList<List<CodeToken>>(), text, language, tokens == null) {
+        value = if (tokens != null) emptyList() else withContext(Dispatchers.Default) { tokenizeLines(text.lines, language) }
     }
+    val lineTokensOf = tokens ?: builtIn
     LaunchedEffect(text, state.query, state.matchCase) {
         val found = withContext(Dispatchers.Default) { findInLines(text.lines, state.query, state.matchCase) }
         state.updateMatches(found)
@@ -114,7 +119,7 @@ fun CodeViewer(
                                 CodeHighlight(range.start, range.end, look.match)
                             }
                         }
-                        val lineTokens = tokens.getOrNull(index).orEmpty()
+                        val lineTokens = lineTokensOf.getOrNull(index).orEmpty()
                         val annotated = remember(line, lineTokens, highlights, look) { codeLineText(line, lineTokens, look.code, highlights) }
                         val click = slots.onLineNumberClick
                         Column {
