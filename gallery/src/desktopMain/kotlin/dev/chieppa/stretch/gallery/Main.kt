@@ -30,8 +30,8 @@ fun main(args: Array<String>) {
             state = state,
         ) {
             CompositionLocalProvider(LocalGalleryHost provides host) {
-                Gallery(gpuPage = if (gpu) ({ GpuPage() }) else null, startOnGpu = gpu, startOnDocuments = System.getProperty("stretch.documents").toBoolean()) { document, edited, menus, modes, actions ->
-                    WindowTopBar("Stretch", document, edited = edited, menus = menus, modes = modes, actions = actions)
+                Gallery(gpuPage = if (gpu) ({ GpuPage() }) else null, startOnGpu = gpu, startOnDocuments = System.getProperty("stretch.documents").toBoolean()) { document, edited, menus, modes, center, actions ->
+                    WindowTopBar("Stretch", document, edited = edited, menus = menus, modes = modes, center = center, actions = actions)
                 }
             }
         }

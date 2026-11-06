@@ -51,5 +51,7 @@ actual fun WindowTopBar(
     edited: Boolean,
     menus: @Composable () -> Unit,
     modes: @Composable () -> Unit,
+    leading: @Composable () -> Unit,
+    center: @Composable () -> Unit,
     actions: @Composable RowScope.() -> Unit,
-) = TopBar(appName, document, modifier, edited, menus, modes, actions)
+) = TopBar(appName, document, modifier, edited, menus, modes, leading, center, actions)

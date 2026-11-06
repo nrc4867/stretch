@@ -56,8 +56,9 @@ fun StretchWindow(
 
 /**
  * On the desktop, the bar is the window's title bar: its empty space, app name and document drag the window,
- * double-click to maximize and open the system menu, and the OS draws the window buttons. On macOS [menus] stay out of
- * the bar, since [MacMenuBar] puts the same actions in the system's menu bar.
+ * double-click to maximize and open the system menu, and the OS draws the window buttons; [leading] and [center] are
+ * controls that take clicks like the menus. On macOS [menus] stay out of the bar, since [MacMenuBar] puts the same
+ * actions in the system's menu bar.
  */
 @Composable
 actual fun WindowTopBar(
@@ -67,11 +68,13 @@ actual fun WindowTopBar(
     edited: Boolean,
     menus: @Composable () -> Unit,
     modes: @Composable () -> Unit,
+    leading: @Composable () -> Unit,
+    center: @Composable () -> Unit,
     actions: @Composable RowScope.() -> Unit,
 ) {
     val titleBar = LocalNativeTitleBar.current
     if (titleBar == null || !titleBar.supported) {
-        TopBar(appName, document, modifier, edited, if (isMac) ({}) else menus, modes, actions)
+        TopBar(appName, document, modifier, edited, if (isMac) ({}) else menus, modes, leading, center, actions)
         return
     }
     val insets = titleBar.installed()
@@ -86,6 +89,9 @@ actual fun WindowTopBar(
         edited = edited,
         menus = { if (!isMac) Box(Modifier.titleBarControl(regions, "menus")) { menus() } },
         modes = { Box(Modifier.titleBarControl(regions, "modes")) { modes() } },
+        leading = { Box(Modifier.titleBarControl(regions, "leading")) { leading() } },
+        center = { Box(Modifier.titleBarControl(regions, "center")) { center() } },
+        onCenterShown = { shown -> if (!shown) regions.remove("center") },
         actions = {
             Row(
                 Modifier.titleBarControl(regions, "actions"),

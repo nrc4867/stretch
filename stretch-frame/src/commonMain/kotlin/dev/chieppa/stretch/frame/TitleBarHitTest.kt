@@ -23,6 +23,11 @@ internal class TitleBarRegions {
     internal fun put(key: Any, bounds: Rect) {
         controls[key] = bounds
     }
+
+    /** Forgets the control under [key], once it is no longer placed in the bar. */
+    internal fun remove(key: Any) {
+        controls.remove(key)
+    }
 }
 
 /** Marks this element, under [key], as a control in the title bar, so pointer input reaches it instead of the OS. */

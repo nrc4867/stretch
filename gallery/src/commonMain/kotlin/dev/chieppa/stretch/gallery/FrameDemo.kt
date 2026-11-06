@@ -493,7 +493,7 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
                     Segmented(Mode.entries, mode, { mode = it }, { it.name }, mode = true)
                     switcher()
                 }
-            }) {
+            }, { GoToField { palette = true } }) {
                 TopBarActions(
                     onUndo = { history.undo() },
                     onRedo = { history.redo() },
