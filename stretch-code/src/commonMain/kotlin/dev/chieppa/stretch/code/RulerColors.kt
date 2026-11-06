@@ -35,5 +35,5 @@ val rulerColors: RulerColors
     @ReadOnlyComposable
     get() {
         val c = Stretch.colors
-        return RulerColors(c.deltaUp, c.deltaDown, c.warnInk, c.errorInk, c.inkSubtle, c.inkMuted, c.accent, c.inkStrong)
+        return RulerColors(c.diffAddInk, c.diffDelInk, c.warnInk, c.errorInk, c.inkSubtle, c.inkMuted, c.accent, c.inkStrong)
     }

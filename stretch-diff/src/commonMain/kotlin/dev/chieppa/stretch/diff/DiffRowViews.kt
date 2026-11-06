@@ -86,7 +86,13 @@ private fun Gutter(extras: LineExtras, metrics: CodeMetrics) {
 
 @Composable
 private fun Sign(kind: LineKind, look: LineLook) {
-    BasicText(signOf(kind), Modifier.width(StretchSpacing.space16), style = look.code.style.merge(TextStyle(color = look.code.muted, textAlign = TextAlign.Center)))
+    val c = Stretch.colors
+    val ink = when (kind) {
+        LineKind.Added -> c.diffAddInk
+        LineKind.Removed -> c.diffDelInk
+        else -> look.code.muted
+    }
+    BasicText(signOf(kind), Modifier.width(StretchSpacing.space16), style = look.code.style.merge(TextStyle(color = ink, textAlign = TextAlign.Center)))
 }
 
 @Composable
@@ -140,8 +146,8 @@ internal fun FileHeaderRow(row: DiffRow.FileHeader, state: DiffViewerState, stri
         Icon(if (row.collapsed) StretchIcons.ChevronRight else StretchIcons.ChevronDown, c.inkMuted, size = 12.dp)
         Label(file.status.name.first().toString(), Stretch.type.valueSm, c.inkMuted)
         Label(path, Stretch.type.valueSm, c.inkStrong, Modifier.weight(1f))
-        Label("+${file.added}", Stretch.type.valueSm, c.deltaUp)
-        Label("−${file.removed}", Stretch.type.valueSm, c.deltaDown)
+        Label("+${file.added}", Stretch.type.valueSm, c.diffAddInk)
+        Label("−${file.removed}", Stretch.type.valueSm, c.diffDelInk)
         slots.fileActions?.invoke(this, file)
     }
 }
