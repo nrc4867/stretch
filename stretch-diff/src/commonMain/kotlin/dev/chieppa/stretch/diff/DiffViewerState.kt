@@ -10,6 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
+import dev.chieppa.stretch.code.revealColumn
+import dev.chieppa.stretch.code.tabOffsets
 
 /** How a [DiffViewer] is laid out and where it has scrolled. Changing a property updates the viewer. */
 @Stable
@@ -45,6 +47,12 @@ class DiffViewerState(split: Boolean = false, wrap: Boolean = false) {
 
     /** Rows currently laid out, for moving between changes. */
     internal var rows by mutableStateOf(emptyList<DiffRow>())
+
+    /** The files showing, to open the file and fold a match is in. */
+    internal var files: List<FileDiff> = emptyList()
+
+    /** One character's width in pixels, to scroll sideways to a column. */
+    internal var charWidth = 0f
 
     fun toggleFile(index: Int) {
         collapsedFiles = if (index in collapsedFiles) collapsedFiles - index else collapsedFiles + index
@@ -92,6 +100,42 @@ class DiffViewerState(split: Boolean = false, wrap: Boolean = false) {
             ?: return null
         val row = rows.getOrNull(item.index)?.takeIf { it.fileIndex == fileIndex } ?: return null
         return row.numberOn(side)
+    }
+
+    /**
+     * Scrolls so [match] shows, opening its file and the fold hiding its line when need be: to its row, with rows above
+     * it, unless it already shows away from the edges, and sideways to it while lines do not wrap.
+     */
+    suspend fun scrollToMatch(match: DiffMatch) {
+        val file = files.getOrNull(match.fileIndex) ?: return
+        val before = rows
+        if (match.fileIndex in collapsedFiles) collapsedFiles = collapsedFiles - match.fileIndex
+        hiddenBy(match, diffRows(files, split, unfolded, collapsedFiles))?.let { unfold(it) }
+        val laidOut = diffRows(files, split, unfolded, collapsedFiles)
+        val index = laidOut.indexOfFirst { it.fileIndex == match.fileIndex && it.numberOn(match.side) == match.line }
+            .takeIf { it >= 0 } ?: rowOfLine(laidOut, match.fileIndex, match.side, match.line) ?: return
+        val visible = list.layoutInfo.visibleItemsInfo
+        val lead = (index - (visible.size / 2).coerceAtLeast(LEAD_IN_ROWS)).coerceAtLeast(0)
+        if (laidOut.size != before.size) {
+            // The rows change at the next layout; the request lands on them rather than on the rows showing now.
+            list.requestScrollToItem(lead)
+        } else if (visible.size <= 2 || index !in visible[1].index..visible[visible.size - 2].index) {
+            list.scrollToItem(lead)
+        }
+        if (!wrap) {
+            val text = file.hunks.asSequence().flatMap { it.lines }.firstOrNull { it.numberOn(match.side) == match.line }?.text.orEmpty()
+            val scroll = if (split && match.side == DiffSide.New) rightScroll else leftScroll
+            scroll.revealColumn(tabOffsets(text)[match.start.coerceIn(0, text.length)], charWidth)
+        }
+    }
+
+    /** The fold among [laidOut] that hides [match]'s line, if one does. */
+    private fun hiddenBy(match: DiffMatch, laidOut: List<DiffRow>): FoldId? {
+        val file = files[match.fileIndex]
+        return laidOut.asSequence().filterIsInstance<DiffRow.Fold>().map { it.id to it.lineCount }.firstOrNull { (id, count) ->
+            id.fileIndex == match.fileIndex &&
+                file.hunks[id.hunkIndex].lines.subList(id.firstLine, id.firstLine + count).any { it.numberOn(match.side) == match.line }
+        }?.first
     }
 
     private fun leadIn(row: Int) = (row - LEAD_IN_ROWS).coerceAtLeast(0)

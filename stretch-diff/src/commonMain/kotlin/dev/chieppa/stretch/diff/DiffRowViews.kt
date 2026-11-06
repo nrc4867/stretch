@@ -33,6 +33,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import dev.chieppa.stretch.code.CodeHighlight
 import dev.chieppa.stretch.code.CodeLineBody
 import dev.chieppa.stretch.code.CodeLineNumber
 import dev.chieppa.stretch.code.CodeLook
@@ -81,6 +82,7 @@ internal class LineExtras(
     val gutterWidth: Dp = StretchSpacing.space16,
     val oldNumber: Modifier = Modifier,
     val newNumber: Modifier = Modifier,
+    val finds: List<CodeHighlight> = emptyList(),
 )
 
 @Composable
@@ -95,8 +97,8 @@ private fun Sign(kind: LineKind, look: LineLook) {
 }
 
 @Composable
-private fun LineCode(line: DiffLine, tokens: List<CodeToken>, metrics: CodeMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, modifier: Modifier) {
-    val text = remember(line, tokens, look) { lineText(line, tokens, look.code.code, look.strong(line.kind)) }
+private fun LineCode(line: DiffLine, tokens: List<CodeToken>, finds: List<CodeHighlight>, metrics: CodeMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, modifier: Modifier) {
+    val text = remember(line, tokens, finds, look) { lineText(line, tokens, look.code.code, look.strong(line.kind), finds) }
     CodeLineBody(text, metrics, look.code, wrap, scroll, modifier)
 }
 
@@ -110,7 +112,7 @@ internal fun UnifiedLine(line: DiffLine, tokens: List<CodeToken>, metrics: CodeM
             CodeLineNumber(line.newNumber, metrics, look.code, extras.newNumber, strong = selected)
             Sign(line.kind, look)
         }
-        LineCode(line, tokens, metrics, look, wrap, scroll, Modifier.weight(1f))
+        LineCode(line, tokens, extras.finds, metrics, look, wrap, scroll, Modifier.weight(1f))
     }
 }
 
@@ -124,7 +126,7 @@ internal fun RowScope.SplitSide(side: DiffSide, line: DiffLine?, tokens: List<Co
             CodeLineNumber(number, metrics, look.code, if (side == DiffSide.Old) extras.oldNumber else extras.newNumber, strong = extras.tone == LineTone.Selected)
             Sign(line.kind, look)
         }
-        LineCode(line, tokens, metrics, look, wrap, scroll, Modifier.weight(1f))
+        LineCode(line, tokens, extras.finds, metrics, look, wrap, scroll, Modifier.weight(1f))
     }
 }
 

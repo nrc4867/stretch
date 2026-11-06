@@ -16,10 +16,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.chieppa.stretch.diff.DiffViewer
-import dev.chieppa.stretch.diff.diffTexts
-import dev.chieppa.stretch.diff.parseUnifiedDiff
-import dev.chieppa.stretch.diff.rememberDiffViewerState
 import dev.chieppa.stretch.frame.RequirementRow
 import dev.chieppa.stretch.markdown.MarkdownEditor
 import dev.chieppa.stretch.markdown.MarkdownMode
@@ -61,14 +57,6 @@ private fun MarkdownDemo() {
     val state = rememberMarkdownEditorState(SampleDocuments.markdown)
     val diagrams = remember { MermaidDiagrams() }
     MarkdownEditor(state, Modifier.fillMaxSize(), modes = MarkdownMode.entries, diagrams = diagrams)
-}
-
-@Composable
-private fun DiffDemo() {
-    val files = remember {
-        parseUnifiedDiff(SampleDocuments.patch) + diffTexts(SampleDocuments.oldCode, SampleDocuments.newCode, "src/Greeter.kt")
-    }
-    DiffViewer(files, Modifier.fillMaxSize(), rememberDiffViewerState(split = true), slots = rememberDiffNotes())
 }
 
 @Composable

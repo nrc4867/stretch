@@ -38,6 +38,10 @@ class CodeLook(
     fun wash(tone: LineTone?): Color = tone?.let { washes[it] } ?: Color.Transparent
 }
 
+/** How a find match from [start] until [end] draws: on [CodeLook.currentMatch] when it is the [current] one, else on [CodeLook.match]. */
+fun CodeLook.matchHighlight(start: Int, end: Int, current: Boolean): CodeHighlight =
+    if (current) CodeHighlight(start, end, currentMatch, onCurrentMatch) else CodeHighlight(start, end, match)
+
 @Composable
 fun rememberCodeLook(): CodeLook {
     val c = Stretch.colors

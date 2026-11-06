@@ -62,6 +62,6 @@ fun tokenizeDiff(files: List<FileDiff>): DiffTokens {
     return DiffTokens(tokens)
 }
 
-/** The text of [line] with tabs expanded, code colored and changed words filled with [changeFill]. */
-internal fun lineText(line: DiffLine, tokens: List<CodeToken>, colors: CodeColors, changeFill: Color): AnnotatedString =
-    codeLineText(line.text, tokens, colors, line.changes.map { CodeHighlight(it.start, it.end, changeFill) })
+/** The text of [line] with tabs expanded, code colored, changed words filled with [changeFill] and [finds] over them. */
+internal fun lineText(line: DiffLine, tokens: List<CodeToken>, colors: CodeColors, changeFill: Color, finds: List<CodeHighlight> = emptyList()): AnnotatedString =
+    codeLineText(line.text, tokens, colors, line.changes.map { CodeHighlight(it.start, it.end, changeFill) } + finds)

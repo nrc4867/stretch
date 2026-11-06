@@ -46,6 +46,9 @@ class CodeViewerState(wrap: Boolean = false) : TextFind {
     /** One character's width in pixels, to scroll sideways to a column. */
     internal var charWidth = 0f
 
+    /** The lines showing, to find a match's column once tabs expand. */
+    internal var lines: List<String> = emptyList()
+
     /** The first line showing at the top, counting from 1. */
     val firstVisibleLine: Int get() = list.firstVisibleItemIndex + 1
 
@@ -73,24 +76,26 @@ class CodeViewerState(wrap: Boolean = false) : TextFind {
     private suspend fun goToMatch(index: Int) {
         if (matches.isEmpty()) return
         currentMatch = index.mod(matches.size)
-        val match = matches[currentMatch]
+        scrollToMatch(matches[currentMatch])
+    }
+
+    /**
+     * Scrolls so [match] shows: to its line, with lines above it, unless it already shows away from the edges, and
+     * sideways to it while lines do not wrap. For matches the find bar finds and for those an app passes in.
+     */
+    suspend fun scrollToMatch(match: CodeRange) {
         val visible = list.layoutInfo.visibleItemsInfo
         val shown = visible.size > 2 && match.line - 1 in visible[1].index..visible[visible.size - 2].index
         if (!shown) scrollToLine(match.line, (visible.size / 2).coerceAtLeast(LEAD_IN_LINES))
-        if (!wrap && charWidth > 0f) {
-            val x = (match.start * charWidth).toInt()
-            if (x < horizontal.value || x > horizontal.value + horizontal.viewportSize - charWidth * MATCH_MARGIN_CHARS) {
-                horizontal.scrollTo((x - (charWidth * MATCH_MARGIN_CHARS).toInt()).coerceAtLeast(0))
-            }
+        if (!wrap) {
+            val line = lines.getOrNull(match.line - 1).orEmpty()
+            horizontal.revealColumn(tabOffsets(line)[match.start.coerceIn(0, line.length)], charWidth)
         }
     }
 
     private companion object {
         /** Lines left showing above a line scrolled to. */
         const val LEAD_IN_LINES = 3
-
-        /** Characters kept showing before a match scrolled to sideways. */
-        const val MATCH_MARGIN_CHARS = 8
     }
 }
 

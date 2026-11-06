@@ -34,6 +34,9 @@ fun DiffRow.numberOn(side: DiffSide): Int? = when (this) {
     else -> null
 }
 
+/** The line's number on [side], or null when it is not on that side. */
+fun DiffLine.numberOn(side: DiffSide): Int? = if (side == DiffSide.Old) oldNumber else newNumber
+
 /** The file a row belongs to, or null for a row of no one file. */
 val DiffRow.fileIndex: Int?
     get() = when (this) {
