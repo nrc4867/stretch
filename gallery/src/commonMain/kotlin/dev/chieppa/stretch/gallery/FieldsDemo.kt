@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.SearchableDropdown
 import dev.chieppa.stretch.ui.Breadcrumbs
 import dev.chieppa.stretch.ui.NumberField
+import dev.chieppa.stretch.ui.PathLabel
+import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.NumberSteppers
 import dev.chieppa.stretch.ui.TextArea
 
@@ -25,6 +27,7 @@ private val bones = listOf("Head", "Neck", "Spine", "Hips", "Tail base", "Tail t
 internal fun BreadcrumbsDemo() {
     var path by remember { mutableStateOf(listOf("Dune walk", "Fennec", "Rig", "Left ear")) }
     Breadcrumbs(path, { it }, { item -> path = path.take(path.indexOf(item) + 1) })
+    PathLabel("characters/fennec/rig/ears/left/LeftEarControls.rig", Stretch.type.valueSm, Stretch.colors.inkMuted, Modifier.width(220.dp))
 }
 
 @Composable
