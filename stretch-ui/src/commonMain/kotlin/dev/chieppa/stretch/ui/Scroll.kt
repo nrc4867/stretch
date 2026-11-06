@@ -4,6 +4,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -12,7 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
-/** A thin themed scrollbar for [state], shown on hover and while scrolling. Align it to the end of the scrolled box. */
+/**
+ * A thin themed scrollbar for [state], shown on hover and while scrolling. It takes all the height it is given, so in
+ * a box that wraps its content, such as a popup's, give it `Modifier.matchParentSize().wrapContentWidth(Alignment.End)`
+ * to keep it from stretching the box; in a box of fixed height, align it to the end.
+ */
 @Composable
 expect fun Scrollbar(state: ScrollState, modifier: Modifier = Modifier)
 
@@ -25,7 +30,7 @@ expect fun Scrollbar(state: LazyListState, modifier: Modifier = Modifier)
 fun ScrollColumn(modifier: Modifier = Modifier, state: ScrollState = rememberScrollState(), content: @Composable ColumnScope.() -> Unit) {
     Box(modifier) {
         Column(Modifier.verticalScroll(state), content = content)
-        Scrollbar(state, Modifier.align(Alignment.CenterEnd))
+        Scrollbar(state, Modifier.matchParentSize().wrapContentWidth(Alignment.End))
     }
 }
 

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -149,7 +150,7 @@ private fun <T> SearchPanel(options: List<T>, selected: T, label: (T) -> String,
                         MenuItem(label(option), { onPick(option) }, checked = option == selected, highlighted = i == index)
                     }
                 }
-                Scrollbar(list, Modifier.align(Alignment.CenterEnd))
+                Scrollbar(list, Modifier.matchParentSize().wrapContentWidth(Alignment.End))
             }
             if (matches.isEmpty()) {
                 BasicText(stringResource(Res.string.no_matches), Modifier.padding(start = 12.dp, end = 12.dp, bottom = 10.dp), style = Stretch.type.body.merge(TextStyle(color = c.inkSubtle)))
