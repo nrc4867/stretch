@@ -3,12 +3,14 @@ package dev.chieppa.stretch.frame
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
@@ -16,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
@@ -37,9 +38,6 @@ data class TabItem(
     val closable: Boolean = true,
 )
 
-/** The widest a tab grows before its title is cut short. */
-internal val TabMaxWidth = 240.dp
-
 /**
  * How a tab looks: `ink-strong` on the panel when [active], with a bar under it in the accent while its strip is
  * [focused] and in a strong line otherwise; `ink-muted` on the strip when not. [onClose] makes the close button.
@@ -56,7 +54,7 @@ internal fun TabFace(
 ) {
     val c = Stretch.colors
     val ink = if (active) c.inkStrong else c.inkMuted
-    Column(modifier.height(StretchSizes.row).widthIn(max = TabMaxWidth).background(if (active) c.surfacePanel else Color.Transparent)) {
+    Column(modifier.height(StretchSizes.row).widthIn(TabMinWidth, TabMaxWidth).width(IntrinsicSize.Max).background(if (active) c.surfacePanel else Color.Transparent)) {
         Row(
             Modifier.weight(1f).padding(start = StretchSpacing.space12, end = if (onClose != null) StretchSpacing.space4 else StretchSpacing.space12),
             horizontalArrangement = Arrangement.spacedBy(StretchSpacing.space6),

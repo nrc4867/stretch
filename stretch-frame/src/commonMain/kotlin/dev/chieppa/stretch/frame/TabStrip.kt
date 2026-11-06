@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -68,8 +69,9 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * A row of tabs for open views. Clicking a tab or pressing Enter or Space on it calls [onActivate]; its close button
  * and a middle-click call [onClose]. Left and Right move the focus between tabs, and with [onMove] Alt Left and Alt
- * Right move the focused tab, as does dragging it, with a line where it will land; Esc cancels a drag. Tabs past the
- * strip's width scroll, and the active one scrolls into view. [focused] says whether the strip's view has the focus,
+ * Right move the focused tab, as does dragging it, with a line where it will land; Esc cancels a drag. Each tab is as
+ * wide as its title asks, within a least and a greatest width. When they do not all fit, the widest shrink first, their
+ * titles cut short, down to the least width; past that the strip scrolls, and the active tab scrolls into view. [focused] says whether the strip's view has the focus,
  * which colors the active tab's bar in the accent. Strips sharing a [drag] see each other's tabs; [onDragEnd] then
  * takes every drop, inside the strip or not, in place of [onMove]. [menu] is the tab's context menu and [trailing]
  * goes after the tabs.
@@ -204,13 +206,13 @@ fun TabStrip(
 
     Column(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().height(StretchSizes.row), verticalAlignment = Alignment.CenterVertically) {
-            Box(
+            BoxWithConstraints(
                 Modifier
                     .weight(1f)
                     .fillMaxHeight()
                     .onGloballyPositioned { drag.strips[stripKey] = Placed(it.boundsInWindow(), toScreen) },
             ) {
-                Row(Modifier.horizontalScroll(rememberScrollState())) {
+                TabRow(maxWidth, Modifier.horizontalScroll(rememberScrollState())) {
                     tabs.forEachIndexed { i, item -> key(item.id) { tab(item, i) } }
                 }
                 if (target != null && order.none { it != drag.tab }) InsertLine(Modifier.align(Alignment.CenterStart))
