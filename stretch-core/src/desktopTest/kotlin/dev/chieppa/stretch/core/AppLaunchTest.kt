@@ -11,9 +11,9 @@ class AppLaunchTest {
     @Test
     fun aJarStartsWithJarAndKeepsItsArgumentsButNotTheDebugger() {
         val command = launchCommand(
-            "java", listOf("-Xmx1g", "-agentlib:jdwp=transport=dt_socket"), "C:/My Apps/app.jar", "C:/My Apps/app.jar --open a b", listOf("--open", "a b"),
+            "java", listOf("-Xmx1g", "-agentlib:jdwp=transport=dt_socket"), "/My Apps/app.jar", "/My Apps/app.jar --open a b", listOf("--open", "a b"),
         )
-        assertEquals(listOf("java", "-Xmx1g", "-jar", "C:/My Apps/app.jar", "--open", "a b"), command)
+        assertEquals(listOf("java", "-Xmx1g", "-jar", "/My Apps/app.jar", "--open", "a b"), command)
     }
 
     @Test
