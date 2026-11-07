@@ -43,7 +43,8 @@ import kotlinx.coroutines.withContext
  * expression, drawn in place of the find bar's with [currentMatch] set apart; [CodeViewerState.scrollToMatch] brings
  * one into view. With [ruler] on, a strip beside the scrollbar marks toned lines, find matches and the app's [marks]
  * along the whole text, where wrapped lines take their real share; pressing or dragging on it scrolls there. With
- * [changeBars] on, lines toned [LineTone.Added] or [LineTone.Removed] get a strong bar down their start edge.
+ * [changeBars] on, lines toned [LineTone.Added] or [LineTone.Removed] get a strong bar down their start edge, and
+ * [changeWash] puts their wash behind the whole line or only behind its gutter and number.
  */
 @Composable
 fun CodeViewer(
@@ -60,6 +61,7 @@ fun CodeViewer(
     marks: List<CodeMark> = emptyList(),
     ruler: Boolean = true,
     changeBars: Boolean = true,
+    changeWash: ChangeWash = ChangeWash.Line,
 ) {
     val builtIn by produceState(emptyList<List<CodeToken>>(), text, language, tokens == null) {
         value = if (tokens != null) emptyList() else withContext(Dispatchers.Default) { tokenizeLines(text.lines, language) }
@@ -74,7 +76,7 @@ fun CodeViewer(
     val matchesByLine = remember(shownMatches) { shownMatches.groupBy { it.line } }
     val longest = remember(text) { longestLine(text.lines) }
     val metrics = rememberCodeMetrics(longest, text.lineCount)
-    val look = rememberCodeLook()
+    val look = rememberCodeLook(changeWash)
     val bars = rulerColors
     val charWidth = with(LocalDensity.current) { metrics.charWidth.toPx() }
     SideEffect {

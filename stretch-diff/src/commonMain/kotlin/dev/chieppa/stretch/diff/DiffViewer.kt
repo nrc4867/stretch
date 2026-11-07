@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import dev.chieppa.stretch.code.ChangeWash
 import dev.chieppa.stretch.code.CodeMetrics
 import dev.chieppa.stretch.code.longestLine
 import dev.chieppa.stretch.code.rememberCodeMetrics
@@ -42,7 +43,8 @@ import kotlinx.coroutines.withContext
  * find matches the app finds, drawn in place with [currentMatch] set apart; [DiffViewerState.scrollToMatch] brings one
  * into view, opening its file and fold when they hide it. With [ruler] on, a strip beside the scrollbar marks removed
  * and added lines, find matches and the app's [marks] along the whole diff, where wrapped rows take their real share;
- * pressing or dragging on it scrolls there.
+ * pressing or dragging on it scrolls there. [changeWash] puts added and removed lines' wash behind the whole line or
+ * only behind its gutter, numbers and sign.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -58,6 +60,7 @@ fun DiffViewer(
     currentMatch: DiffMatch? = null,
     marks: List<DiffMark> = emptyList(),
     ruler: Boolean = true,
+    changeWash: ChangeWash = ChangeWash.Line,
 ) {
     val c = Stretch.colors
     val rows = remember(files, state.split, state.unfolded, state.collapsedFiles) {
@@ -69,7 +72,7 @@ fun DiffViewer(
     val longest = remember(files) { files.maxOfOrNull { file -> file.hunks.maxOfOrNull { hunk -> longestLine(hunk.lines.map { it.text }) } ?: 0 } ?: 0 }
     val highest = remember(files) { files.maxOfOrNull { file -> file.hunks.maxOfOrNull { hunk -> hunk.lines.maxOfOrNull { maxOf(it.oldNumber ?: 0, it.newNumber ?: 0) } ?: 0 } ?: 0 } ?: 0 }
     val metrics = rememberCodeMetrics(longest, highest)
-    val look = rememberLineLook()
+    val look = rememberLineLook(changeWash)
     val charWidth = with(LocalDensity.current) { metrics.charWidth.toPx() }
     SideEffect {
         state.rows = rows

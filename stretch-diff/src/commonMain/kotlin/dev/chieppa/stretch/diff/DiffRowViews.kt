@@ -27,6 +27,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import dev.chieppa.stretch.code.ChangeWash
 import dev.chieppa.stretch.code.CodeHighlight
 import dev.chieppa.stretch.code.CodeLineBody
 import dev.chieppa.stretch.code.CodeLineNumber
@@ -34,7 +35,9 @@ import dev.chieppa.stretch.code.CodeLook
 import dev.chieppa.stretch.code.CodeMetrics
 import dev.chieppa.stretch.code.CodeToken
 import dev.chieppa.stretch.code.LineTone
+import dev.chieppa.stretch.code.lineWash
 import dev.chieppa.stretch.code.rememberCodeLook
+import dev.chieppa.stretch.code.washesGutter
 import dev.chieppa.stretch.theme.StretchSpacing
 import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
@@ -45,9 +48,9 @@ import dev.chieppa.stretch.ui.Label
 internal class LineLook(val code: CodeLook, val addStrong: Color, val delStrong: Color, val blank: Color)
 
 @Composable
-internal fun rememberLineLook(): LineLook {
+internal fun rememberLineLook(changeWash: ChangeWash = ChangeWash.Line): LineLook {
     val c = Stretch.colors
-    val code = rememberCodeLook()
+    val code = rememberCodeLook(changeWash)
     return remember(c, code) { LineLook(code, c.diffAddStrong, c.diffDelStrong, c.surfaceCanvas) }
 }
 
@@ -58,6 +61,19 @@ private fun LineLook.wash(kind: LineKind?, tone: LineTone?): Color = when {
     kind == LineKind.Removed -> code.wash(LineTone.Removed)
     kind == LineKind.Context -> Color.Transparent
     else -> blank
+}
+
+/** How far the wash of a line of [kind] reaches when it goes on the gutter only, [numbers] numbers wide; null for the whole line. */
+private fun LineLook.gutterSpan(kind: LineKind?, extras: LineExtras, metrics: CodeMetrics, numbers: Int): Dp? {
+    val tone = when {
+        extras.tone != null -> return null
+        kind == LineKind.Added -> LineTone.Added
+        kind == LineKind.Removed -> LineTone.Removed
+        else -> return null
+    }
+    if (!code.washesGutter(tone)) return null
+    val gutter = if (extras.gutter != null) extras.gutterWidth else 0.dp
+    return gutter + metrics.numberWidth * numbers + StretchSpacing.space16
 }
 
 private fun LineLook.strong(kind: LineKind) = if (kind == LineKind.Added) addStrong else delStrong
@@ -103,7 +119,8 @@ private fun LineCode(line: DiffLine, tokens: List<CodeToken>, finds: List<CodeHi
 
 @Composable
 internal fun UnifiedLine(line: DiffLine, tokens: List<CodeToken>, metrics: CodeMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, extras: LineExtras) {
-    Row(Modifier.fillMaxWidth().heightIn(min = metrics.lineHeight).background(look.wash(line.kind, extras.tone)).semantics { stateDescription = line.kind.name }) {
+    val wash = Modifier.lineWash(look.wash(line.kind, extras.tone), look.gutterSpan(line.kind, extras, metrics, numbers = 2))
+    Row(Modifier.fillMaxWidth().heightIn(min = metrics.lineHeight).then(wash).semantics { stateDescription = line.kind.name }) {
         DisableSelection {
             Gutter(extras, metrics)
             val selected = extras.tone == LineTone.Selected
@@ -117,7 +134,8 @@ internal fun UnifiedLine(line: DiffLine, tokens: List<CodeToken>, metrics: CodeM
 
 @Composable
 internal fun RowScope.SplitSide(side: DiffSide, line: DiffLine?, tokens: List<CodeToken>, metrics: CodeMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, extras: LineExtras) {
-    Row(Modifier.weight(1f).fillMaxHeight().background(look.wash(line?.kind, extras.tone)).semantics { if (line != null) stateDescription = line.kind.name }) {
+    val wash = Modifier.lineWash(look.wash(line?.kind, extras.tone), look.gutterSpan(line?.kind, extras, metrics, numbers = 1))
+    Row(Modifier.weight(1f).fillMaxHeight().then(wash).semantics { if (line != null) stateDescription = line.kind.name }) {
         if (line == null) return@Row
         DisableSelection {
             Gutter(extras, metrics)

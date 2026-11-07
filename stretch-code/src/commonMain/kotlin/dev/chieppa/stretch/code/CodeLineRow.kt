@@ -24,6 +24,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.StretchSpacing
 
 /** How wide the bar down a changed line's start edge is: wide enough to read at a glance beside the numbers. */
@@ -76,7 +77,8 @@ fun CodeLineRow(
     changeBar: Color = Color.Unspecified,
 ) {
     val bar = Modifier.drawBehind { if (changeBar.isSpecified) drawRect(changeBar, size = Size(ChangeBarWidth.toPx(), size.height)) }
-    Row(modifier.fillMaxWidth().heightIn(min = metrics.lineHeight).background(look.wash(tone)).then(bar)) {
+    val gutterSpan = if (look.washesGutter(tone)) (if (gutter != null) gutterWidth else 0.dp) + metrics.numberWidth else null
+    Row(modifier.fillMaxWidth().heightIn(min = metrics.lineHeight).lineWash(look.wash(tone), gutterSpan).then(bar)) {
         DisableSelection {
             if (gutter != null) Box(Modifier.width(gutterWidth).heightIn(min = metrics.lineHeight), contentAlignment = Alignment.Center) { gutter() }
             CodeLineNumber(number, metrics, look, numberModifier, strong = tone == LineTone.Selected)

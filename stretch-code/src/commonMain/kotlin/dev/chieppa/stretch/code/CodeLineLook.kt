@@ -34,6 +34,7 @@ class CodeLook(
     val currentMatch: Color,
     val onCurrentMatch: Color,
     private val washes: Map<LineTone, Color>,
+    val changeWash: ChangeWash = ChangeWash.Line,
 ) {
     fun wash(tone: LineTone?): Color = tone?.let { washes[it] } ?: Color.Transparent
 }
@@ -45,12 +46,13 @@ fun CodeLook.matchHighlight(start: Int, end: Int, current: Boolean): CodeHighlig
 /** How much of the accent a find match other than the current one shows, so it reads over a line's wash too. */
 private const val MATCH_ALPHA = 0.4f
 
+/** The look lines draw with in the theme, added and removed lines washed where [changeWash] says. */
 @Composable
-fun rememberCodeLook(): CodeLook {
+fun rememberCodeLook(changeWash: ChangeWash = ChangeWash.Line): CodeLook {
     val c = Stretch.colors
     val code = codeColors
     val style = Stretch.type.valueSm
-    return remember(c, style) {
+    return remember(c, style, changeWash) {
         CodeLook(
             code = code,
             style = style.merge(TextStyle(color = c.ink)),
@@ -68,6 +70,7 @@ fun rememberCodeLook(): CodeLook {
                 LineTone.Emphasis to c.surfaceControl,
                 LineTone.Selected to c.surfaceControlHi,
             ),
+            changeWash = changeWash,
         )
     }
 }
