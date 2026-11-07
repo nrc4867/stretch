@@ -40,7 +40,7 @@ internal fun OverflowActions(actions: List<BarAction>) {
                     Box(Modifier.hiddenUnless(i < shown)) {
                         val press = action.popupOpen?.takeIf { action.enabled }?.let { Modifier.opensOnPress(it, action.onClick) } ?: Modifier
                         Tooltip(action.label, action.keys.ifEmpty { null }) {
-                            BadgedBox(action.badge, action.label) { IconButton(action.icon, action.label, action.onClick, press, enabled = action.enabled) }
+                            BadgedBox(action.badge, action.badge.orEmpty()) { IconButton(action.icon, action.label, action.onClick, press, enabled = action.enabled) }
                         }
                     }
                 }
