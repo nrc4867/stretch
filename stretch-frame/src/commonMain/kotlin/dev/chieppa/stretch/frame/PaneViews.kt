@@ -129,7 +129,7 @@ private fun PaneLeafView(leaf: PaneLeaf, grid: PaneGridContext, modifier: Modifi
         ) {
             val active = leaf.active
             if (active != null) {
-                key(active) { grid.holder.SaveableStateProvider(active) { Box(Modifier.fillMaxSize()) { grid.content(this, active) } } }
+                key(active) { PaneTabBody(active, grid) }
             } else {
                 Box(Modifier.fillMaxSize()) { grid.empty(this) }
             }

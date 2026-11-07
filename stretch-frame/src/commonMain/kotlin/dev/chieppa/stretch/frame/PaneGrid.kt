@@ -36,6 +36,9 @@ import androidx.compose.ui.unit.LayoutDirection
  * window, opens in a window of its own under the pointer, which holds panes like the grid's and is a full window of
  * the app. Tabs drag between windows and the grid alike, and dragging a pane window by its header onto a pane docks
  * its tabs there; closing it puts them back in the grid. Without a host, windows in [layout] go back into the grid.
+ *
+ * Inside a `StretchWindow`, a tab its window holds back after a crash shows an error mark and a reload in place of
+ * its content.
  */
 @Composable
 fun PaneGrid(

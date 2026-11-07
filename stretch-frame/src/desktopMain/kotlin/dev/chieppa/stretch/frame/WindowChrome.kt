@@ -30,6 +30,12 @@ private val LocalNativeTitleBar = staticCompositionLocalOf<NativeTitleBar?> { nu
  * into full windows of the app. Clicking empty space takes focus off
  * fields and buttons. Without an [icon] it uses the app's icon from the `dev.chieppa.stretch.app` Gradle plugin, at
  * every size, so the taskbar and Alt+Tab stay sharp; the process is identified to the OS before the window opens.
+ *
+ * A crash anywhere in the window, or in one of its pane windows, goes to [onCrash] and builds that window again
+ * instead of ending the app; state the app keeps outside [content] carries over. A tab of a [PaneGrid] that started
+ * showing just before the crash, or every showing tab when crashes repeat, is held back with a reload in place of its
+ * content, so the same tab does not crash it again. When building again keeps crashing, the window closes as through
+ * [onCloseRequest] (a pane window's tabs go back to the grid).
  */
 @Composable
 fun StretchWindow(
@@ -37,10 +43,22 @@ fun StretchWindow(
     title: String,
     state: WindowState = rememberWindowState(),
     icon: Painter? = null,
+    onCrash: (WindowCrash) -> Unit = { it.cause.printStackTrace() },
     content: @Composable FrameWindowScope.() -> Unit,
 ) {
     AppIdentity.applyToProcess()
+    val holds = remember { TabHolds() }
+    CompositionLocalProvider(LocalTabHolds provides holds, LocalCrashReport provides onCrash) {
+        RecoveringWindow(holds, onCrash, onCloseRequest) {
+            AppWindow(onCloseRequest, title, state, icon, content)
+        }
+    }
+}
+
+@Composable
+private fun AppWindow(onCloseRequest: () -> Unit, title: String, state: WindowState, icon: Painter?, content: @Composable FrameWindowScope.() -> Unit) {
     Window(onCloseRequest = onCloseRequest, state = state, title = title, icon = icon) {
+        WindowSettles()
         if (icon == null) {
             LaunchedEffect(window) { AppIdentity.current?.icons?.takeIf { it.isNotEmpty() }?.let { window.iconImages = it } }
         }

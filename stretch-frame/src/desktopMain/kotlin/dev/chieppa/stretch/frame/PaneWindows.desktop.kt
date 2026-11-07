@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
 import dev.chieppa.stretch.theme.LocalUiScale
 import dev.chieppa.stretch.theme.Stretch
@@ -61,7 +62,16 @@ internal class DesktopPaneWindows(owner: java.awt.Window) : PaneWindowHost {
             }
         }
         val scale = LocalUiScale.current
+        val holds = LocalTabHolds.current ?: remember { TabHolds() }
+        RecoveringWindow(holds, LocalCrashReport.current, onClose) {
+            PaneWindow(title, state, raise, scale, onClose, content)
+        }
+    }
+
+    @Composable
+    private fun PaneWindow(title: String, state: WindowState, raise: Int, scale: Float, onClose: () -> Unit, content: @Composable () -> Unit) {
         Window(onCloseRequest = onClose, state = state, title = title) {
+            WindowSettles()
             LaunchedEffect(window) { AppIdentity.current?.icons?.takeIf { it.isNotEmpty() }?.let { window.iconImages = it } }
             LaunchedEffect(raise) { if (raise > 0) window.toFront() }
             NativePointerInput(window)
