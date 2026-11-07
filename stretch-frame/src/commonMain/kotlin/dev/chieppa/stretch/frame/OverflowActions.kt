@@ -17,6 +17,7 @@ import dev.chieppa.stretch.frame.generated.Res
 import dev.chieppa.stretch.frame.generated.more_actions
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
+import dev.chieppa.stretch.ui.BadgedBox
 import dev.chieppa.stretch.ui.IconButton
 import dev.chieppa.stretch.ui.Tooltip
 import dev.chieppa.stretch.ui.opensOnPress
@@ -38,7 +39,9 @@ internal fun OverflowActions(actions: List<BarAction>) {
                 actions.forEachIndexed { i, action ->
                     Box(Modifier.hiddenUnless(i < shown)) {
                         val press = action.popupOpen?.takeIf { action.enabled }?.let { Modifier.opensOnPress(it, action.onClick) } ?: Modifier
-                        Tooltip(action.label, action.keys.ifEmpty { null }) { IconButton(action.icon, action.label, action.onClick, press, enabled = action.enabled) }
+                        Tooltip(action.label, action.keys.ifEmpty { null }) {
+                            BadgedBox(action.badge, action.label) { IconButton(action.icon, action.label, action.onClick, press, enabled = action.enabled) }
+                        }
                     }
                 }
             },

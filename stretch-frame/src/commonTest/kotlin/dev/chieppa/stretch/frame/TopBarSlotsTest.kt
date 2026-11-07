@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
 import dev.chieppa.stretch.core.KeyChord
 import dev.chieppa.stretch.test.setStretchContent
+import dev.chieppa.stretch.theme.StretchIcons
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -123,5 +125,24 @@ class TopBarSlotsTest {
         onNodeWithContentDescription("Commands").performMouseInput { enter(center) }
         mainClock.advanceTimeBy(1000)
         onNodeWithText("K").assertExists()
+    }
+
+    @Test
+    fun leadingActionsComeBeforeSettingsWithTheirBadge() = runComposeUiTest {
+        setStretchContent {
+            TopBar("App", "Untitled") {
+                TopBarActions(
+                    onUndo = null,
+                    onRedo = null,
+                    onCommands = null,
+                    onSettings = {},
+                    leading = listOf(BarAction(StretchIcons.Info, "Notifications", {}, badge = "3")),
+                )
+            }
+        }
+        val settings = onNodeWithContentDescription("Settings").getUnclippedBoundsInRoot()
+        val first = onAllNodesWithContentDescription("Notifications", useUnmergedTree = true)[0].getUnclippedBoundsInRoot()
+        assertTrue(first.right <= settings.left, "before settings")
+        onNodeWithText("3", useUnmergedTree = true).assertExists()
     }
 }
