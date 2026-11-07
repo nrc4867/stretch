@@ -23,10 +23,17 @@ import dev.chieppa.stretch.theme.StretchSizes
 
 internal const val disabledAlpha = 0.4f
 
+private val TRACK_PADDING = 2.dp
+private val PADDING = 10.dp
+private val COMPACT_TRACK_PADDING = 1.dp
+private val COMPACT_PADDING = 8.dp
+private val COMPACT_HEIGHT = 22.dp
+
 /**
  * Picks exactly one of two to five options. A neutral pick uses the neutral color; [mode] is for top-level modes and
  * the armed view, which use the on colors. [fill] stretches the buttons across the row. An option [enabled] says no to
- * is dimmed and cannot be picked.
+ * is dimmed and cannot be picked. [compact] makes it small enough to sit inside a field's row, such as a palette's
+ * search scope.
  */
 @Composable
 fun <T> Segmented(
@@ -38,6 +45,7 @@ fun <T> Segmented(
     mode: Boolean = false,
     fill: Boolean = false,
     enabled: (T) -> Boolean = { true },
+    compact: Boolean = false,
 ) {
     val c = Stretch.colors
     val track = Stretch.shapes.rowShape
@@ -46,7 +54,7 @@ fun <T> Segmented(
             .clip(track)
             .background(c.surfaceControl)
             .border(Stretch.stroke, c.lineControl, track)
-            .padding(2.dp)
+            .padding(if (compact) COMPACT_TRACK_PADDING else TRACK_PADDING)
             .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -65,16 +73,19 @@ fun <T> Segmented(
             Box(
                 modifier = (if (fill) Modifier.weight(1f) else Modifier)
                     .focusRing(state, shape, bg)
-                    .height(StretchSizes.seg)
+                    .height(if (compact) COMPACT_HEIGHT else StretchSizes.seg)
                     .clip(shape)
                     .background(bg)
                     .border(Stretch.stroke, edge, shape)
                     .hoverable(state.source, canPick)
                     .selectable(isOn, state.source, indication = null, canPick, Role.Tab) { onSelect(option) }
-                    .padding(horizontal = 10.dp),
+                    .padding(horizontal = if (compact) COMPACT_PADDING else PADDING),
                 contentAlignment = Alignment.Center,
             ) {
-                val style = Stretch.type.bodySm.copy(fontWeight = if (isOn && mode) FontWeight.SemiBold else FontWeight.Medium)
+                val style = Stretch.type.bodySm.copy(
+                    fontWeight = if (isOn && mode) FontWeight.SemiBold else FontWeight.Medium,
+                    fontSize = if (compact) Stretch.type.value.fontSize else Stretch.type.bodySm.fontSize,
+                )
                 Label(label(option), style, ink)
             }
         }
