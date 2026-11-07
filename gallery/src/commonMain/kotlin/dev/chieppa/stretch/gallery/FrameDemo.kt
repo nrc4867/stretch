@@ -501,14 +501,14 @@ fun FrameDemo(switcher: @Composable () -> Unit, bar: GalleryBar, scale: Float, o
                     onCommands = { palette = true },
                     onSettings = { settings = true },
                     more = listOf(
-                        BarAction(StretchIcons.Folder, "Open", { fileMenu = true }, listOf("Ctrl", "O"), popupOpen = fileMenu) {
+                        BarAction(StretchIcons.Folder, "Open", { fileMenu = true }, listOf("Ctrl", "O"), popupOpen = fileMenu, popup = {
                             Menu(fileMenu, { fileMenu = false }) {
                                 MenuItem("New", { fileMenu = false; registry[ActionId("new")]?.run?.invoke() }, StretchIcons.File)
                                 MenuItem("Open…", { fileMenu = false; chooseAndOpen() }, StretchIcons.Folder)
                                 MenuDivider()
                                 RecentFilesMenuItems(recent, documentStorage, ::open) { fileMenu = false }
                             }
-                        },
+                        }),
                         BarAction(StretchIcons.Save, "Save", { save() }, listOf("Ctrl", "S")),
                     ),
                     settingsOpen = settings,
