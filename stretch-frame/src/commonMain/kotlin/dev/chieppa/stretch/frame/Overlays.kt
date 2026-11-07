@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -122,17 +123,20 @@ fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnSc
     }
 }
 
-/** The floating list a menu or context menu shows: as wide as its widest item, 200 to 360dp. */
+/** The floating list a menu or context menu shows: as wide as its widest item, 200 to 360dp. It knows which [SubMenuItem] in it is open. */
 @Composable
 fun MenuPanel(content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        Modifier
-            .width(IntrinsicSize.Max)
-            .widthIn(min = 200.dp, max = 360.dp)
-            .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
-            .padding(4.dp),
-        content = content,
-    )
+    val openSubMenu = remember { mutableStateOf<Any?>(null) }
+    CompositionLocalProvider(LocalOpenSubMenu provides openSubMenu) {
+        Column(
+            Modifier
+                .width(IntrinsicSize.Max)
+                .widthIn(min = 200.dp, max = 360.dp)
+                .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
+                .padding(4.dp),
+            content = content,
+        )
+    }
 }
 
 /**
@@ -195,6 +199,8 @@ fun MenuItem(
     val hovered by source.collectIsHoveredAsState()
     val faint = if (enabled) 1f else DISABLED_ITEM_ALPHA
     val pressed by source.collectIsPressedAsState()
+    val openSubMenu = LocalOpenSubMenu.current
+    LaunchedEffect(hovered) { if (hovered) openSubMenu?.value = null }
     Row(
         Modifier
             .fillMaxWidth()
