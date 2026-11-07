@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,7 +35,8 @@ class BarMenu(val title: String, val content: @Composable ColumnScope.(close: ()
 
 /**
  * The menus inside the top bar on Windows and Linux: a title per menu that opens its items under it. Goes in the
- * [TopBar]'s menus slot. A click outside or Esc closes the open menu.
+ * [TopBar]'s menus slot. While one is open, pointing at another title opens that one instead. A click outside or Esc
+ * closes the open menu.
  */
 @Composable
 fun BarMenus(menus: List<BarMenu>, modifier: Modifier = Modifier) {
@@ -43,7 +45,7 @@ fun BarMenus(menus: List<BarMenu>, modifier: Modifier = Modifier) {
         for (menu in menus) {
             val close = { open = null }
             Box {
-                BarMenuTitle(menu.title, open == menu.title) { open = menu.title }
+                BarMenuTitle(menu.title, open == menu.title, open != null) { open = menu.title }
                 Menu(open == menu.title, close) { menu.content(this, close) }
             }
         }
@@ -51,11 +53,12 @@ fun BarMenus(menus: List<BarMenu>, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun BarMenuTitle(title: String, open: Boolean, onClick: () -> Unit) {
+private fun BarMenuTitle(title: String, open: Boolean, anyOpen: Boolean, onClick: () -> Unit) {
     val c = Stretch.colors
     val source = remember { MutableInteractionSource() }
     val hovered by source.collectIsHoveredAsState()
     val pressed by source.collectIsPressedAsState()
+    if (hovered && anyOpen && !open) SideEffect(onClick)
     Box(
         Modifier
             .opensOnPress(open, onClick)

@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.ui.StretchPopup
+import dev.chieppa.stretch.ui.TransientPopup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import dev.chieppa.stretch.core.Action
@@ -118,7 +119,7 @@ private const val DISABLED_ITEM_ALPHA = 0.4f
 @Composable
 fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     if (!expanded) return
-    StretchPopup(popupPositionProvider = BelowAnchor(4), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true), shadow = Stretch.shadows.pop) {
+    StretchPopup(popupPositionProvider = BelowAnchor(4), onDismissRequest = onDismiss, properties = TransientPopup, shadow = Stretch.shadows.pop) {
         MenuPanel(content)
     }
 }
@@ -154,7 +155,7 @@ fun Popover(
 ) {
     if (!open) return
     val c = Stretch.colors
-    StretchPopup(popupPositionProvider = BelowAnchor(6), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true), shadow = Stretch.shadows.pop) {
+    StretchPopup(popupPositionProvider = BelowAnchor(6), onDismissRequest = onDismiss, properties = TransientPopup, shadow = Stretch.shadows.pop) {
         Column(
             Modifier
                 .width(width)

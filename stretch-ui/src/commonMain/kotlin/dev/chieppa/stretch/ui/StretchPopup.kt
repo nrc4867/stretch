@@ -1,6 +1,7 @@
 package dev.chieppa.stretch.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import dev.chieppa.stretch.theme.StretchShadow
@@ -19,3 +20,10 @@ expect fun StretchPopup(
     shadow: StretchShadow? = null,
     content: @Composable () -> Unit,
 )
+
+/**
+ * For a menu or popover: it takes the keyboard, and a press outside closes it and still reaches what is under the
+ * pointer, so the rest of the window keeps its hover while it is open and one click both closes it and acts.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+val TransientPopup = PopupProperties(focusable = true, consumePointerInputOutside = false)

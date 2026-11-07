@@ -8,9 +8,9 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.window.PopupPositionProvider
-import androidx.compose.ui.window.PopupProperties
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.StretchPopup
+import dev.chieppa.stretch.ui.TransientPopup
 import kotlin.math.roundToInt
 
 /** Places a popup at [point] inside its anchor, flipped left or up when it would leave the window. */
@@ -37,7 +37,7 @@ fun ContextMenuPopup(at: Offset?, onDismiss: () -> Unit, menu: @Composable Colum
     StretchPopup(
         popupPositionProvider = AtPoint(IntOffset(at.x.roundToInt(), at.y.roundToInt())),
         onDismissRequest = onDismiss,
-        properties = PopupProperties(focusable = true),
+        properties = TransientPopup,
         shadow = Stretch.shadows.pop,
     ) { MenuPanel { menu(onDismiss) } }
 }
