@@ -245,7 +245,7 @@ fun MenuLabel(text: String) {
     )
 }
 
-/** A field that opens a menu of options. */
+/** A field that opens a menu of options, with an optional [icon] before the selected option's label. */
 @Composable
 fun <T> Dropdown(
     options: List<T>,
@@ -254,6 +254,7 @@ fun <T> Dropdown(
     label: (T) -> String,
     contentDescription: String,
     modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
 ) {
     val c = Stretch.colors
     var open by remember { mutableStateOf(false) }
@@ -272,6 +273,7 @@ fun <T> Dropdown(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (icon != null) Icon(icon, c.inkMuted)
             BasicText(label(selected), Modifier.weight(1f), style = Stretch.type.body.merge(TextStyle(color = c.inkStrong)), maxLines = 1)
             Icon(StretchIcons.ChevronDown, c.inkMuted)
         }

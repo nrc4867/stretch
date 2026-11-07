@@ -63,7 +63,8 @@ import dev.chieppa.stretch.theme.StretchSizes
 /**
  * A one-line text or search field. No inline help text: anything that needs explaining goes in the tooltip, often
  * on a [FieldIcon] in [trailing]. [icon] is a shorthand for a plain leading icon. With [error] the field shows the
- * error edge and icon, and the message in the icon's tooltip.
+ * error edge and icon, and the message in the icon's tooltip. [mono] sets the text in the value face, for text such as
+ * a query or a path.
  */
 @Composable
 fun TextField(
@@ -76,10 +77,12 @@ fun TextField(
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
     error: String? = null,
+    mono: Boolean = false,
 ) {
     val c = Stretch.colors
     val state = rememberControlState()
     val shape = Stretch.shapes.ctlShape
+    val face = if (mono) Stretch.type.valueSm else Stretch.type.body
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
@@ -88,7 +91,7 @@ fun TextField(
             if (error != null) error(error)
         },
         singleLine = true,
-        textStyle = Stretch.type.body.merge(TextStyle(color = c.inkStrong)),
+        textStyle = face.merge(TextStyle(color = c.inkStrong)),
         cursorBrush = SolidColor(c.inkStrong),
         interactionSource = state.source,
         decorationBox = { inner ->
