@@ -303,68 +303,42 @@ fun CommandPalette(
     var query by remember { mutableStateOf("") }
     var index by remember { mutableIntStateOf(0) }
     val matches = searchLabels(query, actions) { text(it.textKey) }
-    val focus = remember { FocusRequester() }
     fun run(action: Action) {
         onDismiss()
         action.run()
     }
-    StretchPopup(popupPositionProvider = InWindow(top = 96), onDismissRequest = onDismiss, properties = PopupProperties(focusable = true), shadow = Stretch.shadows.float) {
-        LaunchedEffect(Unit) { focus.requestFocus() }
-        Column(
-            Modifier
-                .width(520.dp)
-                .floating(Stretch.shapes.cardShape, Stretch.shadows.float)
-                .onPreviewKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                    when (event.key) {
-                        Key.DirectionDown -> index = (index + 1).coerceAtMost(matches.lastIndex.coerceAtLeast(0))
-                        Key.DirectionUp -> index = (index - 1).coerceAtLeast(0)
-                        Key.Enter -> matches.getOrNull(index)?.let(::run)
-                        Key.Escape -> onDismiss()
-                        else -> return@onPreviewKeyEvent false
-                    }
-                    true
-                },
-        ) {
-            Row(
-                Modifier.fillMaxWidth().height(StretchSizes.header).padding(horizontal = 14.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(StretchIcons.Search, c.inkMuted)
-                val placeholder = stringResource(Res.string.search_commands)
-                BasicTextField(
-                    value = query,
-                    onValueChange = {
-                        query = it
-                        index = 0
-                    },
-                    modifier = Modifier.weight(1f).holdsTyping().focusRequester(focus).semantics { contentDescription = placeholder },
-                    singleLine = true,
-                    textStyle = Stretch.type.body.merge(TextStyle(color = c.inkStrong, fontSize = Stretch.type.drawerTitle.fontSize)),
-                    cursorBrush = SolidColor(c.inkStrong),
-                    decorationBox = { inner ->
-                        Box {
-                            if (query.isEmpty()) BasicText(placeholder, style = Stretch.type.body.merge(TextStyle(color = c.inkSubtle, fontSize = Stretch.type.drawerTitle.fontSize)))
-                            inner()
-                        }
-                    },
-                )
+    SearchPalette(
+        query = query,
+        onQueryChange = {
+            query = it
+            index = 0
+        },
+        onDismiss = onDismiss,
+        placeholder = stringResource(Res.string.search_commands),
+        maxHeight = 360.dp,
+        onKey = { event ->
+            if (event.type != KeyEventType.KeyDown) return@SearchPalette false
+            when (event.key) {
+                Key.DirectionDown -> index = (index + 1).coerceAtMost(matches.lastIndex.coerceAtLeast(0))
+                Key.DirectionUp -> index = (index - 1).coerceAtLeast(0)
+                Key.Enter -> matches.getOrNull(index)?.let(::run)
+                else -> return@SearchPalette false
             }
-            Divider()
-            Column(Modifier.padding(6.dp).heightIn(max = 360.dp)) {
-                if (matches.isEmpty()) {
-                    BasicText(stringResource(Res.string.no_matches), Modifier.padding(8.dp), style = Stretch.type.body.merge(TextStyle(color = c.inkSubtle)))
-                }
-                matches.take(12).forEachIndexed { i, action ->
-                    MenuItem(
-                        text = text(action.textKey),
-                        onClick = { run(action) },
-                        icon = action.icon?.let(icons),
-                        keys = keymap.keysFor(action.id).firstOrNull()?.toString(),
-                        highlighted = i == index,
-                    )
-                }
+            true
+        },
+    ) {
+        Column(Modifier.padding(6.dp)) {
+            if (matches.isEmpty()) {
+                BasicText(stringResource(Res.string.no_matches), Modifier.padding(8.dp), style = Stretch.type.body.merge(TextStyle(color = c.inkSubtle)))
+            }
+            matches.take(12).forEachIndexed { i, action ->
+                MenuItem(
+                    text = text(action.textKey),
+                    onClick = { run(action) },
+                    icon = action.icon?.let(icons),
+                    keys = keymap.keysFor(action.id).firstOrNull()?.toString(),
+                    highlighted = i == index,
+                )
             }
         }
     }
