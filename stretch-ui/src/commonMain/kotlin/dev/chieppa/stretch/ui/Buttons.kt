@@ -40,7 +40,10 @@ internal fun buttonLook(kind: ButtonKind, state: ControlState): Triple<Color, Co
     }
 }
 
-/** A text button: 32px, sentence-case label of one to three words. At most one [ButtonKind.Primary] per panel. */
+/**
+ * A text button: 32px, sentence-case label of one to three words. At most one [ButtonKind.Primary] per panel. Made
+ * wider than its label, as across a panel, it keeps the label in its middle.
+ */
 @Composable
 fun Button(
     text: String,
@@ -62,7 +65,7 @@ fun Button(
             .hoverable(state.source)
             .clickable(state.source, indication = null, role = Role.Button, onClick = onClick)
             .padding(horizontal = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(iconGap),
+        horizontalArrangement = Arrangement.spacedBy(iconGap, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) Icon(icon, ink)

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,6 +26,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.Stretch
@@ -36,6 +39,26 @@ import dev.chieppa.stretch.theme.Stretch
 @Composable
 fun Checkbox(checked: Boolean?, onCheckedChange: (Boolean) -> Unit, label: String, modifier: Modifier = Modifier) {
     val c = Stretch.colors
+    CheckboxRow(checked, onCheckedChange, modifier) { Label(label, Stretch.type.body, c.ink) }
+}
+
+/**
+ * A checkbox whose label is [content], such as a title over a detail line in a list of things to pick from. Screen
+ * readers hear [contentDescription] as its name.
+ */
+@Composable
+fun Checkbox(
+    checked: Boolean?,
+    onCheckedChange: (Boolean) -> Unit,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit,
+) {
+    CheckboxRow(checked, onCheckedChange, modifier.semantics { this.contentDescription = contentDescription }, content)
+}
+
+@Composable
+private fun CheckboxRow(checked: Boolean?, onCheckedChange: (Boolean) -> Unit, modifier: Modifier, content: @Composable RowScope.() -> Unit) {
     val state = rememberControlState()
     Row(
         modifier
@@ -58,7 +81,7 @@ fun Checkbox(checked: Boolean?, onCheckedChange: (Boolean) -> Unit, label: Strin
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CheckBoxFace(checked, state)
-        Label(label, Stretch.type.body, c.ink)
+        content()
     }
 }
 

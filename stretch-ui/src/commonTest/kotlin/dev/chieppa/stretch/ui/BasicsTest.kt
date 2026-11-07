@@ -28,6 +28,7 @@ import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.unit.dp
+import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
@@ -46,6 +47,15 @@ class BasicsTest {
         assertEquals(true, checked)
         onNodeWithText("Head").performClick()
         assertEquals(false, checked)
+    }
+
+    @Test
+    fun aCheckboxWithItsOwnContentTogglesByItsName() = runComposeUiTest {
+        var checked by mutableStateOf(false)
+        setContent { StretchTheme(StretchThemes.Ink) { Checkbox(checked, { checked = it }, "Pick for compare") { Label("Drop reads", Stretch.type.body, Stretch.colors.ink) } } }
+        onNodeWithContentDescription("Pick for compare").performClick()
+        assertEquals(true, checked)
+        onNodeWithText("Drop reads").assertExists()
     }
 
     @Test
