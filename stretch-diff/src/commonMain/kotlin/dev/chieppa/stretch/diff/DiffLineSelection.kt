@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import dev.chieppa.stretch.ui.handPointer
 
 /** Which version of a file a line number counts in: before the change or after it. */
 enum class DiffSide { Old, New }
@@ -65,9 +66,10 @@ internal fun lineRange(files: List<FileDiff>, fileIndex: Int, side: DiffSide, an
     DiffLineRange(fileIndex, files[fileIndex], side, minOf(anchor, to), maxOf(anchor, to))
 
 /**
- * Pointer input for one line number. A press selects the line, dragging over other numbers of the same file and side
- * extends the selection, and Shift extends it from where the last one started; letting go reports the range to
- * [onRange]. A press that does not move and is not Shift calls [onClick]. Without [onRange] the number only clicks.
+ * Pointer input for one line number's target, which shows the pointing hand. A press selects the line, dragging over
+ * other numbers of the same file and side extends the selection, and Shift extends it from where the last one started;
+ * letting go reports the range to [onRange]. A press that does not move and is not Shift calls [onClick]. Without
+ * [onRange] the number only clicks.
  */
 internal fun Modifier.lineNumberInput(
     state: DiffViewerState,
@@ -84,6 +86,7 @@ internal fun Modifier.lineNumberInput(
     val range by rememberUpdatedState(onRange)
     val currentFiles by rememberUpdatedState(files)
     this
+        .handPointer()
         .onGloballyPositioned { holder[0] = it }
         .semantics {
             role = Role.Button

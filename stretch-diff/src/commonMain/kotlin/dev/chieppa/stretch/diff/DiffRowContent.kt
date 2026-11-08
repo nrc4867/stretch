@@ -41,12 +41,15 @@ internal fun DiffRowContent(row: DiffRow, context: DiffRowContext) {
             val file = files[row.fileIndex]
             val line = row.line
             val ref = DiffLineRef(file, file.hunks[row.hunkIndex], line)
+            val oldInput = numberInput(state, files, row.fileIndex, ref.copy(side = DiffSide.Old), line.oldNumber, strings, slots)
+            val newInput = numberInput(state, files, row.fileIndex, ref.copy(side = DiffSide.New), line.newNumber, strings, slots)
+            // A line on one side only lets its one number answer over the whole gutter, blank column included.
             val extras = LineExtras(
                 tone = lineToneOf(state, slots, ref, row.fileIndex, line.oldNumber, line.newNumber),
                 gutter = slots.gutterMark?.let { mark -> { mark(ref) } },
                 gutterWidth = slots.gutterWidth,
-                oldNumber = numberInput(state, files, row.fileIndex, ref.copy(side = DiffSide.Old), line.oldNumber, strings, slots),
-                newNumber = numberInput(state, files, row.fileIndex, ref.copy(side = DiffSide.New), line.newNumber, strings, slots),
+                oldNumber = if (line.oldNumber != null) oldInput else newInput,
+                newNumber = if (line.newNumber != null) newInput else oldInput,
                 finds = finds.highlights(row.fileIndex, line, look.code),
             )
             UnifiedLine(line, tokens.of(row.fileIndex, line), metrics, look, state.wrap, state.leftScroll, extras)
@@ -78,7 +81,10 @@ internal fun DiffRowContent(row: DiffRow, context: DiffRowContext) {
                 Box(Modifier.width(Stretch.stroke).fillMaxHeight().background(Stretch.colors.linePanel))
                 SplitSide(DiffSide.New, row.right, row.right?.let { tokens.of(row.fileIndex, it) }.orEmpty(), metrics, look, state.wrap, state.rightScroll, extrasOf(right))
             }
-            (right ?: left)?.let { slots.lineAnnotation?.invoke(it) }
+            slots.lineAnnotation?.let { annotate ->
+                left?.let { annotate(it) }
+                right?.let { annotate(it) }
+            }
         }
         is DiffRow.FileHeader -> Unit
     }

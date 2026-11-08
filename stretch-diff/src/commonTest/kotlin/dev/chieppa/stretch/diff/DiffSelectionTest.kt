@@ -68,6 +68,42 @@ class DiffSelectionTest {
     }
 
     @Test
+    fun theGutterBesideANumberAnswersForItAndLeavesTheCodeAlone() = runComposeUiTest {
+        val long = (1..40).joinToString("\n") { if (it == 20) "wide ".repeat(200) else "line $it" }
+        val wide = diffTexts(long, (1..40).joinToString("\n") { if (it == 20) "changed line" else "line $it" }, "wide.txt")
+        val state = DiffViewerState(split = true)
+        var reported: DiffLineRange? = null
+        var clicked: DiffLineRef? = null
+        val slots = DiffSlots(
+            onLineClick = { clicked = it },
+            onLineRangeSelect = { reported = it },
+            gutterMark = { ref -> if (ref.number == 20 && ref.side == DiffSide.New) BasicText("◆") },
+        )
+        setContent { StretchTheme(StretchThemes.Ink) { DiffViewer(listOf(wide), Modifier.size(700.dp, 600.dp), state, slots = slots) } }
+        onNodeWithText("◆").performTouchInput {
+            down(center)
+            moveBy(androidx.compose.ui.geometry.Offset(-width.toFloat(), 0f))
+            up()
+        }
+        waitForIdle()
+        assertEquals(DiffLineRange(0, wide, DiffSide.New, 20, 20), reported)
+        assertEquals(0, state.leftScroll.value)
+        assertEquals(0, state.rightScroll.value)
+        onNodeWithText("◆").performClick()
+        assertEquals(DiffSide.New, clicked?.side)
+        assertEquals(20, clicked?.number)
+    }
+
+    @Test
+    fun splitRowsAnnotateEachSide() = runComposeUiTest {
+        val seen = mutableListOf<Pair<DiffSide, Int?>>()
+        val slots = DiffSlots(lineAnnotation = { ref -> if (ref.line.kind != LineKind.Context) seen += ref.side to ref.number })
+        setContent { StretchTheme(StretchThemes.Ink) { DiffViewer(listOf(changed), Modifier.size(700.dp, 600.dp), DiffViewerState(split = true), slots = slots) } }
+        waitForIdle()
+        assertEquals(listOf(DiffSide.Old to 20, DiffSide.New to 20), seen.distinct())
+    }
+
+    @Test
     fun drawsGutterMarksAndTones() = runComposeUiTest {
         val slots = DiffSlots(
             gutterMark = { ref -> if (ref.number == 4 && ref.side == DiffSide.New) BasicText("◆") },

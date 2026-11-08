@@ -57,9 +57,10 @@ fun CodeLineBody(text: AnnotatedString, metrics: CodeMetrics, look: CodeLook, wr
 }
 
 /**
- * One line of a code view: the [gutter] column [gutterWidth] wide for marks, the line number (which [numberModifier]
- * can make clickable) and the code, all on the wash of [tone]. A specified [changeBar] draws a bar of that color down
- * the start edge, as tall as the line however it wraps, for a changed line. Only the code can be selected as text.
+ * One line of a code view: the [gutter] column [gutterWidth] wide for marks, the line number and the code. The gutter
+ * and number are one target, which [numberModifier] can make clickable, and a press there never reaches the code. All
+ * of it sits on the wash of [tone]. A specified [changeBar] draws a bar of that color down the start edge, as tall as
+ * the line however it wraps, for a changed line. Only the code can be selected as text.
  */
 @Composable
 fun CodeLineRow(
@@ -80,8 +81,10 @@ fun CodeLineRow(
     val gutterSpan = if (look.washesGutter(tone)) (if (gutter != null) gutterWidth else 0.dp) + metrics.numberWidth else null
     Row(modifier.fillMaxWidth().heightIn(min = metrics.lineHeight).lineWash(look.wash(tone), gutterSpan).then(bar)) {
         DisableSelection {
-            if (gutter != null) Box(Modifier.width(gutterWidth).heightIn(min = metrics.lineHeight), contentAlignment = Alignment.Center) { gutter() }
-            CodeLineNumber(number, metrics, look, numberModifier, strong = tone == LineTone.Selected)
+            Row(Modifier.gutterPresses().then(numberModifier)) {
+                if (gutter != null) Box(Modifier.width(gutterWidth).heightIn(min = metrics.lineHeight), contentAlignment = Alignment.Center) { gutter() }
+                CodeLineNumber(number, metrics, look, strong = tone == LineTone.Selected)
+            }
         }
         CodeLineBody(text, metrics, look, wrap, scroll, Modifier.weight(1f).padding(start = StretchSpacing.space8))
     }

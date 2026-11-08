@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import dev.chieppa.stretch.ui.handPointer
 
 /** Line [number] of a [CodeViewer] with its find [matches] drawn in place, [current] the current one, the app's slots and a [changeBar]. */
 @Composable
@@ -33,7 +34,7 @@ internal fun CodeViewerLine(
             tone = tone,
             gutterWidth = slots.gutterWidth,
             gutter = slots.gutterMark?.let { mark -> { mark(number) } },
-            numberModifier = if (click != null) Modifier.clickable(role = Role.Button) { click(number) } else Modifier,
+            numberModifier = if (click != null) Modifier.handPointer().clickable(role = Role.Button) { click(number) } else Modifier,
             changeBar = changeBar,
         )
         slots.lineAnnotation?.let { annotation -> DisableSelection { annotation(number) } }

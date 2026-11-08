@@ -38,6 +38,7 @@ import dev.chieppa.stretch.code.LineTone
 import dev.chieppa.stretch.code.lineWash
 import dev.chieppa.stretch.code.rememberCodeLook
 import dev.chieppa.stretch.code.washesGutter
+import dev.chieppa.stretch.code.gutterPresses
 import dev.chieppa.stretch.theme.StretchSpacing
 import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
@@ -84,7 +85,7 @@ private fun signOf(kind: LineKind) = when (kind) {
     LineKind.Context -> " "
 }
 
-/** What an app and the viewer add to one line: its wash, its gutter mark and how its numbers answer the pointer. */
+/** What an app and the viewer add to one line: its wash, its gutter mark and how each side's number target answers the pointer. */
 internal class LineExtras(
     val tone: LineTone? = null,
     val gutter: (@Composable () -> Unit)? = null,
@@ -98,6 +99,15 @@ internal class LineExtras(
 private fun Gutter(extras: LineExtras, metrics: CodeMetrics) {
     val gutter = extras.gutter ?: return
     Box(Modifier.width(extras.gutterWidth).heightIn(min = metrics.lineHeight), contentAlignment = Alignment.Center) { gutter() }
+}
+
+/**
+ * One side's gutter mark, number and sign as a single target taking [input], the number's press, drag and click. A
+ * press anywhere on it stops there, so it never starts a selection in the code or scrolls it.
+ */
+@Composable
+private fun NumberTarget(input: Modifier, content: @Composable RowScope.() -> Unit) {
+    Row(Modifier.fillMaxHeight().gutterPresses().then(input), content = content)
 }
 
 @Composable
@@ -122,11 +132,15 @@ internal fun UnifiedLine(line: DiffLine, tokens: List<CodeToken>, metrics: CodeM
     val wash = Modifier.lineWash(look.wash(line.kind, extras.tone), look.gutterSpan(line.kind, extras, metrics, numbers = 2))
     Row(Modifier.fillMaxWidth().heightIn(min = metrics.lineHeight).then(wash).semantics { stateDescription = line.kind.name }) {
         DisableSelection {
-            Gutter(extras, metrics)
             val selected = extras.tone == LineTone.Selected
-            CodeLineNumber(line.oldNumber, metrics, look.code, extras.oldNumber, strong = selected)
-            CodeLineNumber(line.newNumber, metrics, look.code, extras.newNumber, strong = selected)
-            Sign(line.kind, look)
+            NumberTarget(extras.oldNumber) {
+                Gutter(extras, metrics)
+                CodeLineNumber(line.oldNumber, metrics, look.code, strong = selected)
+            }
+            NumberTarget(extras.newNumber) {
+                CodeLineNumber(line.newNumber, metrics, look.code, strong = selected)
+                Sign(line.kind, look)
+            }
         }
         LineCode(line, tokens, extras.finds, metrics, look, wrap, scroll, Modifier.weight(1f))
     }
@@ -138,10 +152,11 @@ internal fun RowScope.SplitSide(side: DiffSide, line: DiffLine?, tokens: List<Co
     Row(Modifier.weight(1f).fillMaxHeight().then(wash).semantics { if (line != null) stateDescription = line.kind.name }) {
         if (line == null) return@Row
         DisableSelection {
-            Gutter(extras, metrics)
-            val number = if (side == DiffSide.Old) line.oldNumber else line.newNumber
-            CodeLineNumber(number, metrics, look.code, if (side == DiffSide.Old) extras.oldNumber else extras.newNumber, strong = extras.tone == LineTone.Selected)
-            Sign(line.kind, look)
+            NumberTarget(if (side == DiffSide.Old) extras.oldNumber else extras.newNumber) {
+                Gutter(extras, metrics)
+                CodeLineNumber(line.numberOn(side), metrics, look.code, strong = extras.tone == LineTone.Selected)
+                Sign(line.kind, look)
+            }
         }
         LineCode(line, tokens, extras.finds, metrics, look, wrap, scroll, Modifier.weight(1f))
     }

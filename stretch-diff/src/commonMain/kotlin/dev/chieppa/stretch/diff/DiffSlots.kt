@@ -10,7 +10,11 @@ import dev.chieppa.stretch.theme.StretchSpacing
 class DiffSlots(
     /** Called when someone clicks a line's number, with the side of the number clicked. */
     val onLineClick: ((DiffLineRef) -> Unit)? = null,
-    /** Shown under a line, across the viewer, such as a thread of notes. Emit nothing for a line with none. */
+    /**
+     * Shown under a line, across the viewer, such as a thread of notes. Emit nothing for a line with none. Unified, it
+     * is called once per line, with the line's own side: old for a removed line, new otherwise. Side by side, it is
+     * called for each side of a row that has a line there, the old side first, each with its own side.
+     */
     val lineAnnotation: (@Composable (DiffLineRef) -> Unit)? = null,
     /** Shown at the end of a file's header, such as Stage or Revert. */
     val fileActions: (@Composable RowScope.(FileDiff) -> Unit)? = null,
