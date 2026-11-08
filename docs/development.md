@@ -45,7 +45,7 @@ Tests open no window anyone sees, and `check` opens none at all. A test that nee
 | `stretch-code` | Tokenizer and languages for syntax coloring, the theme's colors for it, and the read-only code viewer with its line drawing, find and line marks |
 | `stretch-console` | The console view: ANSI color parsing, follow, find and links, and on the desktop running a process into it |
 | `stretch-diff` | Line and word diffs, a unified patch parser, and the diff viewer |
-| `stretch-markdown` | Markdown split into blocks that keep their exact source, inline markup through JetBrains' parser, and the editor |
+| `stretch-markdown` | Markdown split into blocks that keep their exact source, inline markup through JetBrains' parser, the editor, and a read-only view that also draws GitHub's HTML |
 | `stretch-web` | The HTML view and hidden script pages: JCEF drawn offscreen into Compose on the desktop, sandboxed iframes in the browser. It compiles against the JetBrains Runtime, since JCEF ships in it |
 | `stretch-mermaid` | Mermaid's script (`composeResources/files/mermaid.min.js`, version in `NOTICE`), run in a script page and drawn to a PNG |
 | `stretch-devtools` | Development only: a 127.0.0.1 endpoint that screenshots the app's own windows (`-Pdevtools=<port>` on the gallery's run task) |

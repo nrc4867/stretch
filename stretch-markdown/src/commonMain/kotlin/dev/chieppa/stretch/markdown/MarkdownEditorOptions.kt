@@ -23,7 +23,7 @@ fun interface ImageSource {
     suspend fun load(url: String): ImageBitmap?
 }
 
-/** Text a [MarkdownEditor] shows. Apps pass their own for other languages. */
+/** Text a [MarkdownEditor] or [MarkdownView] shows. Apps pass their own for other languages. */
 data class MarkdownStrings(
     val placeholder: String = "",
     val livePreview: String = "Live preview",
@@ -42,6 +42,12 @@ data class MarkdownStrings(
     val language: String = "Language",
     val imageAddress: String = "Image address",
     val imageDescription: String = "Description",
+    /** What a `<details>` with no summary shows in its place. */
+    val details: String = "Details",
+    /** Said of a `<details>` that shows what it holds. */
+    val open: String = "Open",
+    /** Said of a `<details>` that hides what it holds. */
+    val closed: String = "Closed",
     val blockType: (BlockType) -> String = {
         when (it) {
             BlockType.Paragraph -> "Text"
