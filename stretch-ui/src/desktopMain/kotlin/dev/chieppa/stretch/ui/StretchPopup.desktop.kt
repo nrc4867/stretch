@@ -152,7 +152,10 @@ private fun PopupWindow(
             val reused = if (reusable) PopupWindowPool.take(owner) else null
             reused ?: newPopupWindow(owner, currentProperties.focusable)
         },
-        dispose = { if (reusable) PopupWindowPool.release(it) else it.dispose() },
+        dispose = {
+            OwnerMoveFollow.stop(it)
+            if (reusable) PopupWindowPool.release(it) else it.dispose()
+        },
         update = placer::attach,
     ) {
         CompositionLocalProvider(LocalPopupRoot provides root) {
@@ -201,6 +204,7 @@ private class PopupPlacer(
         val reused = window == null && dialog.isDisplayable
         if (window == null) {
             window = dialog
+            OwnerMoveFollow.start(root, dialog)
             dialog.preferredSize = Dimension(root.width, root.height)
             dialog.pack()
             dialog.preferredSize = null
