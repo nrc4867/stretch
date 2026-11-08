@@ -161,11 +161,11 @@ actual fun HtmlView(
         }
     }
     LaunchedEffect(browser, address) {
-        val page = browser?.browser ?: return@LaunchedEffect
+        val current = browser ?: return@LaunchedEffect
         onEventThread {
-            if (page.url != null && page.url != address) {
+            if (current.browser.url != null && current.browser.url != address) {
                 currentBridge?.detach()
-                page.loadURL(address)
+                current.load(address)
             }
         }
     }

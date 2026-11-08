@@ -57,6 +57,9 @@ internal class OffscreenBrowser(url: String, width: Int, height: Int, scale: Flo
     @Volatile private var viewHeight = height.coerceAtLeast(1)
     @Volatile private var scale = scale.toDouble()
 
+    /** The address [load] last went to, which goes ahead without asking [BrowserEvents.onNavigate]. */
+    @Volatile private var loading: String? = null
+
     private val client: CefClient = CefRuntime.app.createClient()
     private val router: CefMessageRouter = CefMessageRouter.create(
         CefMessageRouter.CefMessageRouterConfig(QUERY_FUNCTION, CANCEL_FUNCTION),
@@ -82,7 +85,7 @@ internal class OffscreenBrowser(url: String, width: Int, height: Int, scale: Flo
             override fun onBeforeBrowse(browser: CefBrowser, frame: CefFrame, request: CefRequest, userGesture: Boolean, isRedirect: Boolean): Boolean {
                 val target = request.url ?: return false
                 val current = browser.url.orEmpty()
-                if (!frame.isMain || !browser.hasDocument() || isSamePage(current, target)) return false
+                if (!frame.isMain || !browser.hasDocument() || isSamePage(current, target) || target == loading) return false
                 return !events.onNavigate(target)
             }
         })
@@ -116,6 +119,12 @@ internal class OffscreenBrowser(url: String, width: Int, height: Int, scale: Flo
         val rendering = CefRendering.CefRenderingWithHandler(Renderer(), PLACEHOLDER)
         browser = client.createBrowser(url, rendering, true)
         browser.createImmediately()
+    }
+
+    /** Goes to [url] in place of the page shown, as the app's own choice rather than the page's. */
+    fun load(url: String) {
+        loading = url
+        browser.loadURL(url)
     }
 
     fun resize(width: Int, height: Int, scale: Float) {
