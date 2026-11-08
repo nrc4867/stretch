@@ -17,6 +17,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
@@ -63,6 +64,21 @@ class ComponentsTest {
         assertEquals(0, clicks)
         onNodeWithText("Keep").assertIsEnabled().performClick()
         assertEquals(10, clicks)
+    }
+
+    @Test
+    fun aSegmentShowsItsTooltipOnHover() = runComposeUiTest {
+        setContent {
+            StretchTheme(StretchThemes.Ink) {
+                Segmented(listOf("Side", "Top"), "Side", {}, { it }, Modifier.width(200.dp), fill = true, tooltip = { if (it == "Top") "Look down" else null })
+            }
+        }
+        onNodeWithText("Top").performMouseInput { moveTo(center) }
+        mainClock.advanceTimeBy(600)
+        onNodeWithText("Look down").assertExists()
+        onNodeWithText("Side").performMouseInput { moveTo(center) }
+        mainClock.advanceTimeBy(600)
+        onNodeWithText("Look down").assertDoesNotExist()
     }
 
     @Test

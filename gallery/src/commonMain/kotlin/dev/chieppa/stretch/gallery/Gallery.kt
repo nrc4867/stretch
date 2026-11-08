@@ -297,9 +297,14 @@ private fun SegmentedDemo() {
     var view by remember { mutableStateOf("Side") }
     var mode by remember { mutableStateOf("Build") }
     var shading by remember { mutableStateOf("Two-tone") }
+    var move by remember { mutableStateOf("Place") }
     Segmented(listOf("Side", "Front", "Top", "Under"), view, { view = it }, { it })
     Segmented(listOf("Build", "Pose", "Animate", "Scene"), mode, { mode = it }, { it }, mode = true)
     Segmented(listOf("Flat", "Two-tone"), shading, { shading = it }, { it }, Modifier.width(280.dp), fill = true)
+    Segmented(
+        listOf("Place", "Socket", "Joint"), move, { move = it }, { it }, Modifier.width(280.dp), fill = true,
+        tooltip = { mapOf("Place" to "Move the part", "Socket" to "Add a socket", "Joint" to null)[it] },
+    )
 }
 
 @Composable

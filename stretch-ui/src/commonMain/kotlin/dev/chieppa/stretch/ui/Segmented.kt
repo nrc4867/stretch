@@ -6,6 +6,7 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
@@ -32,7 +33,7 @@ private val COMPACT_HEIGHT = 22.dp
 /**
  * Picks exactly one of two to five options. A neutral pick uses the neutral color; [mode] is for top-level modes and
  * the armed view, which use the on colors. [fill] stretches the buttons across the row. An option [enabled] says no to
- * is dimmed and cannot be picked. [compact] makes it small enough to sit inside a field's row, such as a palette's
+ * is dimmed and cannot be picked. [tooltip] gives an option its tooltip, none where it returns null. [compact] makes it small enough to sit inside a field's row, such as a palette's
  * search scope.
  */
 @Composable
@@ -46,6 +47,7 @@ fun <T> Segmented(
     fill: Boolean = false,
     enabled: (T) -> Boolean = { true },
     compact: Boolean = false,
+    tooltip: (T) -> String? = { null },
 ) {
     val c = Stretch.colors
     val track = Stretch.shapes.rowShape
@@ -70,24 +72,29 @@ fun <T> Segmented(
                 canPick -> Triple(Fills.menu(state), Color.Transparent, c.inkControl)
                 else -> Triple(Color.Transparent, Color.Transparent, c.inkControl.copy(alpha = disabledAlpha))
             }
-            Box(
-                modifier = (if (fill) Modifier.weight(1f) else Modifier)
-                    .focusRing(state, shape, bg)
-                    .height(if (compact) COMPACT_HEIGHT else StretchSizes.seg)
-                    .clip(shape)
-                    .background(bg)
-                    .border(Stretch.stroke, edge, shape)
-                    .hoverable(state.source, canPick)
-                    .controlPointer().selectable(isOn, state.source, indication = null, canPick, Role.Tab) { onSelect(option) }
-                    .padding(horizontal = if (compact) COMPACT_PADDING else PADDING),
-                contentAlignment = Alignment.Center,
-            ) {
-                val style = Stretch.type.bodySm.copy(
-                    fontWeight = if (isOn && mode) FontWeight.SemiBold else FontWeight.Medium,
-                    fontSize = if (compact) Stretch.type.value.fontSize else Stretch.type.bodySm.fontSize,
-                )
-                ControlLabel(label(option), style, ink)
+            val tip = tooltip(option)
+            val segment: @Composable (Modifier) -> Unit = { size ->
+                Box(
+                    modifier = size
+                        .focusRing(state, shape, bg)
+                        .height(if (compact) COMPACT_HEIGHT else StretchSizes.seg)
+                        .clip(shape)
+                        .background(bg)
+                        .border(Stretch.stroke, edge, shape)
+                        .hoverable(state.source, canPick)
+                        .controlPointer().selectable(isOn, state.source, indication = null, canPick, Role.Tab) { onSelect(option) }
+                        .padding(horizontal = if (compact) COMPACT_PADDING else PADDING),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val style = Stretch.type.bodySm.copy(
+                        fontWeight = if (isOn && mode) FontWeight.SemiBold else FontWeight.Medium,
+                        fontSize = if (compact) Stretch.type.value.fontSize else Stretch.type.bodySm.fontSize,
+                    )
+                    ControlLabel(label(option), style, ink)
+                }
             }
+            val slot = if (fill) Modifier.weight(1f) else Modifier
+            if (tip == null) segment(slot) else Box(slot) { Tooltip(tip) { segment(if (fill) Modifier.fillMaxWidth() else Modifier) } }
         }
     }
 }

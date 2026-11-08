@@ -22,6 +22,7 @@
 ## Controls
 
 - **Disabled buttons.** `Button(enabled = false)` shows the label and icon faint, keeps its resting fill under the pointer and takes no clicks, in every `ButtonKind`; `IconButton`, `ToolButton` and `Segmented`'s `enabled` do the same.
+- **Segmented tooltips.** `Segmented(tooltip = { option -> text or null })` gives each option its own `Tooltip`, shown after the usual hover; options that return null have none.
 
 ## Trees
 
