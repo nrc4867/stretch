@@ -131,7 +131,7 @@ fun CodeViewer(
             }
             if (ruler) CodeRuler(text, tones, shownMatches, current, allMarks, state, columns)
         }
-        CodeDecorationTooltip(symbols) { spot -> decorationTip(decorated[spot.line].orEmpty(), spot.column) }
+        CodeDecorationTooltip(symbols)
     }
 }
 

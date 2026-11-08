@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -41,6 +42,7 @@ internal fun CodeViewerLine(
         link?.let { withCodeLink(text, line, it.start, it.end, decorationLook.link) } ?: text
     }
     val geometry = remember(line) { CodeLineGeometry(line) }
+    SideEffect { geometry.decorations = decorations }
     val keys = remember(number) { listOf(CodeLineKey(Unit, number)) }
     val input = rememberCodeSymbolInput(symbols, keys, geometry)
     val click = slots.onLineNumberClick

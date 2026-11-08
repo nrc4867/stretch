@@ -1,5 +1,8 @@
 package dev.chieppa.stretch.code
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -7,11 +10,13 @@ import androidx.compose.ui.text.TextLayoutResult
 
 /**
  * Where one line's code, [text] before tabs expand, is laid out once it shows: its [layout] and the [coordinates] of the
- * text. A code view finds the character under the pointer and the bounds of a range through it.
+ * text. A code view finds the character under the pointer and the bounds of a range through it. [decorations] are
+ * those the line draws, whose tooltips show over it.
  */
 class CodeLineGeometry(val text: String) {
     var layout: TextLayoutResult? = null
     var coordinates: LayoutCoordinates? = null
+    var decorations by mutableStateOf(emptyList<CodeDecoration>())
 
     private val offsets by lazy { tabOffsets(text) }
 

@@ -76,6 +76,9 @@ class CodeSymbolPointer<G> {
         for (key in keys) if (lines[key] === geometry) lines.remove(key)
     }
 
+    /** Where the line [spot] is on is laid out, while it shows. */
+    fun lineOf(spot: CodeSpot<G>): CodeLineGeometry? = lines[CodeLineKey(spot.group, spot.line)]
+
     /** The bounds of [range] on a line of [group] in [root]'s pixels, or null while it is not laid out. */
     fun boundsOf(group: G, range: CodeRange, root: LayoutCoordinates?): Rect? {
         root ?: return null
