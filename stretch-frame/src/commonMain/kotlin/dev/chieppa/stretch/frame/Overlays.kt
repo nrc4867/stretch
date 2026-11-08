@@ -84,6 +84,8 @@ import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
 import dev.chieppa.stretch.ui.Divider
+import dev.chieppa.stretch.ui.ScrollColumn
+import androidx.compose.ui.platform.LocalDensity
 import dev.chieppa.stretch.ui.holdsTyping
 import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.ButtonKind
@@ -94,13 +96,19 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * Places a popup under its anchor, flipping above or shifting left when it would leave the window. With [area], it goes
- * under that rectangle within the anchor instead, in pixels from the anchor's top left.
+ * under that rectangle within the anchor instead, in pixels from the anchor's top left. [onRoom] hears the height in
+ * pixels of the larger of the spaces below and above the anchor, which is the tallest the popup can be and still show whole.
  */
-class BelowAnchor(private val gap: Int, private val area: IntRect? = null) : PopupPositionProvider {
+class BelowAnchor(
+    private val gap: Int,
+    private val area: IntRect? = null,
+    private val onRoom: ((Int) -> Unit)? = null,
+) : PopupPositionProvider {
     override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
         val target = area?.translate(anchorBounds.topLeft) ?: anchorBounds
         val x = target.left.coerceAtMost(windowSize.width - popupContentSize.width).coerceAtLeast(0)
         val below = target.bottom + gap
+        onRoom?.invoke(maxOf(windowSize.height - below, target.top - gap))
         val y = if (below + popupContentSize.height <= windowSize.height) below else (target.top - gap - popupContentSize.height).coerceAtLeast(0)
         return IntOffset(x, y)
     }
@@ -126,31 +134,46 @@ private const val DISABLED_ITEM_ALPHA = 0.4f
 /**
  * A dropdown or context menu under its anchor. Put [MenuItem], [MenuDivider] and [MenuLabel] inside. With [anchor], a
  * rectangle in pixels from the top left of the element the menu is composed in, it opens under that rectangle instead,
- * such as under a name a code view reports clicked.
+ * such as under a name a code view reports clicked. A menu too tall for the window takes the room beside its anchor,
+ * above it when there is more there, and scrolls its items with a themed scrollbar.
  */
 @Composable
 fun Menu(expanded: Boolean, onDismiss: () -> Unit, anchor: Rect? = null, content: @Composable ColumnScope.() -> Unit) {
     if (!expanded) return
-    StretchPopup(popupPositionProvider = remember(anchor) { BelowAnchor(4, anchor?.roundToIntRect()) }, onDismissRequest = onDismiss, properties = TransientPopup, shadow = Stretch.shadows.pop) {
-        MenuPanel(content)
+    var room by remember { mutableIntStateOf(Int.MAX_VALUE) }
+    val density = LocalDensity.current
+    val position = remember(anchor) { BelowAnchor(4, anchor?.roundToIntRect(), onRoom = { if (it != room) room = it }) }
+    val maxHeight = if (room == Int.MAX_VALUE) Dp.Unspecified else (with(density) { room.toDp() } - MENU_WINDOW_MARGIN).coerceAtLeast(MENU_MIN_HEIGHT)
+    StretchPopup(popupPositionProvider = position, onDismissRequest = onDismiss, properties = TransientPopup, shadow = Stretch.shadows.pop) {
+        MenuPanel(maxHeight = maxHeight, content = content)
     }
 }
 
-/** The floating list a menu or context menu shows: as wide as its widest item, 200 to 360dp. It knows which [SubMenuItem] in it is open. */
+/** The space a menu leaves between itself and the window's edge when it has to shrink to fit. */
+private val MENU_WINDOW_MARGIN = 8.dp
+
+/** The least height a menu shrinks to, when its anchor leaves almost no room on either side. */
+private val MENU_MIN_HEIGHT = 80.dp
+
+/**
+ * The floating list a menu or context menu shows: as wide as its widest item, 200 to 360dp. It knows which [SubMenuItem]
+ * in it is open. With a [maxHeight], a list taller than that scrolls inside it; one that fits is unchanged.
+ */
 @Composable
-fun MenuPanel(content: @Composable ColumnScope.() -> Unit) {
+fun MenuPanel(maxHeight: Dp = Dp.Unspecified, content: @Composable ColumnScope.() -> Unit) {
     val openSubMenu = remember { mutableStateOf<Any?>(null) }
     // A menu's text is never part of a selection, though the menu opens over selectable content.
     CompositionLocalProvider(LocalOpenSubMenu provides openSubMenu) {
         DisableSelection {
-            Column(
-                Modifier
-                    .width(IntrinsicSize.Max)
-                    .widthIn(min = 200.dp, max = 360.dp)
-                    .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
-                    .padding(4.dp),
-                content = content,
-            )
+            val panel = Modifier
+                .width(IntrinsicSize.Max)
+                .widthIn(min = 200.dp, max = 360.dp)
+                .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
+            if (maxHeight == Dp.Unspecified) {
+                Column(panel.padding(4.dp), content = content)
+            } else {
+                ScrollColumn(panel.heightIn(max = maxHeight)) { Column(Modifier.padding(4.dp), content = content) }
+            }
         }
     }
 }

@@ -96,7 +96,7 @@ fun SubMenuItem(
                 onDismissRequest = ::dismiss,
                 properties = PopupProperties(focusable = false),
                 shadow = Stretch.shadows.pop,
-            ) { MenuPanel(items) }
+            ) { MenuPanel(content = items) }
         }
     }
 }

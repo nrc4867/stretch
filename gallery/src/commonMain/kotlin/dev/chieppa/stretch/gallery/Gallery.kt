@@ -313,6 +313,7 @@ private fun SegmentedDemo() {
 @Composable
 private fun OverlaysDemo() {
     var menu by remember { mutableStateOf(false) }
+    var longMenu by remember { mutableStateOf(false) }
     var dock by remember { mutableStateOf("Left") }
     var dialog by remember { mutableStateOf(false) }
     var scale by remember { mutableFloatStateOf(2f) }
@@ -329,6 +330,12 @@ private fun OverlaysDemo() {
                 MenuDivider()
                 MenuLabel("Dock")
                 for (side in listOf("Left", "Right", "Float")) MenuItem(side, { dock = side; menu = false }, checked = dock == side)
+            }
+        }
+        Box {
+            Button("Long menu", { longMenu = true }, Modifier.opensOnPress(longMenu) { longMenu = true }, icon = StretchIcons.More)
+            Menu(longMenu, { longMenu = false }) {
+                for (n in 1..60) MenuItem("Template $n", { longMenu = false })
             }
         }
         Tooltip("Mirror to other side", listOf("M")) { IconButton(StretchIcons.Mirror, "Mirror", {}, quiet = false) }
