@@ -131,7 +131,7 @@ fun <T> Tabs(
                         .focusRing(state, Stretch.shapes.segShape)
                         .background(if (current) c.surfacePanel else Fills.borderless(state))
                         .hoverable(state.source)
-                        .clickable(state.source, null, role = Role.Tab) { onSelect(tab) },
+                        .controlPointer().clickable(state.source, null, role = Role.Tab) { onSelect(tab) },
                 ) {
                     Row(
                         Modifier.weight(1f).padding(start = 12.dp, end = if (onClose != null) 4.dp else 12.dp),

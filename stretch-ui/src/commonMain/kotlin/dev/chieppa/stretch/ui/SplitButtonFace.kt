@@ -57,7 +57,7 @@ fun SplitButtonFace(
                 .focusRing(main, mainShape, mainFill)
                 .background(mainFill)
                 .hoverable(main.source)
-                .clickable(main.source, null, role = Role.Button, onClick = onClick)
+                .controlPointer().clickable(main.source, null, role = Role.Button, onClick = onClick)
                 .padding(horizontal = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(iconGap),
             verticalAlignment = Alignment.CenterVertically,
@@ -75,7 +75,7 @@ fun SplitButtonFace(
                 .focusRing(open, openShape, openFill)
                 .background(openFill)
                 .hoverable(open.source)
-                .clickable(open.source, null, role = Role.Button, onClick = onOpen)
+                .controlPointer().clickable(open.source, null, role = Role.Button, onClick = onOpen)
                 .semantics { contentDescription = openDescription },
             contentAlignment = Alignment.Center,
         ) {

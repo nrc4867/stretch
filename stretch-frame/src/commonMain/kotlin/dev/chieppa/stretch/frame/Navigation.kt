@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import dev.chieppa.stretch.ui.controlPointer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -102,7 +103,7 @@ fun ViewNavigator(
                         .clip(Stretch.shapes.segShape)
                         .background(if (pressed) c.surfaceControlHi else if (hovered) c.surfaceControl else Color.Transparent)
                         .hoverable(source)
-                        .clickable(source, null, role = Role.Button) { onZoomChange(1f) }
+                        .controlPointer().clickable(source, null, role = Role.Button) { onZoomChange(1f) }
                         .semantics { contentDescription = actual },
                     contentAlignment = Alignment.Center,
                 ) { BasicText("${(zoom * 100).roundToInt()}%", style = Stretch.type.value.merge(TextStyle(color = c.inkStrong))) }
@@ -182,7 +183,7 @@ fun StatusItem(text: String, icon: ImageVector? = null, onClick: (() -> Unit)? =
         Modifier
             .fillMaxHeight()
             .hoverable(source)
-            .then(if (onClick != null) Modifier.clickable(source, null, role = Role.Button, onClick = onClick) else Modifier),
+            .then(if (onClick != null) Modifier.controlPointer().clickable(source, null, role = Role.Button, onClick = onClick) else Modifier),
         horizontalArrangement = Arrangement.spacedBy(5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

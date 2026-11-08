@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import dev.chieppa.stretch.ui.controlPointer
 import dev.chieppa.stretch.ui.opensOnPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -73,7 +74,7 @@ private fun BarMenuTitle(title: String, open: Boolean, anyOpen: Boolean, onClick
                 },
             )
             .hoverable(source)
-            .clickable(source, indication = null, role = Role.DropdownList, onClick = onClick)
+            .controlPointer().clickable(source, indication = null, role = Role.DropdownList, onClick = onClick)
             .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center,
     ) {

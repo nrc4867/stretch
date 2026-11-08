@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import dev.chieppa.stretch.ui.controlPointer
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -53,7 +54,7 @@ fun PaletteRow(highlighted: Boolean, onClick: () -> Unit, modifier: Modifier = M
             .clip(Stretch.shapes.segShape)
             .background(if (pressed) c.surfaceControlPress else if (highlighted || hovered) c.surfaceControlHi else Color.Transparent)
             .hoverable(source)
-            .clickable(source, indication = null, role = Role.Button, onClick = onClick)
+            .controlPointer().clickable(source, indication = null, role = Role.Button, onClick = onClick)
             .semantics { selected = highlighted }
             .padding(horizontal = StretchSpacing.space10),
         horizontalArrangement = Arrangement.spacedBy(StretchSpacing.space8),

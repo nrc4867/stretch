@@ -134,8 +134,8 @@ private fun CardSurface(
     val control = rememberControlState()
     val press = when {
         onClick == null -> Modifier
-        selected != null -> Modifier.hoverable(control.source).selectable(selected, control.source, null, role = Role.Button, onClick = onClick)
-        else -> Modifier.hoverable(control.source).clickable(control.source, null, role = Role.Button, onClick = onClick)
+        selected != null -> Modifier.hoverable(control.source).controlPointer().selectable(selected, control.source, null, role = Role.Button, onClick = onClick)
+        else -> Modifier.hoverable(control.source).controlPointer().clickable(control.source, null, role = Role.Button, onClick = onClick)
     }
     Column(
         modifier

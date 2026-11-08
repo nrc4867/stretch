@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import dev.chieppa.stretch.ui.controlPointer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -151,7 +152,7 @@ fun DrawerSection(
                     Row(
                         Modifier
                             .hoverable(source)
-                            .clickable(source, null, role = Role.Button) { onCollapsedChange(collapsed != true) }
+                            .controlPointer().clickable(source, null, role = Role.Button) { onCollapsedChange(collapsed != true) }
                             .semantics { stateDescription = state },
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -213,7 +214,7 @@ fun ListRow(
             )
             .border(Stretch.stroke, if (selected) c.onEdge else Color.Transparent, shape)
             .hoverable(source)
-            .clickable(source, indication = null, role = Role.Button, onClick = onClick)
+            .controlPointer().clickable(source, indication = null, role = Role.Button, onClick = onClick)
             .semantics { this.selected = selected }
             .padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),

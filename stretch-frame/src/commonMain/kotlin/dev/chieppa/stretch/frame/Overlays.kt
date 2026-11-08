@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import dev.chieppa.stretch.ui.controlPointer
 import dev.chieppa.stretch.ui.opensOnPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -209,7 +210,7 @@ fun MenuItem(
             .clip(Stretch.shapes.segShape)
             .background(if (pressed) c.surfaceControlPress else if (hovered || highlighted) c.surfaceControlHi else Color.Transparent)
             .hoverable(source)
-            .clickable(source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+            .controlPointer().clickable(source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -274,7 +275,7 @@ fun <T> Dropdown(
                 .clip(shape)
                 .background(c.surfaceFloat)
                 .border(Stretch.stroke, c.lineControl, shape)
-                .clickable(role = Role.DropdownList) { open = true }
+                .controlPointer().clickable(role = Role.DropdownList) { open = true }
                 .semantics { this.contentDescription = contentDescription }
                 .padding(horizontal = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),

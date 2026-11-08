@@ -58,7 +58,7 @@ internal fun PickCell(
             .border(edgeWidth, edge, shape)
             .focusProperties { canFocus = false }
             .hoverable(state.source, enabled)
-            .clickable(state.source, null, enabled, role = Role.Button, onClick = onClick)
+            .controlPointer().clickable(state.source, null, enabled, role = Role.Button, onClick = onClick)
             .semantics {
                 this.selected = selected
                 if (description != null) contentDescription = description

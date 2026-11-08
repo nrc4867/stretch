@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import dev.chieppa.stretch.ui.controlPointer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
@@ -75,7 +76,7 @@ fun SubMenuItem(
                 .clip(Stretch.shapes.segShape)
                 .background(if (hovered || open) c.surfaceControlHi else Color.Transparent)
                 .hoverable(source)
-                .clickable(source, indication = null, role = Role.Button) { openState.value = key }
+                .controlPointer().clickable(source, indication = null, role = Role.Button) { openState.value = key }
                 .onKeyEvent { event ->
                     if (event.type != KeyEventType.KeyDown || event.key != Key.DirectionRight) return@onKeyEvent false
                     openState.value = key

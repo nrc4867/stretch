@@ -76,7 +76,7 @@ fun <T> Table(
                 val sorted = sort?.column == index
                 val header = Modifier.weight(column.weight).padding(horizontal = 10.dp)
                 Row(
-                    if (column.sortBy != null) header.clickable(role = Role.Button) { onSortChange(sort?.toggled(index) ?: TableSort(index)) } else header,
+                    if (column.sortBy != null) header.controlPointer().clickable(role = Role.Button) { onSortChange(sort?.toggled(index) ?: TableSort(index)) } else header,
                     horizontalArrangement = if (column.numeric) Arrangement.End else Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -105,7 +105,7 @@ fun <T> Table(
                         },
                     )
                     .hoverable(source)
-                    .then(if (onRowClick != null) Modifier.clickable(source, null, role = Role.Button) { onRowClick(row) } else Modifier)
+                    .then(if (onRowClick != null) Modifier.controlPointer().clickable(source, null, role = Role.Button) { onRowClick(row) } else Modifier)
                     .semantics { this.selected = selected },
                 verticalAlignment = Alignment.CenterVertically,
             ) {

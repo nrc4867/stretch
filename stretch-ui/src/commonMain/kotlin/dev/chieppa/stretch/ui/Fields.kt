@@ -241,7 +241,7 @@ fun NumberField(
         Row(
             frame
                 .hoverable(state.source)
-                .clickable(state.source, indication = null) {
+                .controlPointer().clickable(state.source, indication = null) {
                     text = format(current).let { TextFieldValue(it, TextRange(0, it.length)) }
                     editing = true
                 }
@@ -318,7 +318,7 @@ fun FieldIcon(icon: ImageVector, modifier: Modifier = Modifier, contentDescripti
         if (onClick == null) {
             base.hoverable(state.source)
         } else {
-            base.alpha(if (enabled) 1f else fieldIconDisabledAlpha).focusRing(state, shape).clip(shape).hoverable(state.source).clickable(state.source, null, enabled, role = Role.Button, onClick = onClick)
+            base.alpha(if (enabled) 1f else fieldIconDisabledAlpha).focusRing(state, shape).clip(shape).hoverable(state.source).controlPointer().clickable(state.source, null, enabled, role = Role.Button, onClick = onClick)
         },
         contentAlignment = Alignment.Center,
     ) {

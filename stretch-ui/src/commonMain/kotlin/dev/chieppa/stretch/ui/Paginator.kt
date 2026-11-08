@@ -89,7 +89,7 @@ private fun PageArrow(icon: ImageVector, description: String, enabled: Boolean, 
             .clip(shape)
             .background(if (enabled) Fills.borderless(state) else Color.Transparent)
             .hoverable(state.source, enabled)
-            .clickable(state.source, null, enabled, role = Role.Button, onClick = onClick)
+            .controlPointer().clickable(state.source, null, enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
@@ -112,7 +112,7 @@ private fun PageButton(page: Int, selected: Boolean, onClick: () -> Unit) {
             .background(fill)
             .border(Stretch.stroke, if (selected) c.onEdge else Color.Transparent, shape)
             .hoverable(state.source)
-            .clickable(state.source, null, role = Role.Button, onClick = onClick)
+            .controlPointer().clickable(state.source, null, role = Role.Button, onClick = onClick)
             .semantics { this.selected = selected }
             .padding(horizontal = 6.dp),
         contentAlignment = Alignment.Center,

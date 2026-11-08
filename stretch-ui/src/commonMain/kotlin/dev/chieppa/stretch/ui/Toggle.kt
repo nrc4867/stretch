@@ -40,7 +40,7 @@ fun Toggle(
             .background(if (checked) c.toggleOn else c.toggleOff)
             .border(Stretch.stroke, if (checked) c.toggleOnEdge else c.toggleOffEdge, shape)
             .hoverable(state.source)
-            .toggleable(checked, state.source, indication = null, role = Role.Switch, onValueChange = onCheckedChange)
+            .controlPointer().toggleable(checked, state.source, indication = null, role = Role.Switch, onValueChange = onCheckedChange)
             .semantics { this.contentDescription = contentDescription }
             .padding(horizontal = 2.dp),
         contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,

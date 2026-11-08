@@ -75,7 +75,7 @@ fun OptionChip(
             .background(fill)
             .border(Stretch.stroke, if (selected) c.chipOnEdge else c.chipEdge, shape)
             .hoverable(state.source)
-            .toggleable(selected, state.source, indication = null, role = Role.Checkbox, onValueChange = onSelectedChange)
+            .controlPointer().toggleable(selected, state.source, indication = null, role = Role.Checkbox, onValueChange = onSelectedChange)
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

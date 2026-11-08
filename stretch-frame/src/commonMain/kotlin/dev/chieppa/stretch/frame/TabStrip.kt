@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.frame
 
+import dev.chieppa.stretch.ui.controlPointer
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -193,7 +194,7 @@ fun TabStrip(
                             onDragCancel = { drag.end() },
                         )
                     }
-                    .clickable(source, null, role = Role.Tab) { onActivate(id) }
+                    .controlPointer().clickable(source, null, role = Role.Tab) { onActivate(id) }
                     .semantics { selected = isActive; role = Role.Tab },
             ) {
                 TabFace(item, isActive, focused, hovered, closeLabel, if (item.closable) close else null)

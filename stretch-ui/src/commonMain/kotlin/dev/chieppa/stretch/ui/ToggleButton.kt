@@ -55,7 +55,7 @@ fun ToggleButton(
             .background(fill)
             .border(Stretch.stroke, edge, shape)
             .hoverable(state.source, enabled)
-            .toggleable(checked, state.source, indication = null, enabled = enabled, role = Role.Checkbox, onValueChange = onCheckedChange)
+            .controlPointer().toggleable(checked, state.source, indication = null, enabled = enabled, role = Role.Checkbox, onValueChange = onCheckedChange)
             .padding(horizontal = if (height < StretchSizes.ctl) compactToggleButtonPadding else toggleButtonPadding),
         horizontalArrangement = Arrangement.spacedBy(iconGap),
         verticalAlignment = Alignment.CenterVertically,

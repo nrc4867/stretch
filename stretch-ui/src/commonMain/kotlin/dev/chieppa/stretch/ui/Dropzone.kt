@@ -127,7 +127,7 @@ internal fun DropzoneFace(state: DropState, title: String, kinds: String, descri
             .clip(Stretch.shapes.cardShape)
             .background(fill)
             .dashedBorder(edge, stroke, radius, dashed = state == DropState.Idle)
-            .clickable(control.source, null, role = Role.Button, onClick = onBrowse)
+            .controlPointer().clickable(control.source, null, role = Role.Button, onClick = onBrowse)
             .semantics {
                 contentDescription = description
                 stateDescription = title

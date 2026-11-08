@@ -177,7 +177,7 @@ fun <T> SortableList(
                             .background(control.fill(c.surfacePanel, c.surfaceControl, c.surfaceControlHi))
                             .hoverable(control.source)
                             .focusRequester(itemFocus)
-                            .then(if (onClick != null) Modifier.clickable(control.source, null, role = Role.Button) { onClick(item) } else Modifier.focusable(interactionSource = control.source))
+                            .then(if (onClick != null) Modifier.controlPointer().clickable(control.source, null, role = Role.Button) { onClick(item) } else Modifier.focusable(interactionSource = control.source))
                             .onKeyEvent { event ->
                                 val at = current.indexOfFirst { key(it) == itemKey }
                                 val to = when (event.altArrow()) {
@@ -271,7 +271,7 @@ fun <T> SortableGrid(
                         .border(if (target) 2.dp else Stretch.stroke, if (target) c.ringSelected else c.linePanel, shape)
                         .hoverable(control.source)
                         .focusRequester(itemFocus)
-                        .then(if (onClick != null) Modifier.clickable(control.source, null, role = Role.Button) { onClick(item) } else Modifier.focusable(interactionSource = control.source))
+                        .then(if (onClick != null) Modifier.controlPointer().clickable(control.source, null, role = Role.Button) { onClick(item) } else Modifier.focusable(interactionSource = control.source))
                         .onKeyEvent { event ->
                             val from = current.indexOfFirst { key(it) == itemKey }
                             val to = when (event.altArrow()?.let { along(it, rtl) }) {

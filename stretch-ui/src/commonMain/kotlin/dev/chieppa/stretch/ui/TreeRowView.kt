@@ -133,7 +133,7 @@ internal fun <T> TreeRowView(
                 .size(StretchSizes.chip)
                 .then(
                     if (parentRow) {
-                        Modifier.clip(Stretch.shapes.segShape).clickable(role = Role.Button, onClick = onToggleOpen)
+                        Modifier.clip(Stretch.shapes.segShape).controlPointer().clickable(role = Role.Button, onClick = onToggleOpen)
                             .semantics { contentDescription = "$label · ${stateText(!open)}" }
                     } else {
                         Modifier
@@ -163,7 +163,7 @@ private fun TreeCheck(check: Boolean?, label: String, onToggle: () -> Unit) {
         Modifier
             .size(StretchSizes.chip)
             .hoverable(state.source)
-            .triStateToggleable(
+            .controlPointer().triStateToggleable(
                 state = when (check) {
                     true -> ToggleableState.On
                     false -> ToggleableState.Off

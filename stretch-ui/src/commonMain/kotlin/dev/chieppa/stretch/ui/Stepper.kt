@@ -78,7 +78,7 @@ private fun StepItem(label: String, index: Int, current: Int, problem: String?, 
     val c = Stretch.colors
     val state = rememberControlState()
     val isCurrent = index == current
-    val press = if (onStep == null) Modifier else Modifier.hoverable(state.source).clickable(state.source, null, role = Role.Button) { onStep(index) }
+    val press = if (onStep == null) Modifier else Modifier.hoverable(state.source).controlPointer().clickable(state.source, null, role = Role.Button) { onStep(index) }
     Row(
         Modifier
             .focusRing(state, Stretch.shapes.segShape)

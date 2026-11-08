@@ -35,7 +35,7 @@ fun Swatch(color: Color, name: String, selected: Boolean, onClick: () -> Unit, m
             .border(2.dp, if (selected) c.ringSelected else Color.Transparent, outer)
             .padding(4.dp)
             .hoverable(state.source)
-            .selectable(selected, state.source, indication = null, role = Role.RadioButton, onClick = onClick)
+            .controlPointer().selectable(selected, state.source, indication = null, role = Role.RadioButton, onClick = onClick)
             .semantics { contentDescription = name },
     ) {
         val shape = RoundedCornerShape(seg)

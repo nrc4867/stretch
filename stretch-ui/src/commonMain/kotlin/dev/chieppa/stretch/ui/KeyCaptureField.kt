@@ -54,7 +54,7 @@ fun KeyCaptureField(
             .border(Stretch.stroke, if (listening) c.lineStrong else c.lineControl, shape)
             .hoverable(state.source)
             .onPreviewKeyEvent { if (listening) onKey(it) else false }
-            .clickable(state.source, null, role = Role.Button) { onListeningChange(true) }
+            .controlPointer().clickable(state.source, null, role = Role.Button) { onListeningChange(true) }
             .semantics {
                 this.contentDescription = contentDescription
                 stateDescription = if (listening) prompt else caps?.joinToString(" ") ?: placeholder

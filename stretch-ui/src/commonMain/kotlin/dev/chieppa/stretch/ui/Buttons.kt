@@ -63,7 +63,7 @@ fun Button(
             .background(fill)
             .border(Stretch.stroke, edge, shape)
             .hoverable(state.source)
-            .clickable(state.source, indication = null, role = Role.Button, onClick = onClick)
+            .controlPointer().clickable(state.source, indication = null, role = Role.Button, onClick = onClick)
             .padding(horizontal = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(iconGap, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
@@ -110,7 +110,7 @@ fun IconButton(
             .background(fill)
             .border(Stretch.stroke, edge, shape)
             .hoverable(state.source)
-            .clickable(state.source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+            .controlPointer().clickable(state.source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { this.contentDescription = contentDescription },
         contentAlignment = Alignment.Center,
     ) {
@@ -145,7 +145,7 @@ fun ToolButton(
         .background(fill)
         .border(Stretch.stroke, if (selected) c.onEdge else Color.Transparent, shape)
         .hoverable(state.source)
-        .clickable(state.source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+        .controlPointer().clickable(state.source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
         .semantics {
             this.contentDescription = contentDescription
             this.selected = selected

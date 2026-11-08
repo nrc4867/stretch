@@ -52,7 +52,7 @@ fun ImageView(image: ImageBitmap, modifier: Modifier = Modifier, contentDescript
         val room = DpSize(maxWidth - StretchSpacing.space16 * 2, maxHeight - StretchSpacing.space16 * 2)
         val scale = fitScale(natural, room)
         val shrunk = scale < 1f
-        val toggle = if (shrunk) Modifier.clickable(role = Role.Button) { actual = !actual } else Modifier
+        val toggle = if (shrunk) Modifier.controlPointer().clickable(role = Role.Button) { actual = !actual } else Modifier
         if (actual && shrunk) {
             Box(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).horizontalScroll(rememberScrollState()).then(toggle),

@@ -66,7 +66,7 @@ private fun CheckboxRow(checked: Boolean?, onCheckedChange: (Boolean) -> Unit, m
             .heightIn(min = 28.dp)
             .padding(horizontal = 8.dp)
             .hoverable(state.source)
-            .triStateToggleable(
+            .controlPointer().triStateToggleable(
                 state = when (checked) {
                     true -> ToggleableState.On
                     false -> ToggleableState.Off
@@ -129,7 +129,7 @@ fun Radio(selected: Boolean, onClick: () -> Unit, label: String, modifier: Modif
             .heightIn(min = 28.dp)
             .padding(horizontal = 8.dp)
             .hoverable(state.source)
-            .selectable(selected, state.source, null, role = Role.RadioButton, onClick = onClick),
+            .controlPointer().selectable(selected, state.source, null, role = Role.RadioButton, onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -78,7 +78,7 @@ fun <T> Segmented(
                     .background(bg)
                     .border(Stretch.stroke, edge, shape)
                     .hoverable(state.source, canPick)
-                    .selectable(isOn, state.source, indication = null, canPick, Role.Tab) { onSelect(option) }
+                    .controlPointer().selectable(isOn, state.source, indication = null, canPick, Role.Tab) { onSelect(option) }
                     .padding(horizontal = if (compact) COMPACT_PADDING else PADDING),
                 contentAlignment = Alignment.Center,
             ) {
