@@ -98,9 +98,8 @@ class RuntimeInstallerTest {
         requirement.install()
         withTimeout(TIMEOUT_MILLIS) { requirement.state.first { it is RequirementState.Installing && it.fetchedBytes > 0 } }
         requirement.cancel()
+        // The install clears its files before it reports Missing.
         withTimeout(TIMEOUT_MILLIS) { requirement.state.first { it == RequirementState.Missing } }
-        val deadline = System.currentTimeMillis() + TIMEOUT_MILLIS
-        while (folder.list()!!.isNotEmpty() && System.currentTimeMillis() < deadline) Thread.sleep(50)
         assertEquals(emptyList(), folder.list()!!.toList())
     }
 

@@ -1,11 +1,12 @@
 package dev.chieppa.stretch.console
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
-import kotlinx.coroutines.yield
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /** Runs small Java programs through the test's own runtime, so it works the same on every OS. */
@@ -37,14 +38,16 @@ class ProcessConsoleTest {
 
     @Test
     fun cancellingEndsTheProcess() = runBlocking {
-        val source = program("Waits", """System.out.println("started"); System.out.flush(); Thread.sleep(600_000);""")
+        // Waits on itself, so only being ended ends it.
+        val source = program("Waits", """Thread.currentThread().join();""")
         val state = ConsoleState()
-        val run = async { state.runProcess(ConsoleCommand(listOf(java, source.path))) }
-        // Output arrives on this thread, so yielding lets it in until the line is there.
-        while (state.lines.none { it.text == "started" }) yield()
+        val started = CompletableDeferred<ProcessHandle>()
+        val run = async { state.runProcess(ConsoleCommand(listOf(java, source.path)), onStart = started::complete) }
+        val process = started.await()
         run.cancel()
         // The run only finishes once the process's output closes, which happens when it has ended.
         run.join()
         assertTrue(run.isCancelled)
+        assertFalse(process.isAlive)
     }
 }

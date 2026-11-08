@@ -13,27 +13,28 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import dev.chieppa.stretch.test.runComposeUiTestAwaiting
 import dev.chieppa.stretch.theme.StretchTheme
+import dev.chieppa.stretch.test.runComposeUiTestAwaiting
 import dev.chieppa.stretch.theme.StretchThemes
+import dev.chieppa.stretch.web.EngineWork
 import java.io.File
 import javax.imageio.ImageIO
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.minutes
 
 /**
- * Draws the documents page with the real engine and Mermaid into build/documents-pages. It runs only with -Pcef. It is
- * how to see the page on an OS no one here has: CI uploads the pictures.
+ * Draws the documents page with the real engine and Mermaid into build/documents-pages, each picture once the engine
+ * has drawn the page and its diagrams. It runs only with -Pcef. It is how to see the page on an OS no one here has: CI
+ * uploads the pictures.
  */
 @OptIn(ExperimentalTestApi::class)
 class DocumentsEngineTest {
     private val output = File(System.getProperty("stretch.web.output")).also { it.mkdirs() }
 
-    /** Long enough for the engine to start and Mermaid to load and draw. */
-    private val settleMillis = 7_000L
-
     @Test
-    fun drawsTheDocumentsPageInEachThemeFamily() = runComposeUiTest {
+    fun drawsTheDocumentsPageInEachThemeFamily() = runComposeUiTestAwaiting(EngineWork, testTimeout = 5.minutes) {
         var theme by mutableStateOf(StretchThemes.Ink)
         setContent {
             StretchTheme(theme) {
@@ -44,11 +45,6 @@ class DocumentsEngineTest {
             theme = candidate
             for (tab in listOf("Markdown", "Diff", "HTML")) {
                 onNodeWithText(tab).performClick()
-                val deadline = System.currentTimeMillis() + settleMillis
-                while (System.currentTimeMillis() < deadline) {
-                    mainClock.advanceTimeBy(250)
-                    Thread.sleep(250)
-                }
                 waitForIdle()
                 val image = onNodeWithTag("page").captureToImage().toAwtImage()
                 ImageIO.write(image, "png", File(output, "${candidate.id}-${tab.lowercase()}.png"))

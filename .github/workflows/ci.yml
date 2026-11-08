@@ -15,7 +15,8 @@ jobs:
           distribution: corretto
           java-version: 25
       - uses: gradle/actions/setup-gradle@v4
-      - run: xvfb-run --auto-servernum ./gradlew check
+      # On a screen of its own, so the tests that need real windows run too.
+      - run: xvfb-run --auto-servernum ./gradlew check -Pscreen
 
   web:
     runs-on: ubuntu-latest
@@ -67,4 +68,5 @@ jobs:
           distribution: corretto
           java-version: 25
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew check
+      # No one sits at this machine, so the tests that need real windows run too.
+      - run: ./gradlew check -Pscreen

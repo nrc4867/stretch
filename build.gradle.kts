@@ -1,3 +1,5 @@
+import dev.chieppa.stretch.build.CheckTestSources
+
 plugins {
     base
     alias(libs.plugins.kotlinMultiplatform) apply false
@@ -32,11 +34,30 @@ val publishedModules = setOf(
 
 subprojects {
     if (name in publishedModules) apply(from = rootProject.file("gradle/publish.gradle.kts"))
+
+    // Tests wait on events, never on time, and leave visibility alone; check fails on one that does.
+    val checkTestSources = tasks.register<CheckTestSources>("checkTestSources") {
+        group = "verification"
+        sources.from(fileTree("src") { include("*Test/**/*.kt", "test/**/*.kt", "test/**/*.java") })
+        report.set(layout.buildDirectory.file("checkTestSources.txt"))
+    }
+    tasks.matching { it.name == "check" }.configureEach { dependsOn(checkTestSources) }
+
+    // Tests named *ScreenTest open real windows, so they run only with -Pscreen; check opens none.
+    tasks.withType<Test>().configureEach {
+        if (!providers.gradleProperty("screen").isPresent) exclude("**/*ScreenTest*")
+    }
+}
+
+val checkPluginTestSources = tasks.register<CheckTestSources>("checkTestSources") {
+    group = "verification"
+    sources.from(fileTree("stretch-gradle-plugin/src") { include("*Test/**/*.kt", "test/**/*.kt") })
+    report.set(layout.buildDirectory.file("checkTestSources.txt"))
 }
 
 // The Gradle plugin is its own build; check runs its tests too.
 tasks.named("check") {
-    dependsOn(gradle.includedBuild("stretch-gradle-plugin").task(":check"))
+    dependsOn(gradle.includedBuild("stretch-gradle-plugin").task(":check"), checkPluginTestSources)
 }
 
 // So is its publishing.

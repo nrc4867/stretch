@@ -39,10 +39,10 @@ data class ConsoleCommand(
 /**
  * Starts [command] and streams its standard output and error into this console as they come, returning its exit code.
  * Output arrives on the coroutine context this is called from, so call it from the UI's, as a scope from
- * `rememberCoroutineScope` gives. Cancelling ends the process and every process it started. Throws [java.io.IOException]
- * when the program cannot start.
+ * `rememberCoroutineScope` gives; so does [onStart], with the process once it is running. Cancelling ends the process
+ * and every process it started. Throws [java.io.IOException] when the program cannot start.
  */
-suspend fun ConsoleState.runProcess(command: ConsoleCommand): Int = coroutineScope {
+suspend fun ConsoleState.runProcess(command: ConsoleCommand, onStart: (ProcessHandle) -> Unit = {}): Int = coroutineScope {
     val builder = ProcessBuilder(command.command).apply {
         command.workingDirectory?.let(::directory)
         if (!command.inheritEnvironment) environment().clear()
@@ -50,6 +50,7 @@ suspend fun ConsoleState.runProcess(command: ConsoleCommand): Int = coroutineSco
     }
     val process = runInterruptible(Dispatchers.IO) { builder.start() }
     try {
+        onStart(process.toHandle())
         process.outputStream.close()
         val chunks = Channel<ConsoleChunk>(Channel.UNLIMITED)
         val readers = listOf(

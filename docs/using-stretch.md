@@ -44,7 +44,7 @@
 
 ## Console
 
-`stretch-console`'s `Console(rememberConsoleState())` shows what a process prints, building only the lines on screen. Feed it with `state.append(text, ConsoleStream.Out)` or `feed(flow)` on the UI thread: it follows ANSI colors and styles (the first 16 colors follow the theme), rewrites a line on a carriage return as progress bars expect, and keeps the last `maxLines`. It follows new output until someone scrolls up, then offers a button back to the end; `clear()` empties it. Ctrl F (Cmd F on macOS) finds. `links` finds what to make clickable, by default `PathLineLinks` for `path:line[:column]`, and `onLinkClick` gets the `ConsoleLink`. On the desktop, `state.runProcess(ConsoleCommand(listOf("git", "status"), folder, env))` runs a program with no shell between, streams both outputs in and returns its exit code; cancel the coroutine to end it and everything it started. Text is in `ConsoleStrings`.
+`stretch-console`'s `Console(rememberConsoleState())` shows what a process prints, building only the lines on screen. Feed it with `state.append(text, ConsoleStream.Out)` or `feed(flow)` on the UI thread: it follows ANSI colors and styles (the first 16 colors follow the theme), rewrites a line on a carriage return as progress bars expect, and keeps the last `maxLines`. It follows new output until someone scrolls up, then offers a button back to the end; `clear()` empties it. Ctrl F (Cmd F on macOS) finds. `links` finds what to make clickable, by default `PathLineLinks` for `path:line[:column]`, and `onLinkClick` gets the `ConsoleLink`. On the desktop, `state.runProcess(ConsoleCommand(listOf("git", "status"), folder, env))` runs a program with no shell between, streams both outputs in and returns its exit code; its `onStart` gets the `ProcessHandle` once the program runs. Cancel the coroutine to end it and everything it started. Text is in `ConsoleStrings`.
 
 ## Markdown
 
@@ -63,6 +63,8 @@ Pass `images` to load pictures, since Stretch has no network of its own, and `di
 To talk with a page, pass `HtmlView` a `rememberHtmlBridge { message -> ... }`. The page sends strings with `stretch.post(text)` and hears the app through `stretch.listen(fn)`; `window.stretch` is there before an inline document's own scripts run, and other pages can wait for the `stretch-ready` event. The app sends with `bridge.post(text)`, which waits until the page is ready, and hears the page on the UI thread. Send JSON for anything richer than a string. In a browser a `Url` page gets neither the bridge nor the theme, since its document is not Stretch's to change: it posts `stretch-message:` and the text to its parent itself, and hears messages that start the same way.
 
 `stretch-mermaid`'s `MermaidDiagrams()` draws `mermaid` blocks: pass one, kept with `remember`, as the editor's `diagrams`. The first diagram takes a few seconds to start the engine and shows its code until then.
+
+`EngineWork` is a `Settled` that is settled while the engine has nothing under way: on the desktop no `HtmlView` waits for its first picture of the page it shows, no `ScriptPage` runs a script and no diagram is drawing. A library that drives a `ScriptPage` through steps of its own wraps them in `EngineWork.during { }`. Tests wait for it rather than for time to pass (see [Tests](#tests)).
 
 On the desktop the engine is the JCEF in the JetBrains Runtime. Run and package the app with one (see `gallery/build.gradle.kts` for the toolchain line), and apply the `dev.chieppa.stretch.app` plugin: it adds Chromium to the package when the app depends on `stretch-web` or `stretch-mermaid`, and leaves it out otherwise. On Windows that takes a package from about 145 MB to about 515 MB. Set `stretchApp { webEngine = true }` if they arrive through another library of the app's. `WebEngine.available` is false on a runtime without JCEF, where `HtmlView` shows `unavailable` and diagrams show as code. Input methods, such as those for CJK languages, do not reach a page.
 
@@ -87,6 +89,10 @@ stretchApp {
 The plugin covers desktop packaging. In a multiplatform module, add its generated resources to the desktop source set, as `gallery/build.gradle.kts` does.
 
 It fills in Compose's `nativeDistributions` (name, description, numeric version, which on macOS is 1.0.0 until the app reaches 1.0 since macOS takes no version starting with 0, icons, macOS bundle id, Windows upgrade id) unless the app set them, and puts the icon and identity on the classpath so `StretchWindow` badges its windows at every size. `./gradlew :app:runDistributable` runs through the real launcher; plain `run` is still `java.exe` to Task Manager, but the window, taskbar button and taskbar grouping carry the app's icon and id.
+
+## Tests
+
+`stretch-test` holds what an app's tests need to wait on events rather than time: `scenario` for commands, `TestSettled` and `awaitSettled` for derived data, and `setStretchContent` and `inEveryTheme` for Compose UI tests, whose `waitForIdle` and virtual `mainClock` cover composition and its effects. Work Compose cannot see, such as the browser engine drawing, goes through a `Settled`: on the desktop, `runComposeUiTestAwaiting(EngineWork) { ... }` runs a Compose UI test whose `waitForIdle`, and every wait built on it, also waits until each `Settled` it is given is. Storage given to a `DocumentSession` runs on the caller's thread unless it moves blocking work off it itself, as `documentStorage` does, so a session over storage in memory saves within `waitForIdle`.
 
 ## Apps run from a jar
 

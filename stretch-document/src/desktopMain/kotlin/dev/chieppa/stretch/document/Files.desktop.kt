@@ -5,6 +5,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.LocalAwtWindow
 import java.awt.Frame
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -16,11 +18,14 @@ import dev.chieppa.stretch.document.generated.Res
 import dev.chieppa.stretch.document.generated.choose_open
 import dev.chieppa.stretch.document.generated.choose_save
 
-/** Documents on the local file system. Writes go to a temporary file beside the target, then replace it in one move. */
+/**
+ * Documents on the local file system, read and written on the IO dispatcher. Writes go to a temporary file beside the
+ * target, then replace it in one move.
+ */
 object FileStorage : DocumentStorage {
-    override suspend fun read(path: String): ByteArray = Files.readAllBytes(Path.of(path))
+    override suspend fun read(path: String): ByteArray = withContext(Dispatchers.IO) { Files.readAllBytes(Path.of(path)) }
 
-    override suspend fun write(path: String, bytes: ByteArray) = writeFile(path, bytes)
+    override suspend fun write(path: String, bytes: ByteArray) = withContext(Dispatchers.IO) { writeFile(path, bytes) }
 
     internal fun writeFile(path: String, bytes: ByteArray) {
         val target = Path.of(path).toAbsolutePath()
@@ -38,7 +43,7 @@ object FileStorage : DocumentStorage {
         }
     }
 
-    override suspend fun exists(path: String): Boolean = Files.isRegularFile(Path.of(path))
+    override suspend fun exists(path: String): Boolean = withContext(Dispatchers.IO) { Files.isRegularFile(Path.of(path)) }
 
     override fun displayName(path: String): String = Path.of(path).fileName.toString().substringBeforeLast('.')
 }

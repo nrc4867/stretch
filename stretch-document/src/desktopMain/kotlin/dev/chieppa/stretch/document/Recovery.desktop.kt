@@ -2,6 +2,8 @@ package dev.chieppa.stretch.document
 
 import androidx.compose.runtime.Composable
 import dev.chieppa.stretch.frame.AppIdentity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.nio.channels.FileChannel
 import java.nio.channels.FileLock
 import java.nio.channels.OverlappingFileLockException
@@ -16,13 +18,13 @@ import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.nameWithoutExtension
 
-/** [Recovery] in the files of [directory], with a file lock per slot. */
+/** [Recovery] in the files of [directory], with a file lock per slot, read and written on the IO dispatcher. */
 class FileRecovery(val directory: Path) : Recovery {
     override fun slot(): RecoverySlot = FileRecoverySlot(directory, UUID.randomUUID().toString())
 
-    override suspend fun pending(): List<RecoveredDocument> {
-        if (!directory.exists()) return emptyList()
-        return directory.listDirectoryEntries("*.properties")
+    override suspend fun pending(): List<RecoveredDocument> = withContext(Dispatchers.IO) {
+        if (!directory.exists()) return@withContext emptyList()
+        directory.listDirectoryEntries("*.properties")
             .filter { !lockedElsewhere(directory.resolve("${it.nameWithoutExtension}.lock")) }
             .sortedByDescending { it.getLastModifiedTime() }
             .mapNotNull { meta ->
@@ -31,9 +33,9 @@ class FileRecovery(val directory: Path) : Recovery {
             }
     }
 
-    override suspend fun read(item: RecoveredDocument): ByteArray = Files.readAllBytes(directory.resolve("${item.key}.data"))
+    override suspend fun read(item: RecoveredDocument): ByteArray = withContext(Dispatchers.IO) { Files.readAllBytes(directory.resolve("${item.key}.data")) }
 
-    override suspend fun discard(item: RecoveredDocument) = remove(directory, item.key)
+    override suspend fun discard(item: RecoveredDocument) = withContext(Dispatchers.IO) { remove(directory, item.key) }
 }
 
 /** Recovery in the app's own data folder. */
@@ -47,7 +49,7 @@ private class FileRecoverySlot(private val directory: Path, private val key: Str
     private var channel: FileChannel? = null
     private var lock: FileLock? = null
 
-    override suspend fun write(bytes: ByteArray, path: String?, name: String?) {
+    override suspend fun write(bytes: ByteArray, path: String?, name: String?) = withContext(Dispatchers.IO) {
         Files.createDirectories(directory)
         if (lock == null) {
             channel = FileChannel.open(directory.resolve("$key.lock"), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
@@ -62,9 +64,7 @@ private class FileRecoverySlot(private val directory: Path, private val key: Str
         Files.newOutputStream(meta).use { props.store(it, null) }
     }
 
-    override suspend fun clear() {
-        remove(directory, key, keepLock = true)
-    }
+    override suspend fun clear() = withContext(Dispatchers.IO) { remove(directory, key, keepLock = true) }
 
     override fun close() {
         remove(directory, key, keepLock = true)

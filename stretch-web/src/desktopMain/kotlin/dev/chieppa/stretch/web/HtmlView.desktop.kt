@@ -59,12 +59,37 @@ actual object WebEngine {
     }
 }
 
-/** A browser's latest pictures, swapped on the event thread so drawing never sees a closed image. */
+/**
+ * A browser's latest pictures, swapped on the event thread so drawing never sees a closed image. From when a page starts
+ * loading until the first picture after it has loaded, the view counts as [EngineWork]. Used on the event thread.
+ */
 private class PageFrames {
     var page by mutableStateOf<Image?>(null)
     var popup by mutableStateOf<Image?>(null)
     var popupBounds by mutableStateOf<Rectangle?>(null)
     var cursor by mutableStateOf(Cursor.DEFAULT_CURSOR)
+
+    private var waiting = false
+    private var hasLoaded = false
+
+    /** Notes that a page starts loading, so the view waits for its picture. */
+    fun loading() {
+        if (!waiting) EngineWork.begin()
+        waiting = true
+        hasLoaded = false
+    }
+
+    /** Notes that the page has loaded, returning whether the view waits for a picture of it. */
+    fun loaded(): Boolean {
+        hasLoaded = waiting
+        return waiting
+    }
+
+    private fun shown() {
+        if (waiting) EngineWork.end()
+        waiting = false
+        hasLoaded = false
+    }
 
     fun show(image: Image, isPopup: Boolean) = SwingUtilities.invokeLater {
         if (isPopup) {
@@ -73,6 +98,7 @@ private class PageFrames {
         } else {
             page?.close()
             page = image
+            if (hasLoaded) shown()
         }
     }
 
@@ -81,6 +107,7 @@ private class PageFrames {
         popup?.close()
         page = null
         popup = null
+        shown()
     }
 }
 
@@ -140,6 +167,8 @@ actual fun HtmlView(
             override fun onMessage(message: String) = SwingUtilities.invokeLater { currentBridge?.receive(message) }
             override fun onLoaded() = SwingUtilities.invokeLater {
                 val page = browser?.browser ?: return@invokeLater
+                // A page may have drawn all it shows before it finished loading; this asks for a picture of it as loaded.
+                if (frames.loaded()) page.invalidate()
                 if (isUrl) page.executeJavaScript(themeScript(currentLook), "", 0)
                 val messages = currentBridge ?: return@invokeLater
                 if (!policy.scripts && !isUrl) return@invokeLater
@@ -148,7 +177,10 @@ actual fun HtmlView(
             }
         }
         if (ready) {
-            onEventThread { browser = OffscreenBrowser(address, pointsOf(size.width, density), pointsOf(size.height, density), density.density, events) }
+            onEventThread {
+                frames.loading()
+                browser = OffscreenBrowser(address, pointsOf(size.width, density), pointsOf(size.height, density), density.density, events)
+            }
         }
         onDispose {
             currentBridge?.detach()
@@ -165,6 +197,7 @@ actual fun HtmlView(
         onEventThread {
             if (current.browser.url != null && current.browser.url != address) {
                 currentBridge?.detach()
+                frames.loading()
                 current.load(address)
             }
         }

@@ -5,6 +5,7 @@ import dev.chieppa.stretch.markdown.DiagramPicture
 import dev.chieppa.stretch.markdown.DiagramRenderer
 import dev.chieppa.stretch.markdown.DiagramStyle
 import dev.chieppa.stretch.mermaid.generated.Res
+import dev.chieppa.stretch.web.EngineWork
 import dev.chieppa.stretch.web.ScriptPage
 import dev.chieppa.stretch.web.WebEngine
 import kotlinx.coroutines.sync.Mutex
@@ -21,7 +22,7 @@ private const val MAX_CACHED_PICTURES = 64
 /**
  * Draws `mermaid` code blocks with Mermaid itself, in a hidden page, in the colors of the current theme. One instance
  * can serve every editor in an app; it starts the engine and loads the script on the first diagram. Where there is no
- * engine (see [WebEngine]) it handles nothing, so diagrams show as their code.
+ * engine (see [WebEngine]) it handles nothing, so diagrams show as their code. Drawing counts as [EngineWork].
  */
 class MermaidDiagrams : DiagramRenderer {
     private val lock = Mutex()
@@ -30,8 +31,10 @@ class MermaidDiagrams : DiagramRenderer {
 
     override fun handles(language: String): Boolean = WebEngine.available && language.equals(LANGUAGE, ignoreCase = true)
 
+    override suspend fun render(source: String, style: DiagramStyle): DiagramPicture = EngineWork.during { draw(source, style) }
+
     @OptIn(ExperimentalResourceApi::class, ExperimentalEncodingApi::class)
-    override suspend fun render(source: String, style: DiagramStyle): DiagramPicture = lock.withLock {
+    private suspend fun draw(source: String, style: DiagramStyle): DiagramPicture = lock.withLock {
         val key = source to style
         cache[key]?.let { return@withLock it }
         val ready = page ?: ScriptPage().also {

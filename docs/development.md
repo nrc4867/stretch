@@ -11,7 +11,8 @@ Needs JDK 25 for Gradle (`JAVA_HOME`); Gradle provisions the toolchain. Apps run
 ./gradlew :gallery:run -Pgpu              # adds a WebGPU viewport page and opens on it (needs a GPU; Windows)
 ./gradlew :gallery:run -Pdocuments        # opens on the diff viewer, markdown editor and HTML view
 ./gradlew :gallery:run -Pdocuments -PjavaHome=<a JDK without JCEF>   # offers to fetch the engine, then runs on it
-./gradlew :stretch-web:desktopTest :stretch-mermaid:desktopTest :gallery:desktopTest -Pcef   # also tests the real browser engine, opening a window briefly; pictures land in each module's build folder
+./gradlew :stretch-web:desktopTest :stretch-mermaid:desktopTest :gallery:desktopTest -Pcef   # also tests the real browser engine; pictures land in each module's build folder
+./gradlew :stretch-frame:desktopTest :stretch-devtools:test -Pscreen   # also runs the tests that need real windows
 ./gradlew compileKotlinWasmJs             # compiles for the browser, which check does not
 ./gradlew :gallery:wasmJsBrowserProductionRun   # the gallery in a browser
 ./gradlew :gallery:wasmJsBrowserDistribution    # the gallery as a static site, in gallery/build/dist/wasmJs/productionExecutable
@@ -22,6 +23,12 @@ Without `-Pcef`, tests in `stretch-web`, `stretch-mermaid` and `gallery` run wit
 Common tests run on the desktop target only, so `check` needs no browser or Node. Compiling for the browser catches JVM-only calls in common code, which the desktop compile lets through; CI does it in its `web` job. After changing npm dependencies, run `./gradlew kotlinWasmUpgradeYarnLock` and commit `kotlin-js-store`.
 
 IntelliJ IDEA: open the folder; the Gallery and Check run configurations are included.
+
+## Tests
+
+Tests wait on events, never on time: a latch, a queue, a `CompletableDeferred`, `waitForIdle`, or a virtual clock (`mainClock.advanceTimeBy`, a test dispatcher). Code that does work off the UI thread gives tests something to wait on: `DocumentStorage` moves its own blocking work off the caller, so a Compose test's `waitForIdle` covers a save; `runProcess` hands over the process once it runs; the browser engine counts its work in `EngineWork`, which `runComposeUiTestAwaiting(EngineWork)` waits for. A timeout only bounds such a wait, so a broken test fails rather than hangs. Tests reach what they need through `internal`, never reflection. `check` fails on `Thread.sleep(`, `delay(`, `waitUntil(` and its variants, `setAccessible` and `isAccessible = true` in any test source, naming the file and line (`CheckTestSources` in `buildSrc`).
+
+Tests open no window anyone sees, and `check` opens none at all. A test that needs a real window is named `…ScreenTest` and runs only with `-Pscreen`; one that needs the engine is named `…EngineTest` and runs only with `-Pcef`. Their windows sit off every screen and leave the focus where it is, or, where the OS keeps no picture of a window off screen, are wholly see-through.
 
 ## Modules
 
@@ -43,7 +50,7 @@ IntelliJ IDEA: open the folder; the Gallery and Check run configurations are inc
 | `stretch-mermaid` | Mermaid's script (`composeResources/files/mermaid.min.js`, version in `NOTICE`), run in a script page and drawn to a PNG |
 | `stretch-devtools` | Development only: a 127.0.0.1 endpoint that screenshots the app's own windows (`-Pdevtools=<port>` on the gallery's run task) |
 | `stretch-gradle-plugin` | The `dev.chieppa.stretch.app` plugin: app name, id and icon for launchers, installers and running windows |
-| `stretch-test` | Command scenarios, a controllable Settled, Compose UI test helpers |
+| `stretch-test` | Command scenarios, a controllable Settled, Compose UI test helpers, and on the desktop a Compose UI test that also waits for a Settled |
 | `gallery` | Every component in every theme, and an app frame demo |
 
 ## Generated code

@@ -18,13 +18,14 @@ import kotlin.test.assertNotNull
 
 /**
  * Sends input through a real window into a real page, by events posted to the window, so it never takes the mouse from
- * whoever is at the machine. The page reports what it saw by trying to go to an address. It runs only with -Pcef.
+ * whoever is at the machine; the window sits off every screen and does not take the focus. The page reports what it saw
+ * by trying to go to an address. It runs only with -Pcef.
  */
 class HtmlInputEngineTest {
     private val page = """
         <!doctype html><body style="margin:0;height:3000px">
         <button id=b style="position:absolute;left:0;top:0;width:200px;height:100px" onclick="location='https://result/clicked'">x</button>
-        <input id=i style="position:absolute;left:0;top:120px;width:200px;height:40px" oninput="if(this.value==='ok')location='https://result/typed'">
+        <input id=i style="position:absolute;left:0;top:120px;width:200px;height:40px" onfocus="location='https://result/focused'" oninput="if(this.value==='ok')location='https://result/typed'">
         <a id=a style="position:absolute;left:0;top:180px" href="https://result/link">link</a>
         <script>
           addEventListener('scroll', () => { if (scrollY > 50) location = 'https://result/scrolled'; });
@@ -87,7 +88,8 @@ class HtmlInputEngineTest {
         lateinit var window: ComposeWindow
         onEvents {
             window = ComposeWindow()
-            window.setSize(500, 400)
+            window.isAutoRequestFocus = false
+            window.setBounds(OFF_SCREEN, OFF_SCREEN, 500, 400)
             window.setContent {
                 StretchTheme(StretchThemes.Ink) {
                     HtmlView(
@@ -108,7 +110,7 @@ class HtmlInputEngineTest {
             click(target, 50, 50)
             awaitNavigation("https://result/clicked")
             click(target, 50, 140)
-            Thread.sleep(SETTLE_MILLIS)
+            awaitNavigation("https://result/focused")
             type(target, 'o')
             type(target, 'k')
             awaitNavigation("https://result/typed")
@@ -125,6 +127,8 @@ class HtmlInputEngineTest {
 
     private companion object {
         const val TIMEOUT_MILLIS = 30_000L
-        const val SETTLE_MILLIS = 300L
+
+        /** Far left of and above any screen, so no one sees the window. */
+        const val OFF_SCREEN = -20_000
     }
 }

@@ -54,6 +54,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(libs.compose.ui.test)
+                implementation(project(":stretch-test"))
             }
         }
     }

@@ -50,10 +50,10 @@ actual class ScriptPage actual constructor() {
     }
 
     actual suspend fun load(script: String) {
-        outcomeOf(run(scriptElementLoader(script)))
+        outcomeOf(EngineWork.during { run(scriptElementLoader(script)) })
     }
 
-    actual suspend fun call(expression: String): String = outcomeOf(run(expression))
+    actual suspend fun call(expression: String): String = outcomeOf(EngineWork.during { run(expression) })
 
     actual fun close() {
         val page = browser ?: return

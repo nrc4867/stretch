@@ -9,8 +9,6 @@ import androidx.compose.runtime.setValue
 import dev.chieppa.stretch.core.Command
 import dev.chieppa.stretch.core.History
 import dev.chieppa.stretch.core.Steps
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /** How an app's documents turn into bytes and back, and the file type they are saved as. */
 interface DocumentFormat<D> {
@@ -35,7 +33,10 @@ interface DocumentFormat<D> {
         path.substringAfterLast('/').substringAfterLast('\\').substringAfterLast('.', "").equals(extension, ignoreCase = true)
 }
 
-/** Where documents are read and written: the platform's [documentStorage], something in memory in tests. */
+/**
+ * Where documents are read and written: the platform's [documentStorage], something in memory in tests. Its calls may
+ * come from the UI thread; an implementation that blocks moves that work off it.
+ */
 interface DocumentStorage {
     suspend fun read(path: String): ByteArray
 
@@ -120,7 +121,7 @@ class DocumentSession<D>(
         val document = history.document.value
         val steps = history.steps.value
         val bytes = format.encode(document)
-        withContext(Dispatchers.Default) { storage.write(target, bytes) }
+        storage.write(target, bytes)
         path = target
         saved = steps.done.lastOrNull()
         savedSize = steps.done.size
@@ -129,7 +130,7 @@ class DocumentSession<D>(
 
     /** Reads [target] and makes it the open document, with a fresh history. */
     suspend fun open(target: String) {
-        val bytes = withContext(Dispatchers.Default) { storage.read(target) }
+        val bytes = storage.read(target)
         replace(format.decode(bytes), target, edited = false)
     }
 

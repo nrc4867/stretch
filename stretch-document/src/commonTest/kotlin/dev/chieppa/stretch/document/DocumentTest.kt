@@ -172,7 +172,8 @@ class DocumentTest {
         session.whenSaved { closed++ }
         waitForIdle()
         onNodeWithText("Save").performClick()
-        waitUntil { closed == 2 }
+        waitForIdle()
+        assertEquals(2, closed)
         assertEquals("fox!", storage.files.getValue("/docs/Fox.txt").decodeToString())
         assertFalse(session.edited)
 

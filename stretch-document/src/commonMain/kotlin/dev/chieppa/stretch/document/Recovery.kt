@@ -7,9 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import dev.chieppa.stretch.core.Steps
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 
 /**
  * Copies of open documents kept while they have unsaved changes, so work survives a crash or power cut. Each running
@@ -32,7 +30,7 @@ interface Recovery {
     companion object
 }
 
-/** One document's place in [Recovery]. It is locked while this run holds it. */
+/** One document's place in [Recovery]. It is locked while this run holds it. Its calls may come from the UI thread. */
 interface RecoverySlot : AutoCloseable {
     /** Stores [bytes] as the document's latest state, with its file [path] and [name] for the recovery list. */
     suspend fun write(bytes: ByteArray, path: String?, name: String?)
@@ -65,13 +63,13 @@ fun <D> Autosave(session: DocumentSession<D>, recovery: Recovery, intervalMillis
             val s = current
             val steps = s.history.steps.value
             if (!s.isEdited(steps)) {
-                if (copied != null) withContext(Dispatchers.Default) { slot.clear() }
+                if (copied != null) slot.clear()
                 copied = null
                 continue
             }
             if (copied === steps && copiedHistory === s.history) continue
             val bytes = s.format.encode(s.history.document.value)
-            withContext(Dispatchers.Default) { runCatching { slot.write(bytes, s.path, s.fileName) } }
+            runCatching { slot.write(bytes, s.path, s.fileName) }
             copied = steps
             copiedHistory = s.history
         }

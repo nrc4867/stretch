@@ -20,12 +20,18 @@ internal val LocalCrashReport = staticCompositionLocalOf<(WindowCrash) -> Unit> 
  * [holds], each crash goes to [report], and [close] closes the window once building it again stops helping. The
  * window's content calls [WindowSettles].
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun RecoveringWindow(holds: TabHolds, report: (WindowCrash) -> Unit, close: () -> Unit, window: @Composable () -> Unit) {
     val reportNow by rememberUpdatedState(report)
     val closeNow by rememberUpdatedState(close)
     val recovery = remember(holds) { WindowRecovery(WindowTabs(holds), { reportNow(it) }, { closeNow() }) }
+    RecoveringWindow(recovery, window)
+}
+
+/** Builds [window] again under each new generation of [recovery], which answers the window's crashes. */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+internal fun RecoveringWindow(recovery: WindowRecovery, window: @Composable () -> Unit) {
     CompositionLocalProvider(LocalWindowExceptionHandlerFactory provides recovery.factory, LocalWindowTabs provides recovery.tabs) {
         key(recovery.generation) { window() }
     }

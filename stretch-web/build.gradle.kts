@@ -33,6 +33,7 @@ kotlin {
         val desktopTest by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation(project(":stretch-test"))
             }
         }
     }
