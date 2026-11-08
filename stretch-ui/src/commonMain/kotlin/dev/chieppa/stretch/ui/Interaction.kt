@@ -48,6 +48,9 @@ import dev.chieppa.stretch.theme.Stretch
 
 /** Hover, press and focus for one control. */
 internal class ControlState(val source: MutableInteractionSource, val hovered: Boolean, val pressed: Boolean, val focused: Boolean) {
+    /** The same control at rest, as a control not enabled looks whatever the pointer does. */
+    fun idle() = ControlState(source, hovered = false, pressed = false, focused = false)
+
     /** [rest], [hover] while the pointer is over it, [press] while it is held down. */
     fun fill(rest: Color, hover: Color, press: Color) = when {
         pressed -> press

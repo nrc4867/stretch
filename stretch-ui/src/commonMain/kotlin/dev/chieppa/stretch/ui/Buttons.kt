@@ -42,7 +42,8 @@ internal fun buttonLook(kind: ButtonKind, state: ControlState): Triple<Color, Co
 
 /**
  * A text button: 32px, sentence-case label of one to three words. At most one [ButtonKind.Primary] per panel. Made
- * wider than its label, as across a panel, it keeps the label in its middle.
+ * wider than its label, as across a panel, it keeps the label in its middle. A button not [enabled] shows faint, keeps
+ * its resting fill under the pointer and takes no clicks.
  */
 @Composable
 fun Button(
@@ -51,10 +52,12 @@ fun Button(
     modifier: Modifier = Modifier,
     kind: ButtonKind = ButtonKind.Default,
     icon: ImageVector? = null,
+    enabled: Boolean = true,
 ) {
     val state = rememberControlState()
     val shape = Stretch.shapes.ctlShape
-    val (fill, edge, ink) = buttonLook(kind, state)
+    val (fill, edge, ink) = buttonLook(kind, if (enabled) state else state.idle())
+    val shown = if (enabled) ink else ink.copy(alpha = disabledAlpha)
     Row(
         modifier = modifier
             .focusRing(state, shape, fill)
@@ -62,15 +65,15 @@ fun Button(
             .clip(shape)
             .background(fill)
             .border(Stretch.stroke, edge, shape)
-            .hoverable(state.source)
-            .controlPointer().clickable(state.source, indication = null, role = Role.Button, onClick = onClick)
+            .hoverable(state.source, enabled)
+            .controlPointer().clickable(state.source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(iconGap, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (icon != null) Icon(icon, ink)
+        if (icon != null) Icon(icon, shown)
         val style = Stretch.type.control
-        ControlLabel(text, if (kind == ButtonKind.Primary) style.copy(fontWeight = FontWeight.SemiBold) else style, ink)
+        ControlLabel(text, if (kind == ButtonKind.Primary) style.copy(fontWeight = FontWeight.SemiBold) else style, shown)
     }
 }
 

@@ -194,6 +194,9 @@ private fun ButtonsDemo() {
         Button("Export", {}, kind = ButtonKind.Primary)
         Button("Reset", {}, kind = ButtonKind.Quiet)
         Button("Add layer", {}, icon = StretchIcons.Plus)
+        Button("Delete", {}, enabled = false)
+        Button("Publish", {}, kind = ButtonKind.Primary, enabled = false)
+        Button("Revert", {}, kind = ButtonKind.Quiet, enabled = false)
         var pinned by remember { mutableStateOf(false) }
         ToggleButton("Pin", pinned, { pinned = it }, icon = StretchIcons.Check)
         var reviewed by remember { mutableStateOf(true) }

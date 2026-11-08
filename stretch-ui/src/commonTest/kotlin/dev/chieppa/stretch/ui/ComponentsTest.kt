@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -45,6 +46,23 @@ class ComponentsTest {
         onNodeWithText("Top").performClick()
         onNodeWithText("Top").assertIsSelected()
         assertEquals("Top", view)
+    }
+
+    @Test
+    fun aDisabledButtonTakesNoClicks() = runComposeUiTest {
+        var clicks = 0
+        setContent {
+            StretchTheme(StretchThemes.Ink) {
+                Column {
+                    Button("Delete", { clicks++ }, enabled = false)
+                    Button("Keep", { clicks += 10 })
+                }
+            }
+        }
+        onNodeWithText("Delete").assertIsNotEnabled().performClick()
+        assertEquals(0, clicks)
+        onNodeWithText("Keep").assertIsEnabled().performClick()
+        assertEquals(10, clicks)
     }
 
     @Test
