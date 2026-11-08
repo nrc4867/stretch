@@ -44,6 +44,7 @@ import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.ui.Label
+import dev.chieppa.stretch.ui.controlPointer
 
 /** The colors lines draw with, gathered once for all the rows. */
 internal class LineLook(val code: CodeLook, val addStrong: Color, val delStrong: Color, val blank: Color)
@@ -171,7 +172,7 @@ internal fun FileHeaderRow(row: DiffRow.FileHeader, state: DiffViewerState, stri
         Modifier
             .fillMaxWidth()
             .background(c.surfaceControl)
-            .clickable(role = Role.Button, onClickLabel = strings.toggleFile) { state.toggleFile(row.fileIndex) }
+            .controlPointer().clickable(role = Role.Button, onClickLabel = strings.toggleFile) { state.toggleFile(row.fileIndex) }
             .padding(horizontal = 10.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -205,7 +206,7 @@ internal fun FoldRow(row: DiffRow.Fold, strings: DiffStrings, onUnfold: () -> Un
     val c = Stretch.colors
     DisableSelection {
         Row(
-            Modifier.fillMaxWidth().background(c.surfaceCanvas).clickable(role = Role.Button, onClick = onUnfold).padding(horizontal = 10.dp, vertical = 3.dp),
+            Modifier.fillMaxWidth().background(c.surfaceCanvas).controlPointer().clickable(role = Role.Button, onClick = onUnfold).padding(horizontal = 10.dp, vertical = 3.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
