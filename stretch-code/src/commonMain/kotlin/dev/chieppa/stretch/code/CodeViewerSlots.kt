@@ -14,4 +14,17 @@ class CodeViewerSlots(
     val lineAnnotation: (@Composable (line: Int) -> Unit)? = null,
     /** Called when someone clicks a line's number. */
     val onLineNumberClick: ((line: Int) -> Unit)? = null,
+    /**
+     * Names the symbol at a position, such as a name to go to the definition of, as a range on the position's own line,
+     * or null for none. Asked while Ctrl (Cmd on macOS) is held over the code, and may take its time: the viewer
+     * underlines the range under a pointing hand once it comes, and drops an answer for a place the pointer has left.
+     * Clicking through is on when both this and [onSymbolClick] are given.
+     */
+    val symbolAt: (suspend (CodePosition) -> CodeRange?)? = null,
+    /**
+     * Called when someone Ctrl or Cmd clicks a symbol [symbolAt] named, or when [CodeViewerState.clickSymbolAtCaret]
+     * finds one. A Ctrl or Cmd press in the code never starts a selection while this is on; a plain press, click and drag
+     * select text as always.
+     */
+    val onSymbolClick: ((CodeSymbolClick) -> Unit)? = null,
 )

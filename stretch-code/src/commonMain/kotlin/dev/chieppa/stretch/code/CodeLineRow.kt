@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -20,6 +22,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,15 +46,32 @@ fun CodeLineNumber(value: Int?, metrics: CodeMetrics, look: CodeLook, modifier: 
 
 /**
  * A line's code: wrapped to the room there is when [wrap], or else as wide as the longest line and scrolled sideways by
- * [scroll], which every line of a view shares so they move together.
+ * [scroll], which every line of a view shares so they move together. [underlines] draw under it, [textModifier] goes
+ * on the text itself, such as from [rememberCodeSymbolInput], and [onTextLayout] gets the text's layout.
  */
 @Composable
-fun CodeLineBody(text: AnnotatedString, metrics: CodeMetrics, look: CodeLook, wrap: Boolean, scroll: ScrollState, modifier: Modifier = Modifier) {
+fun CodeLineBody(
+    text: AnnotatedString,
+    metrics: CodeMetrics,
+    look: CodeLook,
+    wrap: Boolean,
+    scroll: ScrollState,
+    modifier: Modifier = Modifier,
+    underlines: List<CodeUnderline> = emptyList(),
+    textModifier: Modifier = Modifier,
+    onTextLayout: (TextLayoutResult) -> Unit = {},
+) {
+    val layout = remember { mutableStateOf<TextLayoutResult?>(null) }
+    val drawn = textModifier.codeUnderlines(underlines) { layout.value }
+    val laidOut = { result: TextLayoutResult ->
+        layout.value = result
+        onTextLayout(result)
+    }
     if (wrap) {
-        BasicText(text, modifier, style = look.style)
+        BasicText(text, modifier.then(drawn), style = look.style, onTextLayout = laidOut)
     } else {
         Box(modifier.clipToBounds().horizontalScroll(scroll)) {
-            BasicText(text, Modifier.width(metrics.codeWidth), style = look.style, softWrap = false, overflow = TextOverflow.Clip)
+            BasicText(text, Modifier.width(metrics.codeWidth).then(drawn), style = look.style, onTextLayout = laidOut, softWrap = false, overflow = TextOverflow.Clip)
         }
     }
 }
@@ -60,7 +80,8 @@ fun CodeLineBody(text: AnnotatedString, metrics: CodeMetrics, look: CodeLook, wr
  * One line of a code view: the [gutter] column [gutterWidth] wide for marks, the line number and the code. The gutter
  * and number are one target, which [numberModifier] can make clickable, and a press there never reaches the code. All
  * of it sits on the wash of [tone]. A specified [changeBar] draws a bar of that color down the start edge, as tall as
- * the line however it wraps, for a changed line. Only the code can be selected as text.
+ * the line however it wraps, for a changed line. Only the code can be selected as text. [underlines], [textModifier]
+ * and [onTextLayout] go to the code's [CodeLineBody].
  */
 @Composable
 fun CodeLineRow(
@@ -76,6 +97,9 @@ fun CodeLineRow(
     gutter: (@Composable () -> Unit)? = null,
     numberModifier: Modifier = Modifier,
     changeBar: Color = Color.Unspecified,
+    underlines: List<CodeUnderline> = emptyList(),
+    textModifier: Modifier = Modifier,
+    onTextLayout: (TextLayoutResult) -> Unit = {},
 ) {
     val bar = Modifier.drawBehind { if (changeBar.isSpecified) drawRect(changeBar, size = Size(ChangeBarWidth.toPx(), size.height)) }
     val gutterSpan = if (look.washesGutter(tone)) (if (gutter != null) gutterWidth else 0.dp) + metrics.numberWidth else null
@@ -86,6 +110,6 @@ fun CodeLineRow(
                 CodeLineNumber(number, metrics, look, strong = tone == LineTone.Selected)
             }
         }
-        CodeLineBody(text, metrics, look, wrap, scroll, Modifier.weight(1f).padding(start = StretchSpacing.space8))
+        CodeLineBody(text, metrics, look, wrap, scroll, Modifier.weight(1f).padding(start = StretchSpacing.space8), underlines, textModifier, onTextLayout)
     }
 }

@@ -49,6 +49,26 @@ class CodeViewerState(wrap: Boolean = false) : TextFind {
     /** The lines showing, to find a match's column once tabs expand. */
     internal var lines: List<String> = emptyList()
 
+    /** What the viewer knows of the pointer over its code, for clicking through to symbols. */
+    internal val symbols = CodeSymbolPointer<Unit>()
+
+    /**
+     * Where [clickSymbolAtCaret] starts: where the last plain press in the code landed, which is where a selection made
+     * by dragging from it starts, or wherever the app puts it, such as on a definition it has gone to. Null until then.
+     */
+    var caret: CodePosition?
+        get() = symbols.caret?.let { CodePosition(it.line, it.column) }
+        set(value) {
+            symbols.caret = value?.let { CodeSpot(Unit, it.line, it.column) }
+        }
+
+    /**
+     * Clicks through to the symbol at [caret], as a Ctrl or Cmd click there would: asks the viewer's
+     * [CodeViewerSlots.symbolAt], scrolls the symbol into view and calls [CodeViewerSlots.onSymbolClick] with its bounds.
+     * For a key the app binds, such as F12. Whether there was a symbol to click through to.
+     */
+    suspend fun clickSymbolAtCaret(): Boolean = symbols.clickAtCaret { _, range -> scrollToMatch(range) }
+
     /** The first line showing at the top, counting from 1. */
     val firstVisibleLine: Int get() = list.firstVisibleItemIndex + 1
 

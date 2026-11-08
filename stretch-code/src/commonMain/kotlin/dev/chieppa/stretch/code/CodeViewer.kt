@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -44,7 +46,10 @@ import kotlinx.coroutines.withContext
  * one into view. With [ruler] on, a strip beside the scrollbar marks toned lines, find matches and the app's [marks]
  * along the whole text, where wrapped lines take their real share; pressing or dragging on it scrolls there. With
  * [changeBars] on, lines toned [LineTone.Added] or [LineTone.Removed] get a strong bar down their start edge, and
- * [changeWash] puts their wash behind the whole line or only behind its gutter and number.
+ * [changeWash] puts their wash behind the whole line or only behind its gutter and number. [decorations] set runs of
+ * code apart in a few themed styles, with a tooltip each (see [CodeDecoration]); warnings and errors also mark the
+ * ruler. With [CodeViewerSlots.symbolAt] and [CodeViewerSlots.onSymbolClick], holding Ctrl (Cmd on macOS) over a name
+ * underlines it and a click goes through to it; [CodeViewerState.clickSymbolAtCaret] does the same from a key.
  */
 @Composable
 fun CodeViewer(
@@ -62,6 +67,7 @@ fun CodeViewer(
     ruler: Boolean = true,
     changeBars: Boolean = true,
     changeWash: ChangeWash = ChangeWash.Line,
+    decorations: List<CodeDecoration> = emptyList(),
 ) {
     val builtIn by produceState(emptyList<List<CodeToken>>(), text, language, tokens == null) {
         value = if (tokens != null) emptyList() else withContext(Dispatchers.Default) { tokenizeLines(text.lines, language) }
@@ -84,6 +90,16 @@ fun CodeViewer(
         state.lines = text.lines
     }
     val scope = rememberCoroutineScope()
+    val symbols = state.symbols
+    val decorated = remember(decorations) { decorations.groupBy { it.range.line } }
+    val decorationLook = rememberCodeDecorationLook()
+    SideEffect {
+        symbols.symbolAt = slots.symbolAt?.let { ask -> { spot -> ask(CodePosition(spot.line, spot.column)) } }
+        symbols.onClick = slots.onSymbolClick?.let { click -> { spot, range, bounds -> click(CodeSymbolClick(CodePosition(spot.line, spot.column), range, bounds)) } }
+        symbols.frameClock = scope.coroutineContext[MonotonicFrameClock]
+    }
+    LaunchedEffect(symbols) { symbols.followPointer() }
+    val allMarks = remember(marks, decorations, bars) { marks + decorations.mapNotNull { d -> bars.of(d.style)?.let { CodeMark(d.range.line, it) } } }
     val findFocus = remember { FocusRequester() }
     var opened by remember { mutableIntStateOf(0) }
     var listWidth by remember { mutableIntStateOf(0) }
@@ -92,7 +108,9 @@ fun CodeViewer(
     val besidePx = with(LocalDensity.current) { beside.toPx() }
     val columns = if (charWidth > 0f) ((listWidth - besidePx) / charWidth).toInt() else 0
 
-    Column(modifier.background(Stretch.colors.surfacePanel).codeFindKeys(state, scope) { opened++ }) {
+    val content = Modifier.onGloballyPositioned { symbols.outer = it }.then(modifier).background(Stretch.colors.surfacePanel)
+        .codeFindKeys(state, scope) { opened++ }.codeSymbolKeys(symbols).onGloballyPositioned { symbols.inner = it }
+    Column(content) {
         if (state.findOpen) FindBar(state, strings.find, findFocus, opened)
         Row(Modifier.weight(1f).fillMaxWidth()) {
             Box(Modifier.weight(1f).fillMaxHeight().onSizeChanged { listWidth = it.width }) {
@@ -104,14 +122,16 @@ fun CodeViewer(
                             CodeViewerLine(
                                 number, text.lines[index], lineTokens.getOrNull(index).orEmpty(), matchesByLine[number].orEmpty(), current,
                                 tone, metrics, look, state, slots, if (changeBars) changeBarOf(tone, bars) else Color.Unspecified,
+                                decorated[number].orEmpty(), decorationLook,
                             )
                         }
                     }
                 }
                 Scrollbar(state.list, Modifier.align(Alignment.CenterEnd))
             }
-            if (ruler) CodeRuler(text, tones, shownMatches, current, marks, state, columns)
+            if (ruler) CodeRuler(text, tones, shownMatches, current, allMarks, state, columns)
         }
+        CodeDecorationTooltip(symbols) { spot -> decorationTip(decorated[spot.line].orEmpty(), spot.column) }
     }
 }
 

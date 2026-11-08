@@ -27,6 +27,13 @@ class RulerColors(
         LineTone.Emphasis -> emphasis
         LineTone.Selected -> selected
     }
+
+    /** The mark of a decoration in [style]: warnings and errors mark the ruler, other styles do not. */
+    fun of(style: CodeDecorationStyle): Color? = when (style) {
+        CodeDecorationStyle.Warning -> warning
+        CodeDecorationStyle.Error -> error
+        else -> null
+    }
 }
 
 /** The current theme's [RulerColors]. */
