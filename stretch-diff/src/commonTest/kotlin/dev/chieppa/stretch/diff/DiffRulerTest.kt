@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -14,6 +16,7 @@ import dev.chieppa.stretch.test.setStretchContent
 import dev.chieppa.stretch.theme.StretchThemes
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
@@ -52,5 +55,16 @@ class DiffRulerTest {
         onRoot().performTouchInput { click(Offset(width - 5.dp.toPx(), height * 0.92f)) }
         waitForIdle()
         onNodeWithText("line 180").assertExists()
+    }
+
+    @Test
+    fun aShortDiffMarksBesideItsLines() = runComposeUiTest {
+        val short = diffTexts("one\ntwo\nthree", "one\n2\nthree", "short.txt")
+        setStretchContent(StretchThemes.Ink) { DiffViewer(listOf(short), Modifier.size(700.dp, 900.dp), showBar = false) }
+        waitForIdle()
+        val picture = onRoot().captureToImage().toPixelMap()
+        val x = picture.width - 3
+        assertEquals(StretchThemes.Ink.colors.surfaceCanvas, picture[x, picture.height - 3], "nothing below the content")
+        assertNotEquals(StretchThemes.Ink.colors.surfaceCanvas, picture[x, picture.height / 20], "the content shows near the top")
     }
 }

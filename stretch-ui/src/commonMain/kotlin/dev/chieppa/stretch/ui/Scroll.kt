@@ -14,14 +14,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
 /**
- * A thin themed scrollbar for [state], shown on hover and while scrolling. It takes all the height it is given, so in
+ * A thin themed scrollbar for [state], shown on hover and while scrolling, with no thumb while there is nothing to
+ * scroll. It takes all the height it is given, so in
  * a box that wraps its content, such as a popup's, give it `Modifier.matchParentSize().wrapContentWidth(Alignment.End)`
  * to keep it from stretching the box; in a box of fixed height, align it to the end.
  */
 @Composable
 expect fun Scrollbar(state: ScrollState, modifier: Modifier = Modifier)
 
-/** A thin themed scrollbar for a lazy list. */
+/** A thin themed scrollbar for a lazy list, with no thumb while the whole list shows. */
 @Composable
 expect fun Scrollbar(state: LazyListState, modifier: Modifier = Modifier)
 

@@ -37,7 +37,7 @@ internal fun CodeRuler(
             listOfNotNull(current?.let { RulerMark(rows.start(it.line - 1), rows.end(it.line - 1), colors.currentMatch, RulerLanes.Whole) })
     }
     val scope = rememberCoroutineScope()
-    OverviewRuler(toneMarks + findMarks, rows.length, { position -> scope.launch { rows.jump(state.list, position) } }, shown = { rows.shown(state.list) })
+    OverviewRuler(toneMarks + findMarks, rows.length, { position -> scope.launch { rows.jump(state.list, position) } }, shown = { rows.shown(state.list) }, fit = { rows.fit(state.list) })
 }
 
 /** One mark per run of lines in the same tone. */

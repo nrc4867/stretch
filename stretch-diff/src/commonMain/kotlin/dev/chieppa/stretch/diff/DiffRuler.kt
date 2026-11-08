@@ -45,7 +45,7 @@ internal fun DiffRuler(
             listOfNotNull(current?.let { mark(it.fileIndex, it.side, it.line, colors.currentMatch, RulerLanes.Whole) })
     }
     val scope = rememberCoroutineScope()
-    OverviewRuler(changes + found, scale.length, { position -> scope.launch { scale.jump(state.list, position) } }, shown = { scale.shown(state.list) })
+    OverviewRuler(changes + found, scale.length, { position -> scope.launch { scale.jump(state.list, position) } }, shown = { scale.shown(state.list) }, fit = { scale.fit(state.list) })
 }
 
 /** Where [rows] lie along the ruler: a row each, or when [wrap] the rows of text each takes at [columns] characters. */
