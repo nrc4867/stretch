@@ -23,6 +23,7 @@
 
 - **Disabled buttons.** `Button(enabled = false)` shows the label and icon faint, keeps its resting fill under the pointer and takes no clicks, in every `ButtonKind`; `IconButton`, `ToolButton` and `Segmented`'s `enabled` do the same.
 - **Segmented tooltips.** `Segmented(tooltip = { option -> text or null })` gives each option its own `Tooltip`, shown after the usual hover; options that return null have none.
+- **Chips that press.** `Chip(onClick = ...)` presses and ends in a chevron, for a chip that opens a menu of choices (anchor a `Menu` to it); it takes the hover and focus ring of other controls. `Chip(dashed = true)` draws the edge dashed for a tentative value, such as a guess not yet confirmed, and sets the `ChipDashed` semantics property so a test can read it. `Chip(description = ...)` names it for assistive tools.
 
 ## Trees
 

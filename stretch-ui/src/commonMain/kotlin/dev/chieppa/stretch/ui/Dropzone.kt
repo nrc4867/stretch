@@ -142,14 +142,14 @@ internal fun DropzoneFace(state: DropState, title: String, kinds: String, descri
     }
 }
 
-internal fun Modifier.dashedBorder(color: Color, width: Dp, radius: Dp, dashed: Boolean) = drawBehind {
+internal fun Modifier.dashedBorder(color: Color, width: Dp, radius: Dp, dashed: Boolean, dash: Dp = 6.dp, gap: Dp = 4.dp) = drawBehind {
     val w = width.toPx()
-    val dash = if (dashed) PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx())) else null
+    val effect = if (dashed) PathEffect.dashPathEffect(floatArrayOf(dash.toPx(), gap.toPx())) else null
     drawRoundRect(
         color,
         topLeft = Offset(w / 2, w / 2),
         size = Size(size.width - w, size.height - w),
         cornerRadius = CornerRadius(radius.toPx() - w / 2),
-        style = Stroke(w, pathEffect = dash),
+        style = Stroke(w, pathEffect = effect),
     )
 }

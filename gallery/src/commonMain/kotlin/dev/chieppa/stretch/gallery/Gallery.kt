@@ -279,6 +279,9 @@ private fun ChipsDemo() {
         Chip("4 layers", mono = true)
         Chip("Armed", kind = ChipKind.On)
         Chip("Gap · 0.4 px", kind = ChipKind.Warn)
+        Chip("Front paw", onClick = {})
+        Chip("Tail?", dashed = true, onClick = {})
+        Chip("Draft", dashed = true)
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         for (name in listOf("Pads", "Outline", "Fur edge", "Claws")) {

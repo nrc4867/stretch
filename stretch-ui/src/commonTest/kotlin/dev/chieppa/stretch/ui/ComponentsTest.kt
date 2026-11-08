@@ -7,9 +7,15 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -115,6 +121,22 @@ class ComponentsTest {
         setContent { StretchTheme(StretchThemes.Ink) { OptionChip("Pads", pads, { pads = it }) } }
         onNodeWithText("Pads").performClick()
         assertEquals(true, pads)
+    }
+
+    @Test
+    fun aPressableChipOpensAndADashedOneSaysSo() = runComposeUiTest {
+        var presses = 0
+        setContent {
+            StretchTheme(StretchThemes.Ink) {
+                Column {
+                    Chip("Tail?", Modifier.testTag("guess"), dashed = true, description = "Role", onClick = { presses++ })
+                    Chip("Fixed", Modifier.testTag("plain"))
+                }
+            }
+        }
+        onNodeWithTag("guess").assert(SemanticsMatcher.expectValue(ChipDashed, true)).assertHasClickAction().performClick()
+        assertEquals(1, presses)
+        onNodeWithTag("plain").assert(SemanticsMatcher.expectValue(ChipDashed, false)).assertHasNoClickAction()
     }
 
     @Test
