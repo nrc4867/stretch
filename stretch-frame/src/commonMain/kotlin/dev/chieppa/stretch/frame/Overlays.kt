@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -67,6 +68,7 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.roundToIntRect
 import dev.chieppa.stretch.ui.StretchPopup
 import dev.chieppa.stretch.ui.TransientPopup
 import androidx.compose.ui.window.PopupPositionProvider
@@ -90,12 +92,16 @@ import dev.chieppa.stretch.ui.Kbd
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 
-/** Places a popup under its anchor, flipping above or shifting left when it would leave the window. */
-class BelowAnchor(private val gap: Int) : PopupPositionProvider {
+/**
+ * Places a popup under its anchor, flipping above or shifting left when it would leave the window. With [area], it goes
+ * under that rectangle within the anchor instead, in pixels from the anchor's top left.
+ */
+class BelowAnchor(private val gap: Int, private val area: IntRect? = null) : PopupPositionProvider {
     override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
-        val x = anchorBounds.left.coerceAtMost(windowSize.width - popupContentSize.width).coerceAtLeast(0)
-        val below = anchorBounds.bottom + gap
-        val y = if (below + popupContentSize.height <= windowSize.height) below else (anchorBounds.top - gap - popupContentSize.height).coerceAtLeast(0)
+        val target = area?.translate(anchorBounds.topLeft) ?: anchorBounds
+        val x = target.left.coerceAtMost(windowSize.width - popupContentSize.width).coerceAtLeast(0)
+        val below = target.bottom + gap
+        val y = if (below + popupContentSize.height <= windowSize.height) below else (target.top - gap - popupContentSize.height).coerceAtLeast(0)
         return IntOffset(x, y)
     }
 }
@@ -117,11 +123,15 @@ private class InWindow(private val top: Int?, private val moved: IntOffset = Int
 
 private const val DISABLED_ITEM_ALPHA = 0.4f
 
-/** A dropdown or context menu under its anchor. Put [MenuItem], [MenuDivider] and [MenuLabel] inside. */
+/**
+ * A dropdown or context menu under its anchor. Put [MenuItem], [MenuDivider] and [MenuLabel] inside. With [anchor], a
+ * rectangle in pixels from the top left of the element the menu is composed in, it opens under that rectangle instead,
+ * such as under a name a code view reports clicked.
+ */
 @Composable
-fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+fun Menu(expanded: Boolean, onDismiss: () -> Unit, anchor: Rect? = null, content: @Composable ColumnScope.() -> Unit) {
     if (!expanded) return
-    StretchPopup(popupPositionProvider = BelowAnchor(4), onDismissRequest = onDismiss, properties = TransientPopup, shadow = Stretch.shadows.pop) {
+    StretchPopup(popupPositionProvider = remember(anchor) { BelowAnchor(4, anchor?.roundToIntRect()) }, onDismissRequest = onDismiss, properties = TransientPopup, shadow = Stretch.shadows.pop) {
         MenuPanel(content)
     }
 }
@@ -148,7 +158,8 @@ fun MenuPanel(content: @Composable ColumnScope.() -> Unit) {
 /**
  * A popover: a small panel of live controls anchored to the thing that opened it, like a brush's settings or a
  * color picker. Unlike a [Menu] it stays open while you work in it; a click outside or Esc closes it. Changes in it
- * apply at once, so it has no OK button.
+ * apply at once, so it has no OK button. With [anchor], a rectangle in pixels from the top left of the element the
+ * popover is composed in, it opens under that rectangle instead, such as under a name a code view reports clicked.
  */
 @Composable
 fun Popover(
@@ -156,11 +167,12 @@ fun Popover(
     onDismiss: () -> Unit,
     title: String? = null,
     width: Dp = 280.dp,
+    anchor: Rect? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     if (!open) return
     val c = Stretch.colors
-    StretchPopup(popupPositionProvider = BelowAnchor(6), onDismissRequest = onDismiss, properties = TransientPopup, shadow = Stretch.shadows.pop) {
+    StretchPopup(popupPositionProvider = remember(anchor) { BelowAnchor(6, anchor?.roundToIntRect()) }, onDismissRequest = onDismiss, properties = TransientPopup, shadow = Stretch.shadows.pop) {
         Column(
             Modifier
                 .width(width)
