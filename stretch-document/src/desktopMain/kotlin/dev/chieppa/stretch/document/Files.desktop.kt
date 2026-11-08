@@ -44,17 +44,17 @@ object FileStorage : DocumentStorage {
 }
 
 /**
- * The OS's own open and save dialogs, over [owner], through [SystemFileDialogs]: the format's files listed under its description, and
- * its extension added to a name typed without one.
+ * The OS's own open and save dialogs, over [owner], through [SystemFileDialogs]: the format's files listed under its description (every
+ * type it reads when opening, its own type when saving), and its extension added to a name typed without one.
  */
 class SystemFileChooser(private val owner: Frame?, private val openTitle: String, private val saveTitle: String) : FileChooser {
     override suspend fun chooseOpen(format: DocumentFormat<*>): String? =
-        SystemFileDialogs.open(openTitle, listOf(kindOf(format)), multiple = false, owner = owner).firstOrNull()
+        SystemFileDialogs.open(openTitle, listOf(kindOf(format, format.openExtensions)), multiple = false, owner = owner).firstOrNull()
 
     override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? =
-        SystemFileDialogs.save(saveTitle, listOf(kindOf(format)), suggestedName, format.extension, owner)
+        SystemFileDialogs.save(saveTitle, listOf(kindOf(format, setOf(format.extension))), suggestedName, format.extension, owner)
 
-    private fun kindOf(format: DocumentFormat<*>) = FileKind(format.description.ifBlank { extensionsName(setOf(format.extension)) }, setOf(format.extension))
+    private fun kindOf(format: DocumentFormat<*>, extensions: Set<String>) = FileKind(format.description.ifBlank { extensionsName(extensions) }, extensions)
 }
 
 actual val documentStorage: DocumentStorage = FileStorage

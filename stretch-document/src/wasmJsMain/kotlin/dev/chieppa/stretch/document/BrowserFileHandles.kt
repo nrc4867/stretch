@@ -19,10 +19,13 @@ private fun handleName(handle: FileHandle): String = js("handle.name")
 /** Whether this browser can read and write files the person picks. */
 internal fun fileSystemAccessSupported(): Boolean = js("typeof window.showSaveFilePicker === 'function'")
 
-private fun pickerTypes(extension: String, description: String): JsAny = js("""[{
+/** The picker's one file type, named [description], taking the comma-separated [extensions]. */
+private fun pickerTypes(extensions: String, description: String): JsAny = js("""[{
     description: description,
-    accept: { 'application/octet-stream': ['.' + extension] },
+    accept: { 'application/octet-stream': extensions.split(',').map((e) => '.' + e) },
 }]""")
+
+private fun pickerTypes(extensions: Set<String>, description: String): JsAny = pickerTypes(extensions.joinToString(","), description)
 
 /** Null when the person cancels. */
 private fun openPicker(types: JsAny): Promise<FileHandle?> = js("""window.showOpenFilePicker({ types: types })
@@ -67,11 +70,11 @@ internal object BrowserFileHandles {
     private suspend fun handle(path: String): FileHandle? = store.get(path)?.unsafeCast()
 
     suspend fun chooseOpen(format: DocumentFormat<*>): String? =
-        openPicker(pickerTypes(format.extension, format.description)).await<FileHandle?>()?.let { keep(it) }
+        openPicker(pickerTypes(format.openExtensions, format.description)).await<FileHandle?>()?.let { keep(it) }
 
     suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? {
         val name = "${suggestedName.ifBlank { format.description }}.${format.extension}"
-        return savePicker(pickerTypes(format.extension, format.description), name).await<FileHandle?>()?.let { keep(it) }
+        return savePicker(pickerTypes(setOf(format.extension), format.description), name).await<FileHandle?>()?.let { keep(it) }
     }
 
     suspend fun read(path: String): ByteArray {

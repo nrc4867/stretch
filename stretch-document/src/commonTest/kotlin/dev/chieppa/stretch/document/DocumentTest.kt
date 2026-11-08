@@ -22,6 +22,11 @@ private object TextFormat : DocumentFormat<String> {
     override fun decode(bytes: ByteArray) = bytes.decodeToString()
 }
 
+/** Saves text, and reads Markdown files too. */
+private object MarkdownReadingFormat : DocumentFormat<String> by TextFormat {
+    override val openExtensions = setOf("txt", "md")
+}
+
 private class MemoryStorage : DocumentStorage {
     val files = mutableMapOf<String, ByteArray>()
     override suspend fun read(path: String) = files.getValue(path)
@@ -85,6 +90,30 @@ class DocumentTest {
         session.history.redo()
         assertTrue(session.save(chooser))
         assertEquals(1, chooser.asked, "a document with a file saves without asking")
+    }
+
+    @Test
+    fun aFileOfATypeTheFormatOnlyReadsIsNotWrittenOver() = runTest {
+        val storage = MemoryStorage()
+        storage.files["/docs/Fox.md"] = "fox".encodeToByteArray()
+        val session = DocumentSession(MarkdownReadingFormat, "", storage)
+        session.open("/docs/Fox.md")
+        session.history.execute(Append("!"))
+        val chooser = PickedFile("/docs/Fox.txt")
+        assertTrue(session.save(chooser))
+        assertEquals(1, chooser.asked, "saving asks where, as the opened file is not the format's own type")
+        assertEquals("fox", storage.files.getValue("/docs/Fox.md").decodeToString())
+        assertEquals("fox!", storage.files.getValue("/docs/Fox.txt").decodeToString())
+        assertTrue(session.save(chooser))
+        assertEquals(1, chooser.asked, "once saved as its own type, it saves without asking")
+    }
+
+    @Test
+    fun aFormatSavesOnlyItsOwnExtension() {
+        assertTrue(MarkdownReadingFormat.saves("C:\\docs\\Fox.TXT"))
+        assertFalse(MarkdownReadingFormat.saves("/docs/Fox.md"))
+        assertFalse(MarkdownReadingFormat.saves("/docs.txt/Fox"))
+        assertEquals(setOf("txt"), TextFormat.openExtensions)
     }
 
     @Test

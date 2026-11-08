@@ -14,8 +14,14 @@ import kotlinx.coroutines.withContext
 
 /** How an app's documents turn into bytes and back, and the file type they are saved as. */
 interface DocumentFormat<D> {
-    /** The file extension, without the dot. */
+    /** The file extension documents are saved with, without the dot. */
     val extension: String
+
+    /**
+     * Every extension [decode] reads, without the dots: [extension] and any others the format can take in but does not save.
+     * The open dialog lists these.
+     */
+    val openExtensions: Set<String> get() = setOf(extension)
 
     /** The file type as the open and save dialogs name it, such as "Squash character". */
     val description: String
@@ -23,6 +29,10 @@ interface DocumentFormat<D> {
     fun encode(document: D): ByteArray
 
     fun decode(bytes: ByteArray): D
+
+    /** Whether [path] is a file of this format's own type, which saving may write over; a file it only reads is not. */
+    fun saves(path: String): Boolean =
+        path.substringAfterLast('/').substringAfterLast('\\').substringAfterLast('.', "").equals(extension, ignoreCase = true)
 }
 
 /** Where documents are read and written: the platform's [documentStorage], something in memory in tests. */
@@ -88,9 +98,12 @@ class DocumentSession<D>(
     /** Whether there are changes since the last save, at this moment. Composables use [rememberEdited]. */
     val edited: Boolean get() = isEdited(history.steps.value)
 
-    /** Saves to the document's file, asking for one with [chooser] the first time. False when the person cancels. */
+    /**
+     * Saves to the document's file, asking for one with [chooser] the first time, and when the document came from a file of a type
+     * the format only reads, which is left as it is. False when the person cancels.
+     */
     suspend fun save(chooser: FileChooser): Boolean {
-        val target = path ?: chooser.chooseSave(format, fileName ?: "") ?: return false
+        val target = path?.takeIf(format::saves) ?: chooser.chooseSave(format, fileName ?: "") ?: return false
         saveTo(target)
         return true
     }

@@ -55,7 +55,7 @@ private object BrowserFileChooser : FileChooser {
         if (fileSystemAccessSupported()) {
             BrowserFileHandles.chooseOpen(format)
         } else {
-            pickFiles(format.description, setOf(format.extension), multiple = false).firstOrNull()
+            pickFiles(format.description, format.openExtensions, multiple = false).firstOrNull()
         }
 
     override suspend fun chooseSave(format: DocumentFormat<*>, suggestedName: String): String? =
