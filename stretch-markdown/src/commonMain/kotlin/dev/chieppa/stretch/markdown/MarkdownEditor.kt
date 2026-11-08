@@ -102,7 +102,7 @@ fun MarkdownEditor(
                 list,
                 contentPadding = PaddingValues(vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(blockGap),
             ) {
                 itemsIndexed(state.document.blocks, key = { _, block -> block.id }, contentType = { _, block -> block.kind::class.simpleName }) { index, block ->
                     val selected = state.selectedBlocks?.contains(index) == true

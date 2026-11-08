@@ -37,61 +37,19 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.chieppa.stretch.code.codeColors
 import dev.chieppa.stretch.frame.chord
 import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.ui.Label
 
-/** What every block view needs from its editor. */
-internal class BlockContext(
-    val state: MarkdownEditorState,
-    val diagrams: DiagramRenderer?,
-    val images: ImageSource?,
-    val onLinkClick: (String) -> Unit,
-    val strings: MarkdownStrings,
-    val readOnly: Boolean,
-)
-
-@Composable
-internal fun rememberMarkupLook(): MarkupLook {
-    val c = Stretch.colors
-    val mono = Stretch.type.valueSm.fontFamily ?: FontFamily.Monospace
-    val code = codeColors
-    return remember(c, mono) { MarkupLook(c.inkSubtle, c.syntaxType, c.surfaceControl, mono, code) }
-}
-
-private val bodyStyle: TextStyle
-    @Composable @ReadOnlyComposable
-    get() = Stretch.type.body.merge(TextStyle(color = Stretch.colors.ink))
-
-private val codeStyle: TextStyle
-    @Composable @ReadOnlyComposable
-    get() = Stretch.type.valueSm.merge(TextStyle(color = Stretch.colors.ink))
-
-@Composable
-@ReadOnlyComposable
-private fun headingStyle(level: Int): TextStyle {
-    val ink = TextStyle(color = Stretch.colors.inkStrong)
-    return when (level) {
-        1 -> Stretch.type.pageTitle
-        2 -> Stretch.type.boardTitle
-        3 -> Stretch.type.heading
-        4 -> Stretch.type.drawerTitle
-        else -> Stretch.type.body.copy(fontWeight = FontWeight.SemiBold)
-    }.merge(ink)
-}
-
 /** One block, drawn as what it is. */
 @Composable
 internal fun BlockView(block: MarkdownBlock, context: BlockContext) {
     when (val kind = block.kind) {
-        BlockKind.Paragraph -> BlockField(block, context, bodyStyle, Modifier.fillMaxWidth())
-        is BlockKind.Heading -> BlockField(block, context, headingStyle(kind.level), Modifier.fillMaxWidth().padding(top = (HEADING_SPACE_LEVELS - kind.level).coerceAtLeast(0).dp * 2))
+        BlockKind.Paragraph -> BlockText(block, context, bodyStyle, Modifier.fillMaxWidth())
+        is BlockKind.Heading -> BlockText(block, context, headingStyle(kind.level), Modifier.fillMaxWidth().padding(top = headingSpace(kind.level)))
         is BlockKind.ListItem -> ListItemView(block, kind, context)
         BlockKind.Quote -> QuoteView(block, context)
         is BlockKind.Callout -> CalloutView(block, kind, context)
@@ -100,13 +58,12 @@ internal fun BlockView(block: MarkdownBlock, context: BlockContext) {
         is BlockKind.Image -> ImageView(block, kind, context)
         BlockKind.Divider -> DividerView(block, context)
         BlockKind.Raw -> Box(Modifier.fillMaxWidth().clip(Stretch.shapes.ctlShape).background(Stretch.colors.surfaceControl).padding(10.dp)) {
-            BlockField(block, context, codeStyle, Modifier.fillMaxWidth())
+            BlockText(block, context, codeStyle, Modifier.fillMaxWidth())
         }
     }
 }
 
-private const val HEADING_SPACE_LEVELS = 7
-private val listGutter = 20.dp
+internal val listGutter = 20.dp
 
 @Composable
 private fun ListItemView(block: MarkdownBlock, kind: BlockKind.ListItem, context: BlockContext) {
@@ -126,7 +83,7 @@ private fun ListItemView(block: MarkdownBlock, kind: BlockKind.ListItem, context
         }
         val struck = kind.style == ListStyle.Task && kind.checked
         val ink = if (struck) TextStyle(color = c.inkSubtle) else TextStyle()
-        BlockField(block, context, bodyStyle.merge(ink), Modifier.weight(1f))
+        BlockText(block, context, bodyStyle.merge(ink), Modifier.weight(1f))
     }
 }
 
@@ -157,7 +114,7 @@ private fun QuoteView(block: MarkdownBlock, context: BlockContext) {
     val c = Stretch.colors
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
         Box(Modifier.width(3.dp).fillMaxHeight().background(c.lineControl))
-        BlockField(block, context, bodyStyle.merge(TextStyle(color = c.inkMuted)), Modifier.weight(1f).padding(start = 10.dp))
+        BlockText(block, context, bodyStyle.merge(TextStyle(color = c.inkMuted)), Modifier.weight(1f).padding(start = 10.dp))
     }
 }
 
@@ -186,7 +143,7 @@ private fun CalloutView(block: MarkdownBlock, kind: BlockKind.Callout, context: 
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(look.icon, look.ink, contentDescription = kind.kind.name)
-        BlockField(block, context, bodyStyle.merge(TextStyle(color = look.ink)), Modifier.weight(1f))
+        BlockText(block, context, bodyStyle.merge(TextStyle(color = look.ink)), Modifier.weight(1f))
     }
 }
 
@@ -204,7 +161,7 @@ internal fun CodeView(block: MarkdownBlock, kind: BlockKind.Code, context: Block
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         CodeLanguageField(block, kind, context, error)
-        BlockField(block, context, codeStyle, Modifier.fillMaxWidth())
+        BlockText(block, context, codeStyle, Modifier.fillMaxWidth())
     }
 }
 
