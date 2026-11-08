@@ -3,6 +3,7 @@ package dev.chieppa.stretch.diff
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
+import dev.chieppa.stretch.code.CodeRange
 import dev.chieppa.stretch.code.LineTone
 import dev.chieppa.stretch.theme.StretchSpacing
 
@@ -31,4 +32,17 @@ class DiffSlots(
     val gutterWidth: Dp = StretchSpacing.space16,
     /** A wash for a line in place of the added or removed one, such as to set apart lines already seen. Null keeps it. */
     val lineTone: ((DiffLineRef) -> LineTone?)? = null,
+    /**
+     * Names the symbol at a position, such as a name to go to the definition of, as a range on the position's own line
+     * of the same side of the same file, or null for none. Asked while Ctrl (Cmd on macOS) is held over the code, and may
+     * take its time: the viewer underlines the range under a pointing hand once it comes, and drops an answer for a place
+     * the pointer has left. Clicking through is on when both this and [onSymbolClick] are given.
+     */
+    val symbolAt: (suspend (DiffPosition) -> CodeRange?)? = null,
+    /**
+     * Called when someone Ctrl or Cmd clicks a symbol [symbolAt] named, or when [DiffViewerState.clickSymbolAtCaret]
+     * finds one. A Ctrl or Cmd press in the code never starts a selection while this is on; a plain press, click and
+     * drag select text as always.
+     */
+    val onSymbolClick: ((DiffSymbolClick) -> Unit)? = null,
 )

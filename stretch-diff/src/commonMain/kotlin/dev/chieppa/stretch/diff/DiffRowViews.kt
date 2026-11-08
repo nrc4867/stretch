@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +31,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.code.ChangeWash
+import dev.chieppa.stretch.code.CodeDecoration
+import dev.chieppa.stretch.code.CodeDecorationLook
 import dev.chieppa.stretch.code.CodeHighlight
+import dev.chieppa.stretch.code.CodeLineGeometry
+import dev.chieppa.stretch.code.CodeLineKey
+import dev.chieppa.stretch.code.CodeSymbolPointer
+import dev.chieppa.stretch.code.decorationPaint
+import dev.chieppa.stretch.code.rememberCodeDecorationLook
+import dev.chieppa.stretch.code.rememberCodeSymbolInput
+import dev.chieppa.stretch.code.withCodeLink
 import dev.chieppa.stretch.code.CodeLineBody
 import dev.chieppa.stretch.code.CodeLineNumber
 import dev.chieppa.stretch.code.CodeLook
@@ -47,13 +59,14 @@ import dev.chieppa.stretch.ui.Label
 import dev.chieppa.stretch.ui.controlPointer
 
 /** The colors lines draw with, gathered once for all the rows. */
-internal class LineLook(val code: CodeLook, val addStrong: Color, val delStrong: Color, val blank: Color)
+internal class LineLook(val code: CodeLook, val addStrong: Color, val delStrong: Color, val blank: Color, val decoration: CodeDecorationLook)
 
 @Composable
 internal fun rememberLineLook(changeWash: ChangeWash = ChangeWash.Line): LineLook {
     val c = Stretch.colors
     val code = rememberCodeLook(changeWash)
-    return remember(c, code) { LineLook(code, c.diffAddStrong, c.diffDelStrong, c.surfaceCanvas) }
+    val decoration = rememberCodeDecorationLook()
+    return remember(c, code, decoration) { LineLook(code, c.diffAddStrong, c.diffDelStrong, c.surfaceCanvas, decoration) }
 }
 
 /** The wash behind a line: [tone] when an app or the selection gives one, otherwise by what changed. */
@@ -86,7 +99,11 @@ private fun signOf(kind: LineKind) = when (kind) {
     LineKind.Context -> " "
 }
 
-/** What an app and the viewer add to one line: its wash, its gutter mark and how each side's number target answers the pointer. */
+/**
+ * What an app and the viewer add to one line: its wash, its gutter mark, how each side's number target answers the
+ * pointer, its find matches and decorations, and the [keys] it answers to for clicking through to symbols, the one the
+ * pointer reports first.
+ */
 internal class LineExtras(
     val tone: LineTone? = null,
     val gutter: (@Composable () -> Unit)? = null,
@@ -94,6 +111,8 @@ internal class LineExtras(
     val oldNumber: Modifier = Modifier,
     val newNumber: Modifier = Modifier,
     val finds: List<CodeHighlight> = emptyList(),
+    val decorations: List<CodeDecoration> = emptyList(),
+    val keys: List<CodeLineKey<DiffFileSide>> = emptyList(),
 )
 
 @Composable
@@ -122,14 +141,45 @@ private fun Sign(kind: LineKind, look: LineLook) {
     BasicText(signOf(kind), Modifier.width(StretchSpacing.space16), style = look.code.style.merge(TextStyle(color = ink, textAlign = TextAlign.Center)))
 }
 
+/** A line's code with its changed words, decorations, find matches and the symbol under a held Ctrl or Cmd. */
 @Composable
-private fun LineCode(line: DiffLine, tokens: List<CodeToken>, finds: List<CodeHighlight>, metrics: CodeMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, modifier: Modifier) {
-    val text = remember(line, tokens, finds, look) { lineText(line, tokens, look.code.code, look.strong(line.kind), finds) }
-    CodeLineBody(text, metrics, look.code, wrap, scroll, modifier)
+private fun LineCode(
+    line: DiffLine,
+    tokens: List<CodeToken>,
+    extras: LineExtras,
+    symbols: CodeSymbolPointer<DiffFileSide>,
+    metrics: CodeMetrics,
+    look: LineLook,
+    wrap: Boolean,
+    scroll: ScrollState,
+    modifier: Modifier,
+) {
+    val keys = extras.keys
+    val paint = remember(line.text, extras.decorations, look) { decorationPaint(line.text, extras.decorations, look.decoration) }
+    val link by remember(symbols, keys) {
+        derivedStateOf { symbols.link?.let { link -> link.range.takeIf { keys.any { it.group == link.group && it.line == link.range.line } } } }
+    }
+    val text = remember(line, tokens, extras.finds, paint, look, link) {
+        val shown = lineText(line, tokens, look.code.code, look.strong(line.kind), paint.washes + extras.finds)
+        link?.let { withCodeLink(shown, line.text, it.start, it.end, look.decoration.link) } ?: shown
+    }
+    val geometry = remember(line.text) { CodeLineGeometry(line.text) }
+    SideEffect { geometry.decorations = extras.decorations }
+    val input = if (keys.isEmpty()) Modifier else rememberCodeSymbolInput(symbols, keys, geometry)
+    CodeLineBody(text, metrics, look.code, wrap, scroll, modifier, paint.underlines, input) { geometry.layout = it }
 }
 
 @Composable
-internal fun UnifiedLine(line: DiffLine, tokens: List<CodeToken>, metrics: CodeMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, extras: LineExtras) {
+internal fun UnifiedLine(
+    line: DiffLine,
+    tokens: List<CodeToken>,
+    metrics: CodeMetrics,
+    look: LineLook,
+    wrap: Boolean,
+    scroll: ScrollState,
+    extras: LineExtras,
+    symbols: CodeSymbolPointer<DiffFileSide>,
+) {
     val wash = Modifier.lineWash(look.wash(line.kind, extras.tone), look.gutterSpan(line.kind, extras, metrics, numbers = 2))
     Row(Modifier.fillMaxWidth().heightIn(min = metrics.lineHeight).then(wash).semantics { stateDescription = line.kind.name }) {
         DisableSelection {
@@ -143,12 +193,22 @@ internal fun UnifiedLine(line: DiffLine, tokens: List<CodeToken>, metrics: CodeM
                 Sign(line.kind, look)
             }
         }
-        LineCode(line, tokens, extras.finds, metrics, look, wrap, scroll, Modifier.weight(1f))
+        LineCode(line, tokens, extras, symbols, metrics, look, wrap, scroll, Modifier.weight(1f))
     }
 }
 
 @Composable
-internal fun RowScope.SplitSide(side: DiffSide, line: DiffLine?, tokens: List<CodeToken>, metrics: CodeMetrics, look: LineLook, wrap: Boolean, scroll: ScrollState, extras: LineExtras) {
+internal fun RowScope.SplitSide(
+    side: DiffSide,
+    line: DiffLine?,
+    tokens: List<CodeToken>,
+    metrics: CodeMetrics,
+    look: LineLook,
+    wrap: Boolean,
+    scroll: ScrollState,
+    extras: LineExtras,
+    symbols: CodeSymbolPointer<DiffFileSide>,
+) {
     val wash = Modifier.lineWash(look.wash(line?.kind, extras.tone), look.gutterSpan(line?.kind, extras, metrics, numbers = 1))
     Row(Modifier.weight(1f).fillMaxHeight().then(wash).semantics { if (line != null) stateDescription = line.kind.name }) {
         if (line == null) return@Row
@@ -159,7 +219,7 @@ internal fun RowScope.SplitSide(side: DiffSide, line: DiffLine?, tokens: List<Co
                 Sign(line.kind, look)
             }
         }
-        LineCode(line, tokens, extras.finds, metrics, look, wrap, scroll, Modifier.weight(1f))
+        LineCode(line, tokens, extras, symbols, metrics, look, wrap, scroll, Modifier.weight(1f))
     }
 }
 

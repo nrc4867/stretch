@@ -10,6 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
+import dev.chieppa.stretch.code.CodeSpot
+import dev.chieppa.stretch.code.CodeSymbolPointer
 import dev.chieppa.stretch.code.revealColumn
 import dev.chieppa.stretch.code.tabOffsets
 
@@ -35,6 +37,28 @@ class DiffViewerState(split: Boolean = false, wrap: Boolean = false) {
 
     /** The sideways scroll of the new side when split. */
     val rightScroll = ScrollState(0)
+
+    /** What the viewer knows of the pointer over its code, for clicking through to symbols. */
+    internal val symbols = CodeSymbolPointer<DiffFileSide>()
+
+    /**
+     * Where [clickSymbolAtCaret] starts: where the last plain press in the code landed, which is where a selection made
+     * by dragging from it starts, or wherever the app puts it, such as on a definition it has gone to. Null until then.
+     */
+    var caret: DiffPosition?
+        get() = symbols.caret?.let { DiffPosition(it.group.fileIndex, it.group.side, it.line, it.column) }
+        set(value) {
+            symbols.caret = value?.let { CodeSpot(DiffFileSide(it.fileIndex, it.side), it.line, it.column) }
+        }
+
+    /**
+     * Clicks through to the symbol at [caret], as a Ctrl or Cmd click there would: asks the viewer's
+     * [DiffSlots.symbolAt], scrolls the symbol into view, opening its file and fold when they hide it, and calls
+     * [DiffSlots.onSymbolClick] with its bounds. For a key the app binds, such as F12. Whether there was a symbol.
+     */
+    suspend fun clickSymbolAtCaret(): Boolean = symbols.clickAtCaret { spot, range ->
+        scrollToMatch(DiffMatch(spot.group.fileIndex, spot.group.side, range.line, range.start, range.end))
+    }
 
     /** The lines selected over the line numbers, if any. Set it to null to clear the selection. */
     var lineSelection by mutableStateOf<DiffLineRange?>(null)
