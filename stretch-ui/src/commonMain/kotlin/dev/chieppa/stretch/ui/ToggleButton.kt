@@ -62,6 +62,6 @@ fun ToggleButton(
     ) {
         if (icon != null) Icon(icon, ink)
         val style = Stretch.type.control
-        Label(text, if (checked) style.copy(fontWeight = FontWeight.SemiBold) else style, ink)
+        ControlLabel(text, if (checked) style.copy(fontWeight = FontWeight.SemiBold) else style, ink)
     }
 }

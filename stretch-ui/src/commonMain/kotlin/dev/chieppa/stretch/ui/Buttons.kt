@@ -70,7 +70,7 @@ fun Button(
     ) {
         if (icon != null) Icon(icon, ink)
         val style = Stretch.type.control
-        Label(text, if (kind == ButtonKind.Primary) style.copy(fontWeight = FontWeight.SemiBold) else style, ink)
+        ControlLabel(text, if (kind == ButtonKind.Primary) style.copy(fontWeight = FontWeight.SemiBold) else style, ink)
     }
 }
 
@@ -159,7 +159,7 @@ fun ToolButton(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(icon, ink, size = 18.dp)
-            Label(label, Stretch.type.control, ink)
+            ControlLabel(label, Stretch.type.control, ink)
         }
     }
 }

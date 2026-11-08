@@ -51,7 +51,7 @@ fun Chip(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (shown != null) Icon(shown, ink, size = 12.dp)
-        Label(text, if (mono) Stretch.type.valueSm else Stretch.type.chip, ink)
+        ControlLabel(text, if (mono) Stretch.type.valueSm else Stretch.type.chip, ink)
     }
 }
 
@@ -79,6 +79,6 @@ fun OptionChip(
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Label(text, Stretch.type.bodySm.copy(fontWeight = Stretch.type.control.fontWeight), if (selected) c.onInk else c.inkControl)
+        ControlLabel(text, Stretch.type.bodySm.copy(fontWeight = Stretch.type.control.fontWeight), if (selected) c.onInk else c.inkControl)
     }
 }

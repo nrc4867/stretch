@@ -86,7 +86,7 @@ fun <T> Segmented(
                     fontWeight = if (isOn && mode) FontWeight.SemiBold else FontWeight.Medium,
                     fontSize = if (compact) Stretch.type.value.fontSize else Stretch.type.bodySm.fontSize,
                 )
-                Label(label(option), style, ink)
+                ControlLabel(label(option), style, ink)
             }
         }
     }

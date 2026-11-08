@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -129,15 +130,18 @@ fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnSc
 @Composable
 fun MenuPanel(content: @Composable ColumnScope.() -> Unit) {
     val openSubMenu = remember { mutableStateOf<Any?>(null) }
+    // A menu's text is never part of a selection, though the menu opens over selectable content.
     CompositionLocalProvider(LocalOpenSubMenu provides openSubMenu) {
-        Column(
-            Modifier
-                .width(IntrinsicSize.Max)
-                .widthIn(min = 200.dp, max = 360.dp)
-                .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
-                .padding(4.dp),
-            content = content,
-        )
+        DisableSelection {
+            Column(
+                Modifier
+                    .width(IntrinsicSize.Max)
+                    .widthIn(min = 200.dp, max = 360.dp)
+                    .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
+                    .padding(4.dp),
+                content = content,
+            )
+        }
     }
 }
 

@@ -64,7 +64,7 @@ fun SplitButtonFace(
         ) {
             if (icon != null) Icon(icon, ink)
             val style = Stretch.type.control
-            Label(text, if (kind == ButtonKind.Primary) style.copy(fontWeight = FontWeight.SemiBold) else style, ink)
+            ControlLabel(text, if (kind == ButtonKind.Primary) style.copy(fontWeight = FontWeight.SemiBold) else style, ink)
         }
         Box(Modifier.fillMaxHeight().width(Stretch.stroke).background(edge))
         Box(
