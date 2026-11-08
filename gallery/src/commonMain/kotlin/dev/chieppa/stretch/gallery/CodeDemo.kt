@@ -39,7 +39,10 @@ import dev.chieppa.stretch.ui.Label
 import dev.chieppa.stretch.ui.Toggle
 import kotlinx.coroutines.launch
 
-/** Two code viewers, old and new, with changed lines washed and barred, notes under lines and on the ruler, and scrolling that can follow. */
+/**
+ * Two code viewers, old and new, with changed lines washed and barred, notes under lines and on the ruler, and scrolling
+ * that can follow. The new one clicks through to names and shows decorations (see [NavigableCode]).
+ */
 @Composable
 internal fun CodeDemo() {
     val old = remember { CodeText.of(List(12) { SampleDocuments.oldCode }.joinToString("\n")) }
@@ -90,7 +93,7 @@ internal fun CodeDemo() {
         Row(Modifier.weight(1f).fillMaxWidth()) {
             Viewer(old, left, { if (it in changes.first) LineTone.Removed else null }, slots, notes.map { CodeMark(it, Stretch.colors.accent) })
             Box(Modifier.width(Stretch.stroke).fillMaxHeight().background(Stretch.colors.linePanel))
-            Viewer(new, right, { if (it in changes.second) LineTone.Added else null }, CodeViewerSlots())
+            NavigableCode(new, right, Modifier.weight(1f).fillMaxHeight()) { if (it in changes.second) LineTone.Added else null }
         }
     }
 }

@@ -17,6 +17,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.chieppa.stretch.code.CodePosition
+import dev.chieppa.stretch.diff.DiffDecoration
+import dev.chieppa.stretch.diff.DiffSide
+import dev.chieppa.stretch.diff.DiffSlots
+import dev.chieppa.stretch.diff.DiffSymbolClick
 import dev.chieppa.stretch.diff.DiffViewer
 import dev.chieppa.stretch.diff.diffTexts
 import dev.chieppa.stretch.diff.findInDiff
@@ -29,7 +34,10 @@ import dev.chieppa.stretch.ui.Label
 import dev.chieppa.stretch.ui.TextField
 import kotlinx.coroutines.launch
 
-/** A patch and a two-text diff side by side, with notes over picked lines and an app's own find drawn in place. */
+/**
+ * A patch and a two-text diff side by side, with notes over picked lines and an app's own find drawn in place. In the
+ * two-text diff, Ctrl or Cmd and a click on a name sets apart its definition and usages on that side.
+ */
 @Composable
 internal fun DiffDemo() {
     val files = remember {
@@ -40,6 +48,20 @@ internal fun DiffDemo() {
     var current by remember { mutableIntStateOf(0) }
     val matches = remember(files, query) { findInDiff(files, query) }
     val scope = rememberCoroutineScope()
+    val sides = remember { mapOf(DiffSide.Old to SampleSymbols(SampleDocuments.oldCode.lines()), DiffSide.New to SampleSymbols(SampleDocuments.newCode.lines())) }
+    var focus by remember { mutableStateOf<DiffSymbolClick?>(null) }
+    val notes = rememberDiffNotes()
+    val slots = DiffSlots(
+        onLineRangeSelect = notes.onLineRangeSelect,
+        gutterMark = notes.gutterMark,
+        lineAnnotation = notes.lineAnnotation,
+        symbolAt = { at -> if (at.fileIndex == files.lastIndex) sides.getValue(at.side).nameAt(CodePosition(at.line, at.column)) else null },
+        onSymbolClick = { focus = it },
+    )
+    val decorations = remember(focus) {
+        val click = focus ?: return@remember emptyList()
+        sides.getValue(click.position.side).decorate(click.range).map { DiffDecoration(click.position.fileIndex, click.position.side, it.range, it.style, it.tooltip) }
+    }
     fun move(step: Int) {
         if (matches.isEmpty()) return
         current = (current + step).mod(matches.size)
@@ -53,8 +75,8 @@ internal fun DiffDemo() {
             Label(if (matches.isEmpty()) "" else "${current + 1} of ${matches.size}", Stretch.type.bodySm, Stretch.colors.inkMuted)
         }
         DiffViewer(
-            files, Modifier.weight(1f).fillMaxWidth(), state, slots = rememberDiffNotes(),
-            matches = matches, currentMatch = matches.getOrNull(current),
+            files, Modifier.weight(1f).fillMaxWidth(), state, slots = slots,
+            matches = matches, currentMatch = matches.getOrNull(current), decorations = decorations,
         )
     }
 }
