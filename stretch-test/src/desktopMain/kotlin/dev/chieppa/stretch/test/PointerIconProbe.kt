@@ -5,6 +5,7 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.scene.CanvasLayersComposeScene
@@ -21,10 +22,15 @@ private const val FRAME_NANOS = 16_666_667L
 /**
  * Lays out [content] at [size] pixels in a scene with no window, moves the mouse to each of [points] in turn, and
  * returns the pointer icon the content asked for after each move. A test checks what someone would see hovering
- * there, such as a button's arrow inside a draggable header.
+ * there, such as a button's arrow inside a draggable header. Each move carries [keys], such as Ctrl held.
  */
 @OptIn(InternalComposeUiApi::class)
-fun pointerIconsAt(size: IntSize, points: List<Offset>, content: @Composable () -> Unit): List<PointerIcon?> = runBlocking {
+fun pointerIconsAt(
+    size: IntSize,
+    points: List<Offset>,
+    keys: PointerKeyboardModifiers = PointerKeyboardModifiers(),
+    content: @Composable () -> Unit,
+): List<PointerIcon?> = runBlocking {
     var shown: PointerIcon? = null
     val context = object : PlatformContext by PlatformContext.Empty() {
         override fun setPointerIcon(pointerIcon: PointerIcon) {
@@ -42,7 +48,7 @@ fun pointerIconsAt(size: IntSize, points: List<Offset>, content: @Composable () 
         scene.setContent(content = content)
         settle()
         points.map { at ->
-            scene.sendPointerEvent(PointerEventType.Move, at)
+            scene.sendPointerEvent(PointerEventType.Move, at, keyboardModifiers = keys)
             settle()
             shown
         }

@@ -11,6 +11,9 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import dev.chieppa.stretch.test.characterCenter
+import dev.chieppa.stretch.test.characterStart
+import dev.chieppa.stretch.test.underlinedRun
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
 import kotlinx.coroutines.CompletableDeferred
@@ -35,12 +38,12 @@ class CodeSymbolTest {
         val line = onNodeWithText("val greeting = hello(name)")
         line.performMouseInput { click(line.characterCenter(16)) }
         assertEquals(emptyList(), clicks)
-        assertNull(line.underlined())
+        assertNull(line.underlinedRun())
 
         line.performKeyInput { keyDown(Key.CtrlLeft) }
         line.performMouseInput { moveTo(line.characterCenter(16)) }
         waitForIdle()
-        assertEquals(15 to 20, line.underlined())
+        assertEquals(15 to 20, line.underlinedRun())
         assertEquals(CodePosition(1, 16), asked.last())
         val before = asked.size
         line.performMouseInput { moveTo(line.characterCenter(18)) }
@@ -57,7 +60,7 @@ class CodeSymbolTest {
 
         line.performKeyInput { keyUp(Key.CtrlLeft) }
         waitForIdle()
-        assertNull(line.underlined())
+        assertNull(line.underlinedRun())
     }
 
     @Test
@@ -74,17 +77,17 @@ class CodeSymbolTest {
         first.performKeyInput { keyDown(Key.CtrlLeft) }
         first.performMouseInput { moveTo(first.characterCenter(5)) }
         waitForIdle()
-        assertEquals(4 to 12, first.underlined())
+        assertEquals(4 to 12, first.underlinedRun())
 
         second.performMouseInput { moveTo(second.characterCenter(10)) }
         waitForIdle()
-        assertEquals(4 to 12, first.underlined())
-        assertNull(second.underlined())
+        assertEquals(4 to 12, first.underlinedRun())
+        assertNull(second.underlinedRun())
 
         gate.complete(Unit)
         waitForIdle()
-        assertNull(first.underlined())
-        assertEquals(8 to 16, second.underlined())
+        assertNull(first.underlinedRun())
+        assertEquals(8 to 16, second.underlinedRun())
     }
 
     @Test
@@ -122,7 +125,7 @@ class CodeSymbolTest {
         line.performKeyInput { keyDown(Key.CtrlLeft) }
         line.performMouseInput { moveTo(line.characterCenter(16)) }
         waitForIdle()
-        assertNull(line.underlined())
+        assertNull(line.underlinedRun())
     }
 }
 

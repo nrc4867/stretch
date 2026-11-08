@@ -8,8 +8,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import dev.chieppa.stretch.test.annotatedText
+import dev.chieppa.stretch.test.characterCenter
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
+import dev.chieppa.stretch.ui.TOOLTIP_DELAY_MS
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -76,7 +79,7 @@ class CodeDecorationTest {
                 CodeViewer(CodeText.of("val first = 1\nval second = 2"), Modifier.size(600.dp, 300.dp), decorations = decorations)
             }
         }
-        val washed = onNodeWithText("val second = 2").annotated().spanStyles.single { it.item.background != Color.Unspecified }
+        val washed = onNodeWithText("val second = 2").annotatedText().spanStyles.single { it.item.background != Color.Unspecified }
         assertEquals(4 to 9, washed.start to washed.end)
         onNodeWithText("Unused value").assertDoesNotExist()
         val first = onNodeWithText("val first = 1")
@@ -88,3 +91,6 @@ class CodeDecorationTest {
         onNodeWithText("Unused value").assertDoesNotExist()
     }
 }
+
+/** Longer than a tooltip waits before it shows. */
+private const val TOOLTIP_WAIT_MS = TOOLTIP_DELAY_MS + 100
