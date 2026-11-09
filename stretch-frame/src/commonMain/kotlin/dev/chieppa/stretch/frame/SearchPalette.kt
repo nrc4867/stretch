@@ -20,7 +20,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -37,7 +40,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -63,7 +68,8 @@ private val PALETTE_RESULTS_MAX = 420.dp
  * scope picker, the results [content] under it, scrolling past [maxHeight], and what its keys do, [hints], in a footer.
  * It sits [top] down the window, centred. With [scrim] the window behind it dims and a click there closes it. Every key
  * press goes to [onKey] first, for moving through the results; Esc closes. [queryStyle] sets the field's text, such as
- * code type for a pasted link, and [placeholder] names the field.
+ * code type for a pasted link, and [placeholder] names the field. A [query] the palette opens with, or that is set from
+ * outside, puts the cursor after it.
  */
 @Composable
 fun SearchPalette(
@@ -85,6 +91,8 @@ fun SearchPalette(
 ) {
     val c = Stretch.colors
     val focus = remember { FocusRequester() }
+    var field by remember { mutableStateOf(TextFieldValue(query, TextRange(query.length))) }
+    if (field.text != query) field = TextFieldValue(query, TextRange(query.length))
     val panel = @Composable {
         LaunchedEffect(Unit) { focus.requestFocus() }
         Column(
@@ -108,8 +116,11 @@ fun SearchPalette(
                 Icon(icon, c.inkMuted)
                 val fieldStyle = Stretch.type.body.merge(TextStyle(color = c.inkStrong, fontSize = Stretch.type.drawerTitle.fontSize)).merge(queryStyle)
                 BasicTextField(
-                    value = query,
-                    onValueChange = onQueryChange,
+                    value = field,
+                    onValueChange = {
+                        field = it
+                        if (it.text != query) onQueryChange(it.text)
+                    },
                     modifier = Modifier.weight(1f).holdsTyping().focusRequester(focus).semantics { contentDescription = placeholder },
                     singleLine = true,
                     textStyle = fieldStyle,
