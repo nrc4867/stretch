@@ -37,6 +37,8 @@ class FuzzyMatchTest {
     fun shortWordsMustMatchExactly() {
         assertNull(fuzzyMatch("rxt zzz", title))
         assertNull(fuzzyMatch("tak", "token"))
+        assertNull(fuzzyMatch("#402", "#401"))
+        assertNull(fuzzyMatch("demo@c", "demo@aaaa"))
     }
 
     @Test

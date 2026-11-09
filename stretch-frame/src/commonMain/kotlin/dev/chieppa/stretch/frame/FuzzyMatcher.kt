@@ -57,6 +57,7 @@ internal object FuzzyMatcher {
         starts.firstOrNull { l.startsWith(word, it) }?.let { return WORD_AT_START to (it until it + word.length) }
         l.indexOf(word).takeIf { it >= 0 }?.let { return WORD_INSIDE to (it until it + word.length) }
         val allowed = when {
+            !word.all(Char::isLetter) -> return null
             word.length >= TWO_SLIPS -> 2
             word.length >= ONE_SLIP -> 1
             else -> return null
