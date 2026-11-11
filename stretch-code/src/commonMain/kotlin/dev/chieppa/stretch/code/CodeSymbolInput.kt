@@ -17,6 +17,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.isMetaPressed
+import androidx.compose.ui.input.pointer.areAnyPressed
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
@@ -27,12 +28,20 @@ import kotlinx.coroutines.launch
 /** The keys that hold a code view's symbols ready to click through to. */
 private val holdKeys = setOf(Key.CtrlLeft, Key.CtrlRight, Key.MetaLeft, Key.MetaRight)
 
-/** Notes Ctrl and Cmd going down and up while a code view has the keyboard, and lets go of them when it loses it. */
+/**
+ * Notes Ctrl and Cmd going down and up while a code view has the keyboard, and lets go of them when it loses it.
+ * Escape closes an open symbol card.
+ */
 fun Modifier.codeSymbolKeys(pointer: CodeSymbolPointer<*>): Modifier =
     onFocusChanged { if (!it.hasFocus) pointer.held = false }
         .onPreviewKeyEvent { event ->
             if (event.key in holdKeys) pointer.held = event.type == KeyEventType.KeyDown
-            false
+            if (event.key == Key.Escape && event.type == KeyEventType.KeyDown && pointer.card.open != null) {
+                pointer.card.close()
+                true
+            } else {
+                false
+            }
         }
 
 /**
@@ -40,7 +49,8 @@ fun Modifier.codeSymbolKeys(pointer: CodeSymbolPointer<*>): Modifier =
  * further names the same line answers to, such as an unchanged line's number on each side of a diff. Returns the
  * modifier for the line's text, which finds the character under the pointer through [geometry], takes a Ctrl or Cmd
  * press (so it never starts a selection) and clicks through on its release, notes where a plain press lands as the
- * caret, and shows a pointing hand over the underlined symbol. A plain press, click and drag select text as before.
+ * caret, and shows a pointing hand over the underlined symbol. A plain press, click and drag select text as before, and
+ * close a symbol card that is not pinned.
  */
 @Composable
 fun <G> rememberCodeSymbolInput(pointer: CodeSymbolPointer<G>, keys: List<CodeLineKey<G>>, geometry: CodeLineGeometry): Modifier {
@@ -77,6 +87,13 @@ fun <G> rememberCodeSymbolInput(pointer: CodeSymbolPointer<G>, keys: List<CodeLi
                                 val at = pointer.pointer
                                 if (at != null && at.group == primary.group && at.line == primary.line) pointer.pointer = null
                             }
+                            PointerEventType.Press -> pointer.card.run {
+                                pressing = true
+                                dismiss()
+                            }
+                            PointerEventType.Release -> pointer.card.pressing = event.buttons.areAnyPressed
+                        }
+                        when (event.type) {
                             PointerEventType.Press -> if (event.buttons.isPrimaryPressed) {
                                 if (pointer.enabled && pointer.held) {
                                     change.consume()

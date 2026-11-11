@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.collectLatest
 
 /**
  * The tooltip of the decorations under the pointer, from those its line draws ([CodeLineGeometry.decorations]), shown
- * over their range once the pointer rests there and hidden while Ctrl or Cmd is held. Compose it in the content
+ * over their range once the pointer rests there and hidden while Ctrl or Cmd is held or a symbol card is open. Compose it in the content
  * [CodeSymbolPointer.inner] is the coordinates of.
  */
 @Composable
@@ -23,7 +23,7 @@ fun <G> CodeDecorationTooltip(pointer: CodeSymbolPointer<G>) {
     var shown by remember { mutableStateOf<Pair<String, Rect>?>(null) }
     LaunchedEffect(pointer) {
         snapshotFlow {
-            pointer.pointer?.takeIf { !pointer.held }?.let { spot ->
+            pointer.pointer?.takeIf { !pointer.held && pointer.card.open == null }?.let { spot ->
                 pointer.lineOf(spot)?.let { line -> decorationTip(line.decorations, spot.column)?.let { line to it } }
             }
         }.collectLatest { found ->

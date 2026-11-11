@@ -47,7 +47,7 @@ class CodeSymbolPointer<G> {
     /** Where navigation by key starts: where the last plain press in the code landed, or where the app put it. */
     var caret by mutableStateOf<CodeSpot<G>?>(null)
 
-    /** Asks the app for the symbol at a character, on that character's line, or null for none. */
+    /** Asks the app for the symbol at a character, on that character's line, or null for none: while Ctrl or Cmd is held, and where the pointer rests when the view gives a [card]. */
     var symbolAt: (suspend (CodeSpot<G>) -> CodeRange?)? = null
 
     /** Called for a click through to a symbol, with where it started, the symbol and its bounds in [outer]'s pixels. */
@@ -61,6 +61,9 @@ class CodeSymbolPointer<G> {
 
     /** The view's frame clock, to wait for a line scrolled to to be laid out. */
     var frameClock: MonotonicFrameClock? = null
+
+    /** The card opened over a symbol the pointer rests on, when the view gives one. */
+    val card = CodeSymbolCards(this)
 
     private val lines = HashMap<CodeLineKey<G>, CodeLineGeometry>()
 
@@ -130,7 +133,7 @@ class CodeSymbolPointer<G> {
     }
 
     /** The app's answer for [spot], kept only when it is a run of characters on [spot]'s own line. */
-    private suspend fun lookup(spot: CodeSpot<G>): CodeRange? {
+    internal suspend fun lookup(spot: CodeSpot<G>): CodeRange? {
         val ask = symbolAt ?: return null
         return ask(spot)?.takeIf { it.line == spot.line && it.end > it.start }
     }

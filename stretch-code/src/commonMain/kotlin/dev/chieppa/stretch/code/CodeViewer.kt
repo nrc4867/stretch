@@ -19,6 +19,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -32,6 +33,7 @@ import dev.chieppa.stretch.theme.StretchSpacing
 import dev.chieppa.stretch.ui.FindBar
 import dev.chieppa.stretch.ui.Scrollbar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.withContext
 
 /**
@@ -49,7 +51,8 @@ import kotlinx.coroutines.withContext
  * [changeWash] puts their wash behind the whole line or only behind its gutter and number. [decorations] set runs of
  * code apart in a few themed styles, with a tooltip each (see [CodeDecoration]); warnings and errors also mark the
  * ruler. With [CodeViewerSlots.symbolAt] and [CodeViewerSlots.onSymbolClick], holding Ctrl (Cmd on macOS) over a name
- * underlines it and a click goes through to it; [CodeViewerState.clickSymbolAtCaret] does the same from a key.
+ * underlines it and a click goes through to it; [CodeViewerState.clickSymbolAtCaret] does the same from a key. With
+ * [CodeViewerSlots.symbolCard] too, resting the pointer on a name opens the app's card about it.
  */
 @Composable
 fun CodeViewer(
@@ -98,7 +101,12 @@ fun CodeViewer(
         symbols.onClick = slots.onSymbolClick?.let { click -> { spot, range, bounds -> click(CodeSymbolClick(CodePosition(spot.line, spot.column), range, bounds)) } }
         symbols.frameClock = scope.coroutineContext[MonotonicFrameClock]
     }
+    SideEffect { symbols.card.enabled = slots.symbolCard != null && slots.symbolAt != null }
     LaunchedEffect(symbols) { symbols.followPointer() }
+    LaunchedEffect(symbols) { symbols.card.follow() }
+    LaunchedEffect(symbols, state.list) {
+        snapshotFlow { state.list.firstVisibleItemIndex to state.list.firstVisibleItemScrollOffset }.drop(1).collect { symbols.card.dismiss() }
+    }
     val allMarks = remember(marks, decorations, bars) { marks + decorations.mapNotNull { d -> bars.of(d.style)?.let { CodeMark(d.range.line, it) } } }
     val findFocus = remember { FocusRequester() }
     var opened by remember { mutableIntStateOf(0) }
@@ -132,6 +140,7 @@ fun CodeViewer(
             if (ruler) CodeRuler(text, tones, shownMatches, current, allMarks, state, columns)
         }
         CodeDecorationTooltip(symbols)
+        slots.symbolCard?.let { card -> CodeSymbolCardPopup(symbols) { rest, open -> card(CodePosition(rest.spot.line, rest.spot.column), rest.range, open) } }
     }
 }
 

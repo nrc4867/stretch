@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -28,6 +29,7 @@ import androidx.compose.ui.platform.LocalDensity
 import dev.chieppa.stretch.code.ChangeWash
 import dev.chieppa.stretch.code.CodeDecorationTooltip
 import dev.chieppa.stretch.code.CodeSpot
+import dev.chieppa.stretch.code.CodeSymbolCardPopup
 import dev.chieppa.stretch.code.codeSymbolKeys
 import dev.chieppa.stretch.code.rulerColors
 import dev.chieppa.stretch.code.CodeMetrics
@@ -38,6 +40,7 @@ import dev.chieppa.stretch.theme.StretchSpacing
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.ui.Scrollbar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.withContext
 
 /**
@@ -54,7 +57,8 @@ import kotlinx.coroutines.withContext
  * only behind its gutter, numbers and sign. [decorations] set runs of code apart in a few themed styles, with a tooltip
  * each (see [DiffDecoration]); warnings and errors also mark the ruler. With [DiffSlots.symbolAt] and
  * [DiffSlots.onSymbolClick], holding Ctrl (Cmd on macOS) over a name underlines it and a click goes through to it;
- * [DiffViewerState.clickSymbolAtCaret] does the same from a key.
+ * [DiffViewerState.clickSymbolAtCaret] does the same from a key. With [DiffSlots.symbolCard] too, resting the pointer on
+ * a name opens the app's card about it.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -99,7 +103,12 @@ fun DiffViewer(
         symbols.onClick = slots.onSymbolClick?.let { click -> { spot, range, bounds -> click(DiffSymbolClick(spot.position(), range, bounds)) } }
         symbols.frameClock = scope.coroutineContext[MonotonicFrameClock]
     }
+    SideEffect { symbols.card.enabled = slots.symbolCard != null && slots.symbolAt != null }
     LaunchedEffect(symbols) { symbols.followPointer() }
+    LaunchedEffect(symbols) { symbols.card.follow() }
+    LaunchedEffect(symbols, state.list) {
+        snapshotFlow { state.list.firstVisibleItemIndex to state.list.firstVisibleItemScrollOffset }.drop(1).collect { symbols.card.dismiss() }
+    }
     val bars = rulerColors
     val allMarks = remember(marks, decorations, bars) {
         marks + decorations.mapNotNull { d -> bars.of(d.style)?.let { DiffMark(d.fileIndex, d.side, d.range.line, it) } }
@@ -130,6 +139,7 @@ fun DiffViewer(
             if (ruler) DiffRuler(rows, files, matches, currentMatch, allMarks, state, state.wrap, columns)
         }
         CodeDecorationTooltip(symbols)
+        slots.symbolCard?.let { card -> CodeSymbolCardPopup(symbols) { rest, open -> card(rest.spot.position(), rest.range, open) } }
     }
 }
 

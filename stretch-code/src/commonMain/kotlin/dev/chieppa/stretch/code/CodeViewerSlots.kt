@@ -27,4 +27,10 @@ class CodeViewerSlots(
      * select text as always.
      */
     val onSymbolClick: ((CodeSymbolClick) -> Unit)? = null,
+    /**
+     * A card about a symbol, such as its signature and documentation, opened once the pointer rests on a symbol
+     * [symbolAt] names (see [CodeSymbolCards]), with where the pointer rested, the symbol's range, and the card to pin or
+     * close. It draws the whole card; emitting nothing shows nothing.
+     */
+    val symbolCard: (@Composable (position: CodePosition, range: CodeRange, card: SymbolCard) -> Unit)? = null,
 )

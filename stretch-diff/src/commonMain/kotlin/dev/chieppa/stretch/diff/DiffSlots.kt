@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
 import dev.chieppa.stretch.code.CodeRange
 import dev.chieppa.stretch.code.LineTone
+import dev.chieppa.stretch.code.SymbolCard
 import dev.chieppa.stretch.theme.StretchSpacing
 
 /** What the app can add to a [DiffViewer]. Everything is optional. */
@@ -45,4 +46,10 @@ class DiffSlots(
      * drag select text as always.
      */
     val onSymbolClick: ((DiffSymbolClick) -> Unit)? = null,
+    /**
+     * A card about a symbol, such as its signature and documentation, opened once the pointer rests on a symbol
+     * [symbolAt] names (see `CodeSymbolCards`), with where the pointer rested, the symbol's range, and the card to pin or
+     * close. It draws the whole card; emitting nothing shows nothing.
+     */
+    val symbolCard: (@Composable (position: DiffPosition, range: CodeRange, card: SymbolCard) -> Unit)? = null,
 )
