@@ -29,6 +29,9 @@ class ActionRegistry {
         actions[action.id] = action
     }
 
+    /** Takes action [id] out, as when what contributed it goes away; its keys go with it. Gives the action, if it was registered. */
+    fun unregister(id: ActionId): Action? = actions.remove(id)
+
     operator fun get(id: ActionId): Action? = actions[id]
 
     /** Actions that can run now in [mode]. An unavailable action is hidden, never shown disabled. */

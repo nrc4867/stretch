@@ -37,6 +37,17 @@ class KeymapTest {
     }
 
     @Test
+    fun anUnregisteredActionAndItsKeysAreGoneAndItsIdFree() {
+        val registry = ActionRegistry().apply { register(action("run", "R")) }
+        val keymap = Keymap(registry)
+        assertEquals("run", registry.unregister(ActionId("run"))?.id?.value)
+        assertNull(keymap.resolve(KeyChord("R"), null))
+        assertNull(registry.unregister(ActionId("run")))
+        registry.register(action("run", "T"))
+        assertEquals("run", keymap.resolve(KeyChord("T"), null)?.id?.value)
+    }
+
+    @Test
     fun unavailableActionsDoNotResolve() {
         val registry = ActionRegistry().apply { register(action("export", "Ctrl E", available = false)) }
         assertNull(Keymap(registry).resolve(KeyChord("E", ctrl = true), null))
