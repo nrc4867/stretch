@@ -47,10 +47,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.password
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -64,7 +67,7 @@ import dev.chieppa.stretch.theme.StretchSizes
  * A one-line text or search field. No inline help text: anything that needs explaining goes in the tooltip, often
  * on a [FieldIcon] in [trailing]. [icon] is a shorthand for a plain leading icon. With [error] the field shows the
  * error edge and icon, and the message in the icon's tooltip. [mono] sets the text in the value face, for text such as
- * a query or a path.
+ * a query or a path. [masked] shows a dot for every character, for a password or a token, and tells assistive tools so.
  */
 @Composable
 fun TextField(
@@ -78,6 +81,7 @@ fun TextField(
     trailing: (@Composable () -> Unit)? = null,
     error: String? = null,
     mono: Boolean = false,
+    masked: Boolean = false,
 ) {
     val c = Stretch.colors
     val state = rememberControlState()
@@ -89,8 +93,10 @@ fun TextField(
         modifier = modifier.holdsTyping().focusRing(state, shape, always = true).semantics {
             this.contentDescription = contentDescription
             if (error != null) error(error)
+            if (masked) password()
         },
         singleLine = true,
+        visualTransformation = if (masked) PasswordVisualTransformation() else VisualTransformation.None,
         textStyle = face.merge(TextStyle(color = c.inkStrong)),
         cursorBrush = SolidColor(c.inkStrong),
         interactionSource = state.source,

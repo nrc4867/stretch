@@ -6,7 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -92,5 +95,16 @@ class InputsTest {
         setContent { StretchTheme(StretchThemes.Ink) { TextField(text, { text = it }, placeholder = "Search") } }
         onNodeWithContentDescription("Search").performTextInput("ear")
         assertEquals("ear", text)
+    }
+
+    @Test
+    fun aMaskedFieldHidesItsTextButTakesTyping() = runComposeUiTest {
+        var text by mutableStateOf("")
+        setContent { StretchTheme(StretchThemes.Ink) { TextField(text, { text = it }, placeholder = "Token", masked = true) } }
+        val field = onNodeWithContentDescription("Token")
+        field.performTextInput("hunter2")
+        assertEquals("hunter2", text)
+        field.assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Password))
+        field.assert(SemanticsMatcher("shows no text") { node -> "hunter" !in (node.config.getOrElseNullable(SemanticsProperties.EditableText) { null }?.text ?: "") })
     }
 }
