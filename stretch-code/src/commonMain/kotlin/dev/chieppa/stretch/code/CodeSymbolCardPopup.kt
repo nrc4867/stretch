@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.StretchPopup
 
 /** The gap between a symbol and its card, in pixels. */
@@ -20,7 +21,8 @@ private const val CARD_GAP = 4
 
 /**
  * Shows [content] for the symbol [pointer]'s card is open for, under the symbol, or over it when there is no room
- * below, its start lined up with the symbol's. The content draws the card itself; emitting nothing shows nothing.
+ * below, its start lined up with the symbol's. The content draws the card itself, with room left for
+ * `Stretch.shadows.pop` where popups are windows of their own; emitting nothing shows nothing.
  * Compose it in the content [CodeSymbolPointer.inner] is the coordinates of.
  */
 @Composable
@@ -29,7 +31,7 @@ fun <G> CodeSymbolCardPopup(pointer: CodeSymbolPointer<G>, content: @Composable 
     val open = cards.open ?: return
     val bounds = cards.bounds ?: return
     val area = bounds.roundToIntRect()
-    StretchPopup(popupPositionProvider = remember(area) { UnderArea(area) }, properties = PopupProperties(focusable = false)) {
+    StretchPopup(popupPositionProvider = remember(area) { UnderArea(area) }, properties = PopupProperties(focusable = false), shadow = Stretch.shadows.pop) {
         Box(
             Modifier.pointerInput(cards) {
                 awaitPointerEventScope {
