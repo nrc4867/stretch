@@ -34,7 +34,7 @@ internal object FuzzyMatcher {
     }
 
     /** Lowercases letter by letter, so indices stay those of the label. */
-    private fun lower(text: String): String = String(CharArray(text.length) { text[it].lowercaseChar() })
+    private fun lower(text: String): String = CharArray(text.length) { text[it].lowercaseChar() }.concatToString()
 
     private fun wordStarts(label: String): List<Int> = label.indices.filter { i ->
         val c = label[i]
