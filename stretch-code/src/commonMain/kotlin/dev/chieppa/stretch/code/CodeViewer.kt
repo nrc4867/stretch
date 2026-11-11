@@ -138,7 +138,7 @@ fun CodeViewer(
                                     tone, metrics, look, state, slots, if (changeBars) changeBarOf(tone, bars) else Color.Unspecified,
                                     decorated[number].orEmpty(), decorationLook,
                                 )
-                                block.first == number -> CodeViewerBlock(block, tone, metrics, look, slots)
+                                block.first == number -> CodeViewerBlock(block, text.lines[index], tone, metrics, look, slots)
                                 else -> slots.lineAnnotation?.let { annotation -> DisableSelection { annotation(number) } }
                             }
                         }

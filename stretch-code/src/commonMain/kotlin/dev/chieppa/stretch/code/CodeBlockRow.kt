@@ -28,13 +28,15 @@ private val BracketInset = StretchSpacing.space2
 /**
  * A run of lines drawn as [content] in place of their code, such as a doc comment rendered: [numbers] draws the first
  * line's gutter and numbers as a line of the same view has them, a bracket runs down beside them to the block's foot,
- * and [content] takes the room the code would. All of it sits on [wash].
+ * and [content] takes the room the code would, starting [indent] in, as the first line's code does. All of it sits
+ * on [wash]. [indentOf] gives that indent for a line.
  */
 @Composable
 fun CodeBlockRow(
     metrics: CodeMetrics,
     modifier: Modifier = Modifier,
     wash: Color = Color.Unspecified,
+    indent: Dp = 0.dp,
     numbers: @Composable RowScope.() -> Unit,
     content: @Composable () -> Unit,
 ) {
@@ -49,8 +51,14 @@ fun CodeBlockRow(
         DisableSelection {
             Row(Modifier.heightIn(min = metrics.lineHeight).onSizeChanged { numbersWidth = it.width }, content = numbers)
         }
-        Row(Modifier.weight(1f).padding(start = StretchSpacing.space8, top = BlockPadding, bottom = BlockPadding)) { content() }
+        Row(Modifier.weight(1f).padding(start = StretchSpacing.space8 + indent, top = BlockPadding, bottom = BlockPadding)) { content() }
     }
+}
+
+/** How far [line]'s code starts in, its leading spaces and tabs expanded, in [metrics]' characters. */
+fun indentOf(line: String, metrics: CodeMetrics): Dp {
+    val lead = line.length - line.trimStart(' ', '\t').length
+    return metrics.charWidth * tabOffsets(line)[lead]
 }
 
 /** The room above and below a block's content. */

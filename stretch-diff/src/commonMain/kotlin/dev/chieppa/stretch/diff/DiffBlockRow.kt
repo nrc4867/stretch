@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.chieppa.stretch.code.CodeBlockRow
 import dev.chieppa.stretch.code.CodeLineNumber
+import dev.chieppa.stretch.code.indentOf
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchSpacing
 
@@ -41,7 +42,7 @@ internal fun DiffBlockRow(row: DiffRow, block: DiffBlock, context: DiffRowContex
                 if (index > 0) Box(Modifier.width(Stretch.stroke).heightIn(min = metrics.lineHeight).background(Stretch.colors.linePanel))
                 val ref = refs.firstOrNull { it.side == side } ?: first
                 Box(Modifier.weight(1f)) {
-                    CodeBlockRow(metrics, numbers = {
+                    CodeBlockRow(metrics, indent = indentOf(line.text, metrics), numbers = {
                         gutter(ref)
                         CodeLineNumber(line.numberOn(side), metrics, look)
                         Box(Modifier.width(StretchSpacing.space16))
@@ -50,7 +51,7 @@ internal fun DiffBlockRow(row: DiffRow, block: DiffBlock, context: DiffRowContex
             }
         }
     } else {
-        CodeBlockRow(metrics, numbers = {
+        CodeBlockRow(metrics, indent = indentOf(line.text, metrics), numbers = {
             gutter(first)
             CodeLineNumber(line.oldNumber, metrics, look)
             CodeLineNumber(line.newNumber, metrics, look)
