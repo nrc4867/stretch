@@ -52,4 +52,10 @@ class DiffSlots(
      * close. It draws the whole card; emitting nothing shows nothing.
      */
     val symbolCard: (@Composable (position: DiffPosition, range: CodeRange, card: SymbolCard) -> Unit)? = null,
+    /**
+     * Draws a [DiffBlock] the viewer's `blocks` names in place of its code, such as a doc comment rendered, on [side]:
+     * once in one column, and on each side of a split view. The block's first row shows it beside that row's gutter and
+     * numbers; its other rows take no room, though their [lineAnnotation]s still show under it.
+     */
+    val lineBlock: (@Composable (block: DiffBlock, side: DiffSide) -> Unit)? = null,
 )

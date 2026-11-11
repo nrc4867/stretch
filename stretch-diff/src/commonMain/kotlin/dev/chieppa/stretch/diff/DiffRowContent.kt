@@ -29,12 +29,24 @@ internal data class DiffRowContext(
     val state: DiffViewerState,
     val strings: DiffStrings,
     val slots: DiffSlots,
+    val blocks: Map<String, DiffBlockRole> = emptyMap(),
 )
 
 /** One row of a [DiffViewer] other than a file's header. */
 @Composable
 internal fun DiffRowContent(row: DiffRow, context: DiffRowContext) {
     val (files, tokens, finds, decorations, metrics, look, state, strings, slots) = context
+    when (val role = context.blocks[row.key]) {
+        is DiffBlockRole.Start -> {
+            DiffBlockRow(row, role.block, context)
+            return
+        }
+        DiffBlockRole.Inside -> {
+            annotationsOf(row, files).forEach { ref -> slots.lineAnnotation?.invoke(ref) }
+            return
+        }
+        null -> Unit
+    }
     when (row) {
         is DiffRow.HunkHeader -> HunkHeaderRow(row, files[row.fileIndex], slots)
         is DiffRow.Fold -> FoldRow(row, strings) { state.unfold(row.id) }

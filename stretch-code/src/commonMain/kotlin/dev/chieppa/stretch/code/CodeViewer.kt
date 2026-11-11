@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,7 +53,8 @@ import kotlinx.coroutines.withContext
  * code apart in a few themed styles, with a tooltip each (see [CodeDecoration]); warnings and errors also mark the
  * ruler. With [CodeViewerSlots.symbolAt] and [CodeViewerSlots.onSymbolClick], holding Ctrl (Cmd on macOS) over a name
  * underlines it and a click goes through to it; [CodeViewerState.clickSymbolAtCaret] does the same from a key. With
- * [CodeViewerSlots.symbolCard] too, resting the pointer on a name opens the app's card about it.
+ * [CodeViewerSlots.symbolCard] too, resting the pointer on a name opens the app's card about it. [blocks] are runs of
+ * lines [CodeViewerSlots.lineBlock] draws in place of their code; runs that overlap or fall outside the text are left out.
  */
 @Composable
 fun CodeViewer(
@@ -71,6 +73,7 @@ fun CodeViewer(
     changeBars: Boolean = true,
     changeWash: ChangeWash = ChangeWash.Line,
     decorations: List<CodeDecoration> = emptyList(),
+    blocks: List<IntRange> = emptyList(),
 ) {
     val builtIn by produceState(emptyList<List<CodeToken>>(), text, language, tokens == null) {
         value = if (tokens != null) emptyList() else withContext(Dispatchers.Default) { tokenizeLines(text.lines, language) }
@@ -95,6 +98,7 @@ fun CodeViewer(
     val scope = rememberCoroutineScope()
     val symbols = state.symbols
     val decorated = remember(decorations) { decorations.groupBy { it.range.line } }
+    val blockAt = remember(blocks, slots.lineBlock != null) { if (slots.lineBlock == null) emptyMap() else CodeBlocks.byLine(blocks, text.lineCount) }
     val decorationLook = rememberCodeDecorationLook()
     SideEffect {
         symbols.symbolAt = slots.symbolAt?.let { ask -> { spot -> ask(CodePosition(spot.line, spot.column)) } }
@@ -127,11 +131,16 @@ fun CodeViewer(
                         items(text.lineCount, key = { it }) { index ->
                             val number = index + 1
                             val tone = tones(number)
-                            CodeViewerLine(
-                                number, text.lines[index], lineTokens.getOrNull(index).orEmpty(), matchesByLine[number].orEmpty(), current,
-                                tone, metrics, look, state, slots, if (changeBars) changeBarOf(tone, bars) else Color.Unspecified,
-                                decorated[number].orEmpty(), decorationLook,
-                            )
+                            val block = blockAt[number]
+                            when {
+                                block == null -> CodeViewerLine(
+                                    number, text.lines[index], lineTokens.getOrNull(index).orEmpty(), matchesByLine[number].orEmpty(), current,
+                                    tone, metrics, look, state, slots, if (changeBars) changeBarOf(tone, bars) else Color.Unspecified,
+                                    decorated[number].orEmpty(), decorationLook,
+                                )
+                                block.first == number -> CodeViewerBlock(block, tone, metrics, look, slots)
+                                else -> slots.lineAnnotation?.let { annotation -> DisableSelection { annotation(number) } }
+                            }
                         }
                     }
                 }

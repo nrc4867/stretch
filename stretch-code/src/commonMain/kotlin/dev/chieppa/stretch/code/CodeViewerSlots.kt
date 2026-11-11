@@ -33,4 +33,10 @@ class CodeViewerSlots(
      * close. It draws the whole card; emitting nothing shows nothing.
      */
     val symbolCard: (@Composable (position: CodePosition, range: CodeRange, card: SymbolCard) -> Unit)? = null,
+    /**
+     * Draws a run of lines the viewer's `blocks` names in place of their code, such as a doc comment rendered. The run's
+     * first line shows it beside that line's gutter and number; the other lines take no room, though their
+     * [lineAnnotation]s still show under it.
+     */
+    val lineBlock: (@Composable (lines: IntRange) -> Unit)? = null,
 )

@@ -58,7 +58,8 @@ import kotlinx.coroutines.withContext
  * each (see [DiffDecoration]); warnings and errors also mark the ruler. With [DiffSlots.symbolAt] and
  * [DiffSlots.onSymbolClick], holding Ctrl (Cmd on macOS) over a name underlines it and a click goes through to it;
  * [DiffViewerState.clickSymbolAtCaret] does the same from a key. With [DiffSlots.symbolCard] too, resting the pointer on
- * a name opens the app's card about it.
+ * a name opens the app's card about it. [blocks] are runs of unchanged lines [DiffSlots.lineBlock] draws in place of their
+ * code.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -76,6 +77,7 @@ fun DiffViewer(
     ruler: Boolean = true,
     changeWash: ChangeWash = ChangeWash.Line,
     decorations: List<DiffDecoration> = emptyList(),
+    blocks: List<DiffBlock> = emptyList(),
 ) {
     val c = Stretch.colors
     val rows = remember(files, state.split, state.unfolded, state.collapsedFiles) {
@@ -115,7 +117,8 @@ fun DiffViewer(
     }
     var listWidth by remember { mutableIntStateOf(0) }
     val columns = wrapColumns(listWidth, state.split, metrics, slots, charWidth)
-    val context = DiffRowContext(files, lineTokens, finds, decorated, metrics, look, state, strings, slots)
+    val blockRoles = remember(rows, blocks, slots.lineBlock != null) { if (slots.lineBlock == null) emptyMap() else DiffBlockRows.of(rows, blocks) }
+    val context = DiffRowContext(files, lineTokens, finds, decorated, metrics, look, state, strings, slots, blockRoles)
     val content = Modifier.onGloballyPositioned { symbols.outer = it }.then(modifier).background(c.surfacePanel)
         .codeSymbolKeys(symbols).onGloballyPositioned { symbols.inner = it }
     Column(content) {
