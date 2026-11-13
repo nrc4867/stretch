@@ -1,11 +1,13 @@
 package dev.chieppa.stretch.gradle
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -29,6 +31,11 @@ abstract class GenerateAppIdentity : DefaultTask() {
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val icon: RegularFileProperty
 
+    /** Hand-tuned SVGs for single sizes, `<icon name>-<size>.svg` beside an SVG icon. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val iconVariants: ConfigurableFileCollection
+
     @get:OutputDirectory
     abstract val packaging: DirectoryProperty
 
@@ -37,14 +44,14 @@ abstract class GenerateAppIdentity : DefaultTask() {
 
     @TaskAction
     fun generate() {
-        val source = AppIcons.read(icon.get().asFile)
+        val source = IconSource.read(icon.get().asFile)
         val pack = packaging.get().asFile.apply { deleteRecursively(); mkdirs() }
         pack.resolve("icon.ico").writeBytes(AppIcons.ico(source))
         pack.resolve("icon.icns").writeBytes(AppIcons.icns(source))
-        pack.resolve("icon.png").writeBytes(AppIcons.png(AppIcons.scaled(source, 512)))
+        pack.resolve("icon.png").writeBytes(AppIcons.png(source.at(512)))
 
         val res = resources.get().asFile.apply { deleteRecursively() }.resolve(RESOURCE_DIR).apply { mkdirs() }
-        AppIcons.windowSizes.forEach { size -> res.resolve("icon-$size.png").writeBytes(AppIcons.png(AppIcons.scaled(source, size))) }
+        AppIcons.windowSizes.forEach { size -> res.resolve("icon-$size.png").writeBytes(AppIcons.png(source.at(size))) }
         // For the launcher an app run from jars makes for itself (AppLauncher in stretch-frame).
         listOf("icon.ico", "icon.icns", "icon.png").forEach { pack.resolve(it).copyTo(res.resolve(it), overwrite = true) }
         val props = Properties().apply {

@@ -9,6 +9,8 @@ apply(from = "../gradle/publish.gradle.kts")
 
 dependencies {
     compileOnly("org.jetbrains.compose:compose-gradle-plugin:1.12.2")
+    // Draws an SVG app icon at each size (MIT).
+    implementation("com.github.weisj:jsvg:2.1.0")
     testImplementation(kotlin("test"))
 }
 

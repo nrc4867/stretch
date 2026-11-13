@@ -98,9 +98,11 @@ plugins { id("dev.chieppa.stretch.app") version "<version>" }
 stretchApp {
     name = "Squash"
     id = "dev.chieppa.squash"
-    icon = layout.projectDirectory.file("app-icon.png") // square PNG, 1024px best
+    icon = layout.projectDirectory.file("app-icon.png") // square PNG (1024px best) or an SVG
 }
 ```
+
+An SVG icon is drawn at every size the icon files hold; a hand-tuned `<name>-<size>.svg` beside it, such as `app-icon-16.svg`, is drawn for that size instead, for the small sizes where the full drawing loses detail.
 
 The plugin covers desktop packaging. In a multiplatform module, add its generated resources to the desktop source set, as `gallery/build.gradle.kts` does.
 

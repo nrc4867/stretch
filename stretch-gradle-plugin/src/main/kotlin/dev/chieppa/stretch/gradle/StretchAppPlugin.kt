@@ -21,7 +21,10 @@ abstract class StretchAppExtension {
     /** A reverse-DNS id, like `dev.chieppa.squash`: the macOS bundle id, and the seed for the Windows upgrade id. */
     abstract val id: Property<String>
 
-    /** A square PNG, 1024px for best results, at least 256px. */
+    /**
+     * A square PNG, 1024px for best results, at least 256px; or an SVG, drawn at every size, with hand-tuned
+     * `<name>-<size>.svg` files beside it used for their sizes, such as `icon-16.svg`.
+     */
     abstract val icon: RegularFileProperty
 
     /** Who makes it, shown in installers and file properties. */
@@ -56,6 +59,10 @@ class StretchAppPlugin : Plugin<Project> {
             appName.set(app.name)
             appId.set(app.id)
             icon.set(app.icon)
+            iconVariants.from(app.icon.map { file ->
+                val svg = file.asFile
+                project.fileTree(svg.parentFile) { include("${svg.nameWithoutExtension}-*.svg") }
+            })
             packaging.set(project.layout.buildDirectory.dir("stretch-app/packaging"))
             resources.set(project.layout.buildDirectory.dir("stretch-app/resources"))
         }

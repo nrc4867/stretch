@@ -3,12 +3,11 @@ package dev.chieppa.stretch.gradle
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import javax.imageio.ImageIO
 
-/** Writes every icon file an app needs from one square PNG: a Windows .ico, a macOS .icns and PNGs. */
+/** Writes every icon file an app needs from one icon: a Windows .ico, a macOS .icns and PNGs. */
 internal object AppIcons {
     /** The sizes in a Windows .ico, which Explorer, the taskbar and Task Manager pick from. */
     val windowsSizes = listOf(16, 20, 24, 32, 40, 48, 64, 96, 128, 256)
@@ -18,13 +17,6 @@ internal object AppIcons {
 
     /** macOS icon types that hold a PNG, by pixel size. */
     private val macTypes = listOf("icp4" to 16, "icp5" to 32, "icp6" to 64, "ic07" to 128, "ic08" to 256, "ic09" to 512, "ic10" to 1024)
-
-    fun read(file: File): BufferedImage {
-        val image = requireNotNull(ImageIO.read(file)) { "${file.name} is not a PNG the JDK can read" }
-        require(image.width == image.height) { "App icon ${file.name} must be square, is ${image.width}x${image.height}" }
-        require(image.width >= 256) { "App icon ${file.name} must be at least 256px, is ${image.width}px; 1024px is best" }
-        return image
-    }
 
     /** Scales [source] to [size] in halving steps, which keeps small sizes sharp. */
     fun scaled(source: BufferedImage, size: Int): BufferedImage {
@@ -47,8 +39,8 @@ internal object AppIcons {
     fun png(image: BufferedImage): ByteArray = ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
 
     /** An .ico whose entries are PNGs, which every Windows since Vista reads. */
-    fun ico(source: BufferedImage): ByteArray {
-        val entries = windowsSizes.filter { it <= source.width }.map { it to png(scaled(source, it)) }
+    fun ico(source: IconSource): ByteArray {
+        val entries = windowsSizes.map { it to png(source.at(it)) }
         val header = ByteBuffer.allocate(6 + 16 * entries.size).order(ByteOrder.LITTLE_ENDIAN)
         header.putShort(0).putShort(1).putShort(entries.size.toShort())
         var offset = header.capacity()
@@ -64,8 +56,8 @@ internal object AppIcons {
     }
 
     /** An .icns whose entries are PNGs. */
-    fun icns(source: BufferedImage): ByteArray {
-        val entries = macTypes.filter { it.second <= source.width }.map { (type, size) -> type to png(scaled(source, size)) }
+    fun icns(source: IconSource): ByteArray {
+        val entries = macTypes.map { (type, size) -> type to png(source.at(size)) }
         val body = ByteArrayOutputStream()
         for ((type, data) in entries) {
             body.write(type.toByteArray(Charsets.US_ASCII))
