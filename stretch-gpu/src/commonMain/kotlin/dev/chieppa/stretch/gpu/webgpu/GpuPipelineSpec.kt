@@ -51,3 +51,10 @@ data class RenderPipelineSpec(
     val sampleCount: Int = 1,
     val label: String? = null,
 )
+
+/**
+ * A compute pipeline: the [entry] point of [shader] it runs. Bind group layouts come from the shader's declarations,
+ * read-only (`var<storage, read>`) and read-write (`var<storage, read_write>`) storage buffers among them; only the
+ * bindings the entry point uses are in them.
+ */
+data class ComputePipelineSpec(val shader: GpuShaderModule, val entry: String, val label: String? = null)

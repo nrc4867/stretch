@@ -43,9 +43,11 @@ subprojects {
     }
     tasks.matching { it.name == "check" }.configureEach { dependsOn(checkTestSources) }
 
-    // Tests named *ScreenTest open real windows, so they run only with -Pscreen; check opens none.
+    // Tests named *ScreenTest open real windows, so they run only with -Pscreen; check opens none. Tests named
+    // *GpuTest need a real GPU adapter, so they run only with -Pgpu.
     tasks.withType<Test>().configureEach {
         if (!providers.gradleProperty("screen").isPresent) exclude("**/*ScreenTest*")
+        if (!providers.gradleProperty("gpu").isPresent) exclude("**/*GpuTest*")
     }
 }
 

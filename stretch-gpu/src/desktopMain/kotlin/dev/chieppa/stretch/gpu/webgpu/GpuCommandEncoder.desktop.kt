@@ -1,6 +1,7 @@
 package dev.chieppa.stretch.gpu.webgpu
 
 import dev.chieppa.stretch.gpu.ffi.WGPUColor
+import dev.chieppa.stretch.gpu.ffi.WGPUComputePassDescriptor
 import dev.chieppa.stretch.gpu.ffi.WGPUExtent3D
 import dev.chieppa.stretch.gpu.ffi.WGPUOrigin3D
 import dev.chieppa.stretch.gpu.ffi.WGPURenderPassColorAttachment
@@ -46,6 +47,20 @@ actual class GpuCommandEncoder internal constructor(handle: MemorySegment) : Gpu
             }
             GpuRenderPass(wgpu_h.wgpuCommandEncoderBeginRenderPass(handle, pass))
         }
+
+    actual fun beginComputePass(label: String?): GpuComputePass = Arena.ofConfined().use { arena ->
+        val pass = arena.allocate(WGPUComputePassDescriptor.layout())
+        arena.setString(WGPUComputePassDescriptor.label(pass), label)
+        GpuComputePass(wgpu_h.wgpuCommandEncoderBeginComputePass(handle, pass))
+    }
+
+    /**
+     * Copies [size] bytes of [source] from [sourceOffset] into [destination] at [destinationOffset]: a compute pass's
+     * results into a [BufferUsage.MapRead] buffer for [GpuDevice.readBuffer], say. The source needs
+     * [BufferUsage.CopySrc] and the destination [BufferUsage.CopyDst]; sizes and offsets are multiples of 4.
+     */
+    actual fun copyBufferToBuffer(source: GpuBuffer, destination: GpuBuffer, size: Long, sourceOffset: Long, destinationOffset: Long) =
+        wgpu_h.wgpuCommandEncoderCopyBufferToBuffer(handle, source.handle, sourceOffset, destination.handle, destinationOffset, size)
 
     /**
      * Copies [texture], or the [width] by [height] texels from [x], [y], into [buffer] from [bufferOffset], each row

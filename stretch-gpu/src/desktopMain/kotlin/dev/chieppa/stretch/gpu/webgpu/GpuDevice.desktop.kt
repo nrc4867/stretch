@@ -5,6 +5,8 @@ import dev.chieppa.stretch.gpu.ffi.WGPUBindGroupEntry
 import dev.chieppa.stretch.gpu.ffi.WGPUBufferDescriptor
 import dev.chieppa.stretch.gpu.ffi.WGPUBufferMapCallback
 import dev.chieppa.stretch.gpu.ffi.WGPUBufferMapCallbackInfo
+import dev.chieppa.stretch.gpu.ffi.WGPUComputePipelineDescriptor
+import dev.chieppa.stretch.gpu.ffi.WGPUComputeState
 import dev.chieppa.stretch.gpu.ffi.WGPUExtent3D
 import dev.chieppa.stretch.gpu.ffi.WGPUShaderModuleDescriptor
 import dev.chieppa.stretch.gpu.ffi.WGPUShaderSourceWGSL
@@ -15,8 +17,8 @@ import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 
 /**
- * A WebGPU device: makes buffers, textures, shaders, pipelines and bind groups, and owns the [queue] that runs
- * commands. Made by a [dev.chieppa.stretch.gpu.GpuContext]'s session; use it from one thread at a time.
+ * A WebGPU device: makes buffers, textures, shaders, render and compute pipelines and bind groups, and owns the
+ * [queue] that runs commands. Made by a [dev.chieppa.stretch.gpu.GpuContext]'s session; use it from one thread at a time.
  */
 actual class GpuDevice internal constructor(handle: MemorySegment, private val instance: MemorySegment) :
     GpuHandle(handle, wgpu_h::wgpuDeviceRelease) {
@@ -58,6 +60,15 @@ actual class GpuDevice internal constructor(handle: MemorySegment, private val i
 
     actual fun createRenderPipeline(spec: RenderPipelineSpec): GpuRenderPipeline = Arena.ofConfined().use { arena ->
         GpuRenderPipeline(wgpu_h.wgpuDeviceCreateRenderPipeline(handle, renderPipelineDescriptor(arena, spec)))
+    }
+
+    actual fun createComputePipeline(spec: ComputePipelineSpec): GpuComputePipeline = Arena.ofConfined().use { arena ->
+        val descriptor = arena.allocate(WGPUComputePipelineDescriptor.layout())
+        arena.setString(WGPUComputePipelineDescriptor.label(descriptor), spec.label)
+        val compute = WGPUComputePipelineDescriptor.compute(descriptor)
+        WGPUComputeState.module(compute, spec.shader.handle)
+        arena.setString(WGPUComputeState.entryPoint(compute), spec.entry)
+        GpuComputePipeline(wgpu_h.wgpuDeviceCreateComputePipeline(handle, descriptor))
     }
 
     /** Binds [buffers] to the group with [layout]. */

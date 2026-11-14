@@ -7,6 +7,11 @@ private fun encoderBeginPass(encoder: JsAny, descriptor: JsAny): JsAny = js("enc
 private fun encoderCopy(encoder: JsAny, source: JsAny, destination: JsAny, size: JsAny): Unit =
     js("encoder.copyTextureToBuffer(source, destination, size)")
 
+private fun encoderBeginComputePass(encoder: JsAny, descriptor: JsAny): JsAny = js("encoder.beginComputePass(descriptor)")
+
+private fun encoderCopyBuffer(encoder: JsAny, source: JsAny, sourceOffset: Double, destination: JsAny, destinationOffset: Double, size: Double): Unit =
+    js("encoder.copyBufferToBuffer(source, sourceOffset, destination, destinationOffset, size)")
+
 private fun encoderFinish(encoder: JsAny): JsAny = js("encoder.finish()")
 
 actual class GpuCommandEncoder internal constructor(handle: JsAny) : GpuJsHandle(handle) {
@@ -41,6 +46,12 @@ actual class GpuCommandEncoder internal constructor(handle: JsAny) : GpuJsHandle
                 },
             ),
         )
+
+    actual fun beginComputePass(label: String?): GpuComputePass =
+        GpuComputePass(encoderBeginComputePass(handle, jsObject { this["label"] = label }))
+
+    actual fun copyBufferToBuffer(source: GpuBuffer, destination: GpuBuffer, size: Long, sourceOffset: Long, destinationOffset: Long) =
+        encoderCopyBuffer(handle, source.handle, sourceOffset.toDouble(), destination.handle, destinationOffset.toDouble(), size.toDouble())
 
     actual fun copyTextureToBuffer(
         texture: GpuTexture,

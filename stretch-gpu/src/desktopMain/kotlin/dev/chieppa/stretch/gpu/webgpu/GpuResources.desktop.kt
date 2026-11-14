@@ -33,3 +33,9 @@ actual class GpuRenderPipeline internal constructor(handle: MemorySegment) : Gpu
     /** The layout of bind group [index] as the shaders declare it. Close it once the bind group is made. */
     actual fun bindGroupLayout(index: Int): GpuBindGroupLayout = GpuBindGroupLayout(wgpu_h.wgpuRenderPipelineGetBindGroupLayout(handle, index))
 }
+
+/** A compute pipeline: a shader's compute entry point, made by [GpuDevice.createComputePipeline]. */
+actual class GpuComputePipeline internal constructor(handle: MemorySegment) : GpuHandle(handle, wgpu_h::wgpuComputePipelineRelease) {
+    /** The layout of bind group [index] as the shader declares it. Close it once the bind group is made. */
+    actual fun bindGroupLayout(index: Int): GpuBindGroupLayout = GpuBindGroupLayout(wgpu_h.wgpuComputePipelineGetBindGroupLayout(handle, index))
+}

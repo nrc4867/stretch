@@ -51,3 +51,11 @@ expect class GpuRenderPipeline : AutoCloseable {
     /** The layout of bind group [index] as the shaders declare it. Close it once the bind group is made. */
     fun bindGroupLayout(index: Int): GpuBindGroupLayout
 }
+
+/** A compute pipeline: a shader's compute entry point, made by [GpuDevice.createComputePipeline]. */
+expect class GpuComputePipeline : AutoCloseable {
+    override fun close()
+
+    /** The layout of bind group [index] as the shader declares it. Close it once the bind group is made. */
+    fun bindGroupLayout(index: Int): GpuBindGroupLayout
+}

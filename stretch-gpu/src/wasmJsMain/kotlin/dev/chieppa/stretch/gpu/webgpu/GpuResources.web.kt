@@ -47,3 +47,7 @@ actual class GpuCommandBuffer internal constructor(handle: JsAny) : GpuJsHandle(
 actual class GpuRenderPipeline internal constructor(handle: JsAny) : GpuJsHandle(handle) {
     actual fun bindGroupLayout(index: Int): GpuBindGroupLayout = GpuBindGroupLayout(pipelineLayout(handle, index))
 }
+
+actual class GpuComputePipeline internal constructor(handle: JsAny) : GpuJsHandle(handle) {
+    actual fun bindGroupLayout(index: Int): GpuBindGroupLayout = GpuBindGroupLayout(pipelineLayout(handle, index))
+}

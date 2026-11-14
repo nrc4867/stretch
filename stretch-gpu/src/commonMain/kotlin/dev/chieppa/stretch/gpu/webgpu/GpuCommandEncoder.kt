@@ -6,6 +6,21 @@ expect class GpuCommandEncoder : AutoCloseable {
 
     fun beginRenderPass(colors: List<ColorAttachment>, depth: DepthAttachment? = null, label: String? = null): GpuRenderPass
 
+    fun beginComputePass(label: String? = null): GpuComputePass
+
+    /**
+     * Copies [size] bytes of [source] from [sourceOffset] into [destination] at [destinationOffset]: a compute pass's
+     * results into a [BufferUsage.MapRead] buffer for [GpuDevice.readBuffer], say. The source needs
+     * [BufferUsage.CopySrc] and the destination [BufferUsage.CopyDst]; sizes and offsets are multiples of 4.
+     */
+    fun copyBufferToBuffer(
+        source: GpuBuffer,
+        destination: GpuBuffer,
+        size: Long = source.size,
+        sourceOffset: Long = 0,
+        destinationOffset: Long = 0,
+    )
+
     /**
      * Copies [texture], or the [width] by [height] texels from [x], [y], into [buffer] from [bufferOffset], each row
      * starting [bytesPerRow] bytes after the last: a multiple of 256, see [dev.chieppa.stretch.gpu.paddedRowBytes].

@@ -17,6 +17,8 @@ private fun deviceCreateShader(device: JsAny, descriptor: JsAny): JsAny = js("de
 
 private fun deviceCreatePipeline(device: JsAny, descriptor: JsAny): JsAny = js("device.createRenderPipeline(descriptor)")
 
+private fun deviceCreateComputePipeline(device: JsAny, descriptor: JsAny): JsAny = js("device.createComputePipeline(descriptor)")
+
 private fun deviceCreateBindGroup(device: JsAny, descriptor: JsAny): JsAny = js("device.createBindGroup(descriptor)")
 
 private fun deviceCreateEncoder(device: JsAny): JsAny = js("device.createCommandEncoder()")
@@ -81,6 +83,20 @@ actual class GpuDevice internal constructor(handle: JsAny) : GpuJsHandle(handle)
 
     actual fun createRenderPipeline(spec: RenderPipelineSpec): GpuRenderPipeline =
         GpuRenderPipeline(deviceCreatePipeline(handle, pipelineDescriptor(spec)))
+
+    actual fun createComputePipeline(spec: ComputePipelineSpec): GpuComputePipeline = GpuComputePipeline(
+        deviceCreateComputePipeline(
+            handle,
+            jsObject {
+                this["label"] = spec.label
+                this["layout"] = AUTO_LAYOUT
+                this["compute"] = jsObject {
+                    this["module"] = spec.shader.handle
+                    this["entryPoint"] = spec.entry
+                }
+            },
+        ),
+    )
 
     actual fun createBindGroup(layout: GpuBindGroupLayout, buffers: List<BufferBinding>, label: String?): GpuBindGroup = GpuBindGroup(
         deviceCreateBindGroup(

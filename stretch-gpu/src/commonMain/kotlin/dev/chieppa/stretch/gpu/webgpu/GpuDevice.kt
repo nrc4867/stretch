@@ -1,8 +1,8 @@
 package dev.chieppa.stretch.gpu.webgpu
 
 /**
- * A WebGPU device: makes buffers, textures, shaders, pipelines and bind groups, and owns the [queue] that runs
- * commands. Made by a [dev.chieppa.stretch.gpu.GpuContext]'s session; use it from one thread at a time.
+ * A WebGPU device: makes buffers, textures, shaders, render and compute pipelines and bind groups, and owns the
+ * [queue] that runs commands. Made by a [dev.chieppa.stretch.gpu.GpuContext]'s session; use it from one thread at a time.
  */
 expect class GpuDevice : AutoCloseable {
     override fun close()
@@ -17,6 +17,8 @@ expect class GpuDevice : AutoCloseable {
     fun createShaderModule(wgsl: String, label: String? = null): GpuShaderModule
 
     fun createRenderPipeline(spec: RenderPipelineSpec): GpuRenderPipeline
+
+    fun createComputePipeline(spec: ComputePipelineSpec): GpuComputePipeline
 
     /** Binds [buffers] to the group with [layout]. */
     fun createBindGroup(layout: GpuBindGroupLayout, buffers: List<BufferBinding>, label: String? = null): GpuBindGroup
