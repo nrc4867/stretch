@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.SearchableDropdown
 import dev.chieppa.stretch.ui.Breadcrumbs
 import dev.chieppa.stretch.ui.NumberField
+import dev.chieppa.stretch.ui.PathField
 import dev.chieppa.stretch.ui.PathLabel
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.NumberSteppers
@@ -36,6 +37,9 @@ internal fun MoreFieldsDemo() {
     var bone by remember { mutableStateOf(bones.first()) }
     var frames by remember { mutableFloatStateOf(24f) }
     TextArea(notes, { notes = it }, Modifier.fillMaxWidth(), placeholder = "Notes for this shot")
+    var folder by remember { mutableStateOf("") }
+    val chooseFolder = LocalGalleryHost.current.chooseFolder
+    PathField(folder, { folder = it }, "Browse for a folder", chooseFolder?.let { choose -> { choose(folder) } }, Modifier.fillMaxWidth(), placeholder = "Export folder")
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         SearchableDropdown(bones, bone, { bone = it }, { it }, "Bone", Modifier.width(200.dp))
         NumberField(frames, { frames = it }, "Frames", range = 1f..120f, steppers = NumberSteppers("Fewer frames", "More frames"))

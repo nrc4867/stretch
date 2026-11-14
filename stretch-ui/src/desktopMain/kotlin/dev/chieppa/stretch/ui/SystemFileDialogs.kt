@@ -5,6 +5,7 @@ import java.awt.Frame
 import java.awt.KeyboardFocusManager
 import java.awt.Window
 import java.io.File
+import javax.swing.JFileChooser
 import java.util.concurrent.Executors
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -16,8 +17,9 @@ data class FileKind(val name: String, val extensions: Set<String>) {
 }
 
 /**
- * The platform's own dialogs for choosing files. On Windows they are the system's file dialogs, with the address bar, search, previews
- * and a list of [FileKind]s; elsewhere they are AWT's. Each is modal over [owner], the app's window, or over the active window when null.
+ * The platform's own dialogs for choosing files and folders. On Windows they are the system's file dialogs, with the address bar,
+ * search, previews and a list of [FileKind]s; elsewhere they are AWT's, and Swing's for a folder outside macOS, where AWT's dialog
+ * picks files only. Each is modal over [owner], the app's window, or over the active window when null.
  */
 object SystemFileDialogs {
     /** Shows a Windows dialog on a thread of its own, set up for the shell's objects, so the app's window keeps drawing under it. */
@@ -26,6 +28,10 @@ object SystemFileDialogs {
     }
 
     private val onWindows: Boolean = System.getProperty("os.name").orEmpty().startsWith("Windows")
+    private val onMac: Boolean = System.getProperty("os.name").orEmpty().startsWith("Mac")
+
+    /** The property that turns macOS's AWT file dialog into a folder dialog while it is set. */
+    private const val MAC_FOLDER_DIALOG = "apple.awt.fileDialogForDirectories"
 
     /** The files chosen to open, listing [kinds], several at once when [multiple]; empty when cancelled. */
     suspend fun open(title: String, kinds: List<FileKind>, multiple: Boolean, owner: Window? = null): List<String> {
@@ -56,6 +62,20 @@ object SystemFileDialogs {
         return awtSave(title, kinds, suggestedName, defaultExtension, parent)?.let { withExtension(it, defaultExtension) }
     }
 
+    /** A folder chosen in a dialog that opens in [start] when it names one; null when cancelled. */
+    suspend fun chooseFolder(title: String, start: String? = null, owner: Window? = null): String? {
+        val parent = owner ?: activeWindow()
+        val from = start?.takeIf { it.isNotBlank() && File(it).isDirectory }
+        if (onWindows) {
+            when (val shown = withContext(windowsThread) { WindowsFileDialog.chooseFolder(title, from, parent) }) {
+                is DialogOutcome.Chosen -> return shown.value
+                DialogOutcome.Cancelled -> return null
+                DialogOutcome.Unavailable -> Unit
+            }
+        }
+        return if (onMac) macFolder(title, from, parent) else swingFolder(title, from, parent)
+    }
+
     private fun activeWindow(): Window? = KeyboardFocusManager.getCurrentKeyboardFocusManager().activeWindow
 
     private fun awtOpen(title: String, kinds: List<FileKind>, multiple: Boolean, owner: Window?): List<String> {
@@ -64,6 +84,27 @@ object SystemFileDialogs {
         if (kinds.isNotEmpty()) dialog.setFilenameFilter { _, name -> kinds.any { it.covers(name) } }
         dialog.isVisible = true
         return dialog.files.map { it.path }
+    }
+
+    private fun macFolder(title: String, start: String?, owner: Window?): String? {
+        val before = System.getProperty(MAC_FOLDER_DIALOG)
+        System.setProperty(MAC_FOLDER_DIALOG, "true")
+        try {
+            val dialog = FileDialog(owner as? Frame, title, FileDialog.LOAD)
+            if (start != null) dialog.directory = start
+            dialog.isVisible = true
+            val chosen = dialog.file ?: return null
+            return File(dialog.directory, chosen).path
+        } finally {
+            if (before == null) System.clearProperty(MAC_FOLDER_DIALOG) else System.setProperty(MAC_FOLDER_DIALOG, before)
+        }
+    }
+
+    private fun swingFolder(title: String, start: String?, owner: Window?): String? {
+        val chooser = JFileChooser(start)
+        chooser.dialogTitle = title
+        chooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+        return if (chooser.showOpenDialog(owner) == JFileChooser.APPROVE_OPTION) chooser.selectedFile?.path else null
     }
 
     private fun awtSave(title: String, kinds: List<FileKind>, suggestedName: String, defaultExtension: String, owner: Window?): String? {

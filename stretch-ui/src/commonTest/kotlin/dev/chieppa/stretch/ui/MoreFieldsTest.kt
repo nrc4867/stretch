@@ -95,4 +95,32 @@ class MoreFieldsTest {
         assertEquals(10f, value)
         onNodeWithContentDescription("More").assertIsNotEnabled()
     }
+
+    @Test
+    fun pathFieldsBrowseButtonFillsTheFieldWithWhatItAnswers() = runComposeUiTest {
+        var path by mutableStateOf("~/notes")
+        var answer: String? = null
+        var asked = 0
+        setContent {
+            StretchTheme(StretchThemes.Ink) {
+                PathField(path, { path = it }, "Browse", { asked++; answer }, placeholder = "Folder")
+            }
+        }
+        onNodeWithContentDescription("Browse").performClick()
+        waitForIdle()
+        assertEquals(1, asked)
+        assertEquals("~/notes", path, "a cancelled dialog leaves the text")
+        answer = "/home/fennec/rigs"
+        onNodeWithContentDescription("Browse").performClick()
+        waitForIdle()
+        assertEquals("/home/fennec/rigs", path)
+    }
+
+    @Test
+    fun pathFieldWithNoDialogHasNoBrowseButton() = runComposeUiTest {
+        setContent {
+            StretchTheme(StretchThemes.Ink) { PathField("", {}, "Browse", null, placeholder = "Folder") }
+        }
+        onNodeWithContentDescription("Browse").assertDoesNotExist()
+    }
 }

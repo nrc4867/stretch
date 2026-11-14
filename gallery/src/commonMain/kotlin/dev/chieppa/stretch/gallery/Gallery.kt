@@ -96,6 +96,9 @@ class GalleryHost {
 
     /** Where unsaved work is kept for after a crash; none in tests. */
     var recovery: dev.chieppa.stretch.document.Recovery? = null
+
+    /** Asks for a folder, starting in the one given; none where the platform has no folder dialog, and in tests. */
+    var chooseFolder: (suspend (start: String) -> String?)? = null
 }
 
 val LocalGalleryHost = staticCompositionLocalOf { GalleryHost() }

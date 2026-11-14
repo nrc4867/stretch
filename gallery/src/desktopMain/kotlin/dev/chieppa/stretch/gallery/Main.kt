@@ -12,6 +12,7 @@ import dev.chieppa.stretch.frame.NativeSurfaces
 import dev.chieppa.stretch.frame.StretchWindow
 import dev.chieppa.stretch.frame.WindowTopBar
 import dev.chieppa.stretch.gallery.gpu.GpuPage
+import dev.chieppa.stretch.ui.SystemFileDialogs
 import dev.chieppa.stretch.web.WebEngine
 
 fun main(args: Array<String>) {
@@ -23,7 +24,10 @@ fun main(args: Array<String>) {
     DevTools.startIfRequested()
     application {
         val state = rememberWindowState(width = 1200.dp, height = 820.dp)
-        val host = remember { GalleryHost().apply { recovery = Recovery.forApp() } }
+        val host = remember { GalleryHost().apply {
+            recovery = Recovery.forApp()
+            chooseFolder = { start -> SystemFileDialogs.chooseFolder("Choose a folder", start) }
+        } }
         StretchWindow(
             onCloseRequest = { host.closeGuard?.invoke(::exitApplication) ?: exitApplication() },
             title = "Stretch gallery",

@@ -1,5 +1,6 @@
 package dev.chieppa.stretch.ui
 
+import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.Structure
@@ -18,12 +19,15 @@ private object Shell {
     val FILE_SAVE_DIALOG: Guid.CLSID = Guid.CLSID("{C0B4E2F3-BA21-4773-8DBA-335EC946EB8B}")
     val I_FILE_OPEN_DIALOG: Guid.IID = Guid.IID("{d57c7288-d4ad-4768-be02-9d969532d960}")
     val I_FILE_SAVE_DIALOG: Guid.IID = Guid.IID("{84bccd23-5fde-4cdb-aea4-af64b83d78ab}")
+    val I_SHELL_ITEM: Guid.IID = Guid.IID("{43826d1e-e718-42ee-bc55-a1e261c37bfe}")
 
     /** Places in IFileDialog's table of methods, after IUnknown's three and IModalWindow's Show. */
     const val SHOW = 3
     const val SET_FILE_TYPES = 4
     const val SET_OPTIONS = 9
     const val GET_OPTIONS = 10
+    const val SET_FOLDER = 12
+    const val GET_FOLDER = 13
     const val SET_FILE_NAME = 15
     const val GET_FILE_NAME = 16
     const val SET_TITLE = 17
@@ -39,6 +43,7 @@ private object Shell {
     const val ARRAY_ITEM_AT = 8
 
     const val FOS_OVERWRITEPROMPT = 0x2
+    const val FOS_PICKFOLDERS = 0x20
     const val FOS_FORCEFILESYSTEM = 0x40
     const val FOS_ALLOWMULTISELECT = 0x200
     const val FOS_PATHMUSTEXIST = 0x800
@@ -51,6 +56,16 @@ private object Shell {
     const val CANCELLED = 0x800704C7.toInt()
 
     const val COINIT_APARTMENTTHREADED = 0x2
+}
+
+/** shell32's SHCreateItemFromParsingName, which makes the shell item for a path. */
+private interface ShellItems : Library {
+    @Suppress("FunctionName")
+    fun SHCreateItemFromParsingName(path: WString, bindContext: Pointer?, iid: Guid.GUID, item: PointerByReference): Int
+
+    companion object {
+        val INSTANCE: ShellItems by lazy { Native.load("shell32", ShellItems::class.java) }
+    }
 }
 
 /** COMDLG_FILTERSPEC: one entry of a dialog's file types, its name and its patterns. */
@@ -124,6 +139,41 @@ internal object WindowsFileDialog {
         }
     }
 
+    /** A folder chosen with the open dialog set to pick folders, starting in [start] when it names one. */
+    fun chooseFolder(title: String, start: String?, owner: Window?): DialogOutcome<String> {
+        val dialog = create(Shell.FILE_OPEN_DIALOG, Shell.I_FILE_OPEN_DIALOG) ?: return DialogOutcome.Unavailable
+        try {
+            prepare(dialog, title, emptyList(), FOLDER_OPTIONS)
+            if (start != null) startIn(dialog, start)
+            when (val shown = dialog.call(Shell.SHOW, ownerHandle(owner))) {
+                0 -> Unit
+                Shell.CANCELLED -> return DialogOutcome.Cancelled
+                else -> return DialogOutcome.Unavailable.also { System.err.println("Folder dialog failed: 0x${shown.toUInt().toString(16)}") }
+            }
+            val result = PointerByReference()
+            if (dialog.call(Shell.GET_RESULT, result) != 0) return DialogOutcome.Cancelled
+            return pathOf(ComObject(result.value))?.let { DialogOutcome.Chosen(it) } ?: DialogOutcome.Cancelled
+        } finally {
+            dialog.Release()
+        }
+    }
+
+    /** Makes a folder dialog starting in [start] and reads back, without showing it, its options and the folder it would open in. */
+    fun probeFolder(start: String): Pair<Int, String?>? {
+        val dialog = create(Shell.FILE_OPEN_DIALOG, Shell.I_FILE_OPEN_DIALOG) ?: return null
+        try {
+            prepare(dialog, "", emptyList(), FOLDER_OPTIONS)
+            startIn(dialog, start)
+            val options = IntByReference()
+            dialog.call(Shell.GET_OPTIONS, options)
+            val folder = PointerByReference()
+            if (dialog.call(Shell.GET_FOLDER, folder) != 0 || folder.value == null) return options.value to null
+            return options.value to pathOf(ComObject(folder.value))
+        } finally {
+            dialog.Release()
+        }
+    }
+
     /** Makes a dialog and reads back what it was given, without showing it: its options and file name, for checking the binding. */
     fun probe(fileName: String): Pair<Int, String?>? {
         val dialog = create(Shell.FILE_SAVE_DIALOG, Shell.I_FILE_SAVE_DIALOG) ?: return null
@@ -137,6 +187,21 @@ internal object WindowsFileDialog {
             return options.value to takeString(name.value)
         } finally {
             dialog.Release()
+        }
+    }
+
+    private val FOLDER_OPTIONS = Shell.FOS_PICKFOLDERS or Shell.FOS_FORCEFILESYSTEM or Shell.FOS_PATHMUSTEXIST
+
+    /** Opens [dialog] in the folder at [path]; a path the shell cannot read leaves it where it would open anyway. */
+    private fun startIn(dialog: ComObject, path: String) {
+        val item = PointerByReference()
+        val made = runCatching { ShellItems.INSTANCE.SHCreateItemFromParsingName(WString(path), null, Shell.I_SHELL_ITEM, item) }.getOrNull()
+        if (made != 0 || item.value == null) return
+        val folder = ComObject(item.value)
+        try {
+            dialog.call(Shell.SET_FOLDER, folder.pointer)
+        } finally {
+            folder.Release()
         }
     }
 
