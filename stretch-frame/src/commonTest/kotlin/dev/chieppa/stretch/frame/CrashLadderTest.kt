@@ -13,7 +13,9 @@ class CrashLadderTest {
         lastShown: String? = null,
         sinceShown: Duration? = null,
         sinceLastCrash: Duration? = null,
-    ) = CrashFacts(showing, held, lastShown, sinceShown, sinceLastCrash)
+        reloaded: String? = null,
+        sinceReloaded: Duration? = null,
+    ) = CrashFacts(showing, held, lastShown, sinceShown, sinceLastCrash, reloaded, sinceReloaded)
 
     @Test
     fun aTabThatJustStartedShowingIsHeld() {
@@ -47,5 +49,23 @@ class CrashLadderTest {
     fun aHeldTabShownLastIsNotHeldAgain() {
         val response = CrashLadder.respond(facts(held = setOf("b"), lastShown = "b", sinceShown = 100.milliseconds, sinceLastCrash = 1.seconds))
         assertEquals(CrashResponse.Rebuild(listOf("a")), response)
+    }
+
+    @Test
+    fun aCrashSoonAfterAReloadHoldsTheReloadedTabAgain() {
+        assertEquals(CrashResponse.Rebuild(listOf("b")), CrashLadder.respond(facts(reloaded = "b", sinceReloaded = 5.seconds)))
+        val repeated = facts(reloaded = "b", sinceReloaded = 5.seconds, sinceLastCrash = 5.seconds)
+        assertEquals(CrashResponse.Rebuild(listOf("b")), CrashLadder.respond(repeated), "only the reloaded tab, not every showing one")
+    }
+
+    @Test
+    fun aReloadLongAgoOrOfATabNotShowingCountsForNothing() {
+        assertEquals(CrashResponse.Rebuild(emptyList()), CrashLadder.respond(facts(reloaded = "b", sinceReloaded = 1.seconds + CrashLadder.REPEAT_WINDOW)))
+        assertEquals(CrashResponse.Rebuild(emptyList()), CrashLadder.respond(facts(reloaded = "c", sinceReloaded = 1.seconds)))
+    }
+
+    @Test
+    fun aTabJustShownCountsBeforeOneReloaded() {
+        assertEquals(CrashResponse.Rebuild(listOf("a")), CrashLadder.respond(facts(lastShown = "a", sinceShown = 100.milliseconds, reloaded = "b", sinceReloaded = 3.seconds)))
     }
 }

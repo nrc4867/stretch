@@ -47,6 +47,15 @@ internal class PaneGridContext(
     /** The app's own answer to an item from a [paneDragSource] let go over a place that takes it, if it has one. */
     var dropItem: ((id: String, drop: PaneItemDrop) -> Unit)? = null
 
+    /** The app's own reset of a tab's state before a held tab shows again, if it has one. */
+    var onReload: ((id: String) -> Unit)? = null
+
+    /** Starts tab [id] afresh: its saved state forgotten and the app's [onReload] called. */
+    fun reload(id: String) {
+        holder.removeState(id)
+        onReload?.invoke(id)
+    }
+
     /** The surface holding pane [leaf]: [GRID_SURFACE] or a window id. */
     fun surfaceOf(leaf: String): String =
         layout().windows.firstOrNull { w -> w.root.leaves().any { it.id == leaf } }?.id ?: GRID_SURFACE

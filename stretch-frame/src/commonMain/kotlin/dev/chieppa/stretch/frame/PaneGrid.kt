@@ -37,8 +37,9 @@ import androidx.compose.ui.unit.LayoutDirection
  * the app. Tabs drag between windows and the grid alike, and dragging a pane window by its header onto a pane docks
  * its tabs there; closing it puts them back in the grid. Without a host, windows in [layout] go back into the grid.
  *
- * Inside a `StretchWindow`, a tab its window holds back after a crash shows an error mark and a reload in place of
- * its content.
+ * Inside a `StretchWindow`, a tab its window holds back after a crash shows an error mark, the crash's message and a
+ * reload in place of its content. The reload starts the tab afresh: its saved state is forgotten and [onReload] lets
+ * the app reset what it keeps for the tab, say a page's place, so it does not build what crashed again.
  */
 @Composable
 fun PaneGrid(
@@ -52,6 +53,7 @@ fun PaneGrid(
     paneActions: @Composable RowScope.(paneId: String) -> Unit = {},
     dropTarget: PaneDropTarget? = null,
     onDropItem: ((id: String, drop: PaneItemDrop) -> Unit)? = null,
+    onReload: ((id: String) -> Unit)? = null,
     content: @Composable BoxScope.(id: String) -> Unit,
 ) {
     val current by rememberUpdatedState(layout)
@@ -82,6 +84,7 @@ fun PaneGrid(
         it.empty = empty
         it.actions = paneActions
         it.dropItem = onDropItem
+        it.onReload = onReload
         it.content = content
     }
     ForgetClosedTabs(layout.tabs, holder::removeState)

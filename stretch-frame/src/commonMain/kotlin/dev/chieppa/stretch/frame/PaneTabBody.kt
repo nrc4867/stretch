@@ -8,14 +8,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 
 /**
- * The showing tab [id]'s content, or [HeldTab] while its window holds it back after a crash. The content is noted on
- * the window's [WindowTabs] before it composes, so a crash it causes is put on this tab.
+ * The showing tab [id]'s content, or [HeldTab] while its window holds it back after a crash, whose reload starts the
+ * content afresh through [PaneGridContext.reload]. The content is noted on the window's [WindowTabs] before it
+ * composes, so a crash it causes is put on this tab.
  */
 @Composable
 internal fun PaneTabBody(id: String, grid: PaneGridContext) {
     val holds = LocalTabHolds.current
-    if (holds != null && holds.isHeld(id)) {
-        HeldTab(onReload = { holds.release(id) })
+    val message = holds?.message(id)
+    if (holds != null && message != null) {
+        HeldTab(message, onReload = { grid.reload(id); holds.release(id) })
         return
     }
     val tabs = LocalWindowTabs.current

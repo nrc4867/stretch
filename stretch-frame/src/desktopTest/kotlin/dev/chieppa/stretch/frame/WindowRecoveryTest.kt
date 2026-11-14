@@ -12,6 +12,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.test.setStretchContent
@@ -69,7 +70,25 @@ class WindowRecoveryTest {
         assertFalse(reports.single().closed)
         assertEquals(2, builds)
         onNodeWithText("Showing bad").assertDoesNotExist()
+        onNodeWithText("IllegalStateException: build 0").assertExists()
         onNodeWithContentDescription("Reload").assertExists()
+        assertFalse(closed)
+    }
+
+    @Test
+    fun aTabThatCrashesAgainSoonAfterItsReloadIsHeldAgainWithTheNewCrash() = runComposeUiTest {
+        showWindow()
+        layout = layout.activate("bad")
+        waitForIdle()
+        crash()
+        time += 30.seconds
+        onNodeWithContentDescription("Reload").performClick()
+        waitForIdle()
+        onNodeWithText("Showing bad").assertExists()
+        time += 5.seconds
+        crash()
+        assertEquals(listOf("bad"), reports.last().held, "past the shown window, the reload still puts it on the tab")
+        onNodeWithText("IllegalStateException: build 1").assertExists()
         assertFalse(closed)
     }
 

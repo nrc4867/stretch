@@ -12,8 +12,8 @@ import kotlin.time.TimeMark
 
 /**
  * Keeps one window of the app alive through crashes: the window's exception handler answers a crash by the
- * [CrashLadder], holding back tabs on [tabs] and building the window again under a new [generation], or calling
- * [close]. Each crash goes to [report]. A crashed window keeps failing until it is gone, and only its first failure
+ * [CrashLadder], holding back tabs on [tabs] with the crash's message and building the window again under a new
+ * [generation], or calling [close]. Each crash goes to [report]. A crashed window keeps failing until it is gone, and only its first failure
  * counts.
  */
 @OptIn(ExperimentalComposeUiApi::class)
@@ -40,17 +40,21 @@ internal class WindowRecovery(
         if (built != generation || built == crashed) return
         crashed = built
         val shown = tabs.lastShown
+        val reloaded = tabs.holds.lastReload
         val facts = CrashFacts(
             showing = tabs.showing(),
             held = tabs.holds.ids,
             lastShown = shown?.first,
             sinceShown = shown?.second?.elapsedNow(),
             sinceLastCrash = lastCrash?.elapsedNow(),
+            reloaded = reloaded?.first,
+            sinceReloaded = reloaded?.second?.elapsedNow(),
         )
         lastCrash = tabs.holds.time.markNow()
         when (val response = CrashLadder.respond(facts)) {
             is CrashResponse.Rebuild -> {
-                response.hold.forEach(tabs.holds::hold)
+                val message = CrashSummary.of(cause)
+                response.hold.forEach { tabs.holds.hold(it, message) }
                 tabs.rebuilding()
                 generation++
                 report(WindowCrash(cause, response.hold, closed = false))
