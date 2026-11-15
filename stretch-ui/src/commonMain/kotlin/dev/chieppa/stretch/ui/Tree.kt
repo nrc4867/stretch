@@ -25,6 +25,10 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.isMetaPressed
+import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.platform.LocalDensity
 import dev.chieppa.stretch.theme.StretchSizes
 
@@ -33,7 +37,8 @@ import dev.chieppa.stretch.theme.StretchSizes
  * screen are built, so it stays smooth with many thousands; inside a column that scrolls, every row is. Click selects one row, Ctrl-click (Cmd-click on macOS) adds or removes,
  * Shift-click selects a range. Up and Down move, Home and End go to the ends, Page Up and Page Down move a screen,
  * Right opens or steps in, Left closes or steps out, Ctrl A selects every visible row, and typing a name's first
- * letters jumps to it. Enter or a double-click calls [onActivate], to open what the row stands for.
+ * letters jumps to it. Enter or a double-click calls [onActivate], to open what the row stands for; a click with no
+ * Shift, Ctrl or Cmd held calls [onClick] after selecting the row, each time, whether or not the selection changed.
  *
  * With [checkboxes] each row has a box; checking a parent checks everything under it, and a parent whose children
  * differ shows the mixed state. Space checks the row with focus. With [onRename], F2 renames in place (Enter keeps,
@@ -58,6 +63,7 @@ fun <T> Tree(
     icon: (T) -> ImageVector? = { null },
     checkboxes: Boolean = false,
     onActivate: ((T) -> Unit)? = null,
+    onClick: ((T) -> Unit)? = null,
     onRename: ((T, String) -> Unit)? = null,
     onMove: ((key: Any, drop: TreeDrop) -> Unit)? = null,
     strings: TreeStrings = TreeStrings(),
@@ -75,7 +81,7 @@ fun <T> Tree(
             focused = state.focused, onFocusedChange = { state.focused = it },
             list = state.list, onRows = { state.rowKeys = it },
         ),
-        modifier, icon, onActivate, onRename, onMove, strings::state, onContextMenu, rowModifier, leading, trailing,
+        modifier, icon, onActivate, onRename, onMove, strings::state, onContextMenu, rowModifier, leading, trailing, onClick,
     )
 }
 
@@ -110,7 +116,7 @@ fun <T> Tree(
             expanded, onExpandedChange, selection, onSelectionChange, checked = null, onCheckedChange = {},
             focused = focused, onFocusedChange = { focused = it }, list = rememberLazyListState(), onRows = {},
         ),
-        modifier, icon, null, onRename, onMove, stateText, onContextMenu, rowModifier, leading, trailing,
+        modifier, icon, null, onRename, onMove, stateText, onContextMenu, rowModifier, leading, trailing, null,
     )
 }
 
@@ -130,6 +136,7 @@ private fun <T> TreeView(
     rowModifier: (T) -> Modifier,
     leading: @Composable RowScope.(T) -> Unit,
     trailing: @Composable RowScope.(T) -> Unit,
+    onClick: ((T) -> Unit)?,
 ) {
     val expanded = model.expanded
     val rows = remember(roots, expanded) { flattenTree(roots) { key(it) in expanded } }
@@ -183,7 +190,10 @@ private fun <T> TreeView(
                 slot = control.slot,
                 drag = if (onMove != null) drag else null,
                 onPress = { treeFocus.requestFocus() },
-                onClick = { mods -> control.click(k, mods) },
+                onClick = { mods ->
+                    control.click(k, mods)
+                    if (onClick != null && mods.isPlain()) onClick(item)
+                },
                 onDoubleClick = when {
                     onActivate != null -> { -> onActivate(item) }
                     onRename != null -> { -> control.renaming = k }
@@ -225,3 +235,7 @@ private fun <T> TreeView(
         }
     }
 }
+
+/** Whether a click held none of the keys that extend the selection: Shift, Ctrl or Cmd. */
+private fun PointerKeyboardModifiers?.isPlain(): Boolean =
+    this == null || !(isShiftPressed || isCtrlPressed || isMetaPressed)
