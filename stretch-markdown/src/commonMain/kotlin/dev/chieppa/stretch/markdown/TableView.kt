@@ -53,6 +53,10 @@ private data class CellAt(val row: Int, val column: Int)
  */
 @Composable
 internal fun TableView(block: MarkdownBlock, context: BlockContext) {
+    if (context.text != null) {
+        ReadOnlyTableView(block, context)
+        return
+    }
     val c = Stretch.colors
     val state = context.state
     val table = remember(block.source) { parseTable(block.source) }
@@ -137,7 +141,7 @@ internal fun TableView(block: MarkdownBlock, context: BlockContext) {
 }
 
 /** Space on each side of a cell's text. */
-private val CELL_PADDING = 8.dp
+internal val CELL_PADDING = 8.dp
 
 /** The cell a key moves to from [at], one past the last row for a new one, or null when the key moves nothing. */
 private fun nextCell(at: CellAt, chord: String, table: MarkdownTable): CellAt? = when (chord) {

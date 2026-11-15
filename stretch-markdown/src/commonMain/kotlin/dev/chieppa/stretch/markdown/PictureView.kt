@@ -6,13 +6,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.ui.handPointer
 
@@ -22,16 +18,23 @@ import dev.chieppa.stretch.ui.handPointer
  */
 @Composable
 internal fun PictureView(picture: Picture, images: ImageSource?, onLinkClick: (String) -> Unit) {
-    val loaded: ImageBitmap? by produceState<ImageBitmap?>(null, picture.url, images) {
-        value = runCatching { images?.load(picture.url) }.getOrNull()
-    }
-    val link = picture.link
-    val opens = if (link != null) Modifier.handPointer().clickable(role = Role.Button) { onLinkClick(link) } else Modifier
-    val shown = loaded
-    if (shown == null) {
-        Box(opens) { MissingPicture(StretchIcons.Image, picture.alt.ifEmpty { picture.url }) }
-        return
-    }
-    val width = picture.width?.dp ?: (shown.width / LocalDensity.current.density).dp
-    Image(shown, picture.alt, opens.widthIn(max = width).fillMaxWidth())
+    PictureView(picture, rememberPictureLoad(picture.url, images), onLinkClick)
 }
+
+/** [picture] as far as [load] has come: nothing yet while it loads, a marked placeholder when it failed. */
+@Composable
+internal fun PictureView(picture: Picture, load: PictureLoad, onLinkClick: (String) -> Unit) {
+    val opens = Modifier.opensLink(picture.link, onLinkClick)
+    when (load) {
+        PictureLoad.Loading -> Unit
+        PictureLoad.Failed -> Box(opens) { MissingPicture(StretchIcons.Image, picture.alt.ifEmpty { picture.url }) }
+        is PictureLoad.Shown -> {
+            val width = pictureSize(picture, load.image, LocalDensity.current).width
+            Image(load.image, picture.alt, opens.widthIn(max = width).fillMaxWidth())
+        }
+    }
+}
+
+/** Opens [link] through [onLinkClick] on a click, under a pointing hand; nothing when there is no link. */
+internal fun Modifier.opensLink(link: String?, onLinkClick: (String) -> Unit): Modifier =
+    if (link != null) handPointer().clickable(role = Role.Button) { onLinkClick(link) } else this

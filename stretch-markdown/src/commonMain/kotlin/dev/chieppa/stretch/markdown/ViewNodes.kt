@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
@@ -41,8 +40,7 @@ internal fun ViewNodes(nodes: List<ViewNode>, context: BlockContext, modifier: M
                 is ViewNode.Text -> {
                     val style = if (node.heading > 0) headingStyle(node.heading) else bodyStyle
                     val space = if (node.heading > 0) Modifier.padding(top = headingSpace(node.heading)) else Modifier
-                    val text = remember(node, context.onLinkClick) { clickableLinks(node.text.text, context.onLinkClick) }
-                    BasicText(text, space.fillMaxWidth(), style)
+                    RichTextView(node.text, style, space.fillMaxWidth(), context.images, context.onLinkClick)
                 }
                 is ViewNode.Details -> DetailsView(node, context)
                 is ViewNode.Items -> ItemsView(node, context)
@@ -57,7 +55,6 @@ internal fun ViewNodes(nodes: List<ViewNode>, context: BlockContext, modifier: M
                     }
                 }
                 ViewNode.Rule -> Box(Modifier.fillMaxWidth().padding(vertical = ruleSpace).height(Stretch.stroke).background(c.linePanel))
-                is ViewNode.Image -> PictureView(node.picture, context.images, context.onLinkClick)
                 is ViewNode.Table -> HtmlTableView(node, context)
             }
         }

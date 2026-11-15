@@ -35,16 +35,33 @@ internal fun columnWidths(extents: List<ColumnExtent>, available: Float): List<F
 
 /** Measures what each column of [table] needs, the header row in [header] and the rest in [body], plus [padding]. */
 internal fun columnExtents(table: MarkdownTable, measurer: TextMeasurer, body: TextStyle, header: TextStyle, padding: Float, floor: Float): List<ColumnExtent> =
-    (0 until table.columns).map { column ->
+    columnExtents(table.rows, table.columns, measurer, body, header, padding, floor)
+
+/**
+ * Measures what each of [columns] columns of [rows] needs, as the text each cell shows, the first row in [header] and
+ * the rest in [body], plus [padding] and the room [extra] says a cell needs for what is not text, such as a picture.
+ */
+internal fun columnExtents(
+    rows: List<List<String>>,
+    columns: Int,
+    measurer: TextMeasurer,
+    body: TextStyle,
+    header: TextStyle,
+    padding: Float,
+    floor: Float,
+    extra: (row: Int, column: Int) -> Float = { _, _ -> 0f },
+): List<ColumnExtent> =
+    (0 until columns).map { column ->
         var least = floor
         var most = floor
-        table.rows.forEachIndexed { row, cells ->
+        rows.forEachIndexed { row, cells ->
             val text = cells.getOrElse(column) { "" }
             val style = if (row == 0) header else body
-            val line = measurer.measure(text, style, softWrap = false).size.width + padding
+            val room = extra(row, column)
+            val line = measurer.measure(text, style, softWrap = false).size.width + padding + room
             val word = text.split(' ').maxOfOrNull { measurer.measure(it, style, softWrap = false).size.width.toFloat() } ?: 0f
             most = maxOf(most, line)
-            least = maxOf(least, word + padding)
+            least = maxOf(least, maxOf(word, room) + padding)
         }
         ColumnExtent(least, maxOf(least, most))
     }

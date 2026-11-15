@@ -28,8 +28,14 @@ internal fun richStyleOf(style: InlineStyle): RichStyle = when (style) {
 /** A picture to show as a block of its own: from `![alt](url)` or `<img>`, linking to [link] when it sits in a link. */
 internal data class Picture(val url: String, val alt: String, val width: Int? = null, val link: String? = null)
 
-/** Text ready to show, with links as [URL_ANNOTATION]s, and the pictures it held, which show after it. */
-internal class RichText(val text: AnnotatedString, val pictures: List<Picture> = emptyList())
+/**
+ * Text ready to show, with links as [URL_ANNOTATION]s and code as [CODE_ANNOTATION]s, and the pictures it held, each
+ * at the offset into [text] in [places] where it sat. [RichTextView] shows small ones there and the rest after it.
+ */
+internal class RichText(val text: AnnotatedString, val pictures: List<Picture> = emptyList(), val places: List<Int> = pictures.map { text.length })
+
+/** Marks inline code in a [RichText], whose fill is drawn behind the text so a selection shows over it. */
+internal const val CODE_ANNOTATION = "code"
 
 /** How small `<sub>` and `<sup>` text is beside the text around it. */
 private val SHIFTED_SIZE = 0.8.em
@@ -44,7 +50,7 @@ internal fun rememberRichStyles(): RichStyles {
                 RichStyle.Bold -> SpanStyle(fontWeight = FontWeight.SemiBold)
                 RichStyle.Italic -> SpanStyle(fontStyle = FontStyle.Italic)
                 RichStyle.Strike -> SpanStyle(textDecoration = TextDecoration.LineThrough)
-                RichStyle.Code -> SpanStyle(fontFamily = look.mono, background = look.codeFill)
+                RichStyle.Code -> SpanStyle(fontFamily = look.mono)
                 RichStyle.Link -> SpanStyle(color = look.link, textDecoration = TextDecoration.Underline)
                 RichStyle.Sub -> SpanStyle(baselineShift = BaselineShift.Subscript, fontSize = SHIFTED_SIZE)
                 RichStyle.Sup -> SpanStyle(baselineShift = BaselineShift.Superscript, fontSize = SHIFTED_SIZE)

@@ -20,18 +20,19 @@ private val inlineStyles = mapOf(
 internal class HtmlInlineText(private val styles: RichStyles) {
     private val builder = AnnotatedString.Builder()
     private val pictures = ArrayList<Picture>()
+    private val places = ArrayList<Int>()
     private var space = false
     private var lineStart = true
     private var link: String? = null
 
     fun add(nodes: List<HtmlNode>): HtmlInlineText = apply { nodes.forEach(::add) }
 
-    fun build(): RichText = RichText(builder.toAnnotatedString(), pictures)
+    fun build(): RichText = RichText(builder.toAnnotatedString(), pictures, places)
 
     private fun add(node: HtmlNode) {
         when (node) {
-            is HtmlNode.Text -> text(node.text)
-            is HtmlNode.Markdown -> text(node.block.source)
+            is HtmlNode.Text -> text(replaceShortcodes(node.text))
+            is HtmlNode.Markdown -> markdown(node.block)
             is HtmlNode.Element -> element(node)
         }
     }
@@ -59,6 +60,10 @@ internal class HtmlInlineText(private val styles: RichStyles) {
             }
             "img" -> element.attributes["src"]?.takeIf { it.isNotBlank() }?.let { src ->
                 pictures += Picture(src, element.attributes["alt"].orEmpty(), element.attributes["width"]?.toIntOrNull(), link)
+                if (space) builder.append(' ')
+                space = false
+                lineStart = false
+                places += builder.length
             }
             "a" -> {
                 val href = element.attributes["href"]
@@ -81,10 +86,25 @@ internal class HtmlInlineText(private val styles: RichStyles) {
                     add(children)
                 } else {
                     builder.pushStyle(styles(style))
+                    if (style == RichStyle.Code) builder.pushStringAnnotation(CODE_ANNOTATION, "")
                     add(children)
+                    if (style == RichStyle.Code) builder.pop()
                     builder.pop()
                 }
             }
         }
+    }
+
+    /** A markdown block inside inline HTML, such as a paragraph inside `<summary>`, read as its text shows. */
+    private fun markdown(block: MarkdownBlock) {
+        val read = readOnlyText(block.source, block.kind, styles)
+        if (read.text.isEmpty() && read.pictures.isEmpty()) return
+        if (space) builder.append(' ')
+        space = false
+        lineStart = false
+        val from = builder.length
+        builder.append(read.text)
+        pictures += read.pictures
+        places += read.places.map { from + it }
     }
 }

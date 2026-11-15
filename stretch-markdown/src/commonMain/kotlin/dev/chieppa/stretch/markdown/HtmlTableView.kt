@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,10 +34,8 @@ internal fun HtmlTableView(table: ViewNode.Table, context: BlockContext) {
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).then(if (header) Modifier.background(c.surfaceControl) else Modifier)) {
                 for (column in 0 until columns) {
                     val cell = row.getOrNull(column)
-                    val text = cell?.let { clickableLinks(it.text, context.onLinkClick) }
                     Column(Modifier.weight(1f).fillMaxHeight().border(Stretch.stroke / 2, c.linePanel).padding(cellPadding)) {
-                        if (text != null) BasicText(text, style = style)
-                        cell?.pictures?.forEach { PictureView(it, context.images, context.onLinkClick) }
+                        if (cell != null) RichTextView(cell, style, Modifier, context.images, context.onLinkClick)
                     }
                 }
             }

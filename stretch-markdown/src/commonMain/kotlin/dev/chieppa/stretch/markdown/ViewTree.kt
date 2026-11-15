@@ -14,7 +14,7 @@ internal sealed interface ViewNode {
     /** A block of source that starts with an inline tag, such as `<b>`, read as a paragraph with HTML in it. */
     data class Inline(val block: MarkdownBlock) : ViewNode
 
-    /** A paragraph, or a heading of [heading] 1 to 6. */
+    /** A paragraph, or a heading of [heading] 1 to 6, with the pictures in it. */
     class Text(val text: RichText, val heading: Int = 0) : ViewNode
 
     /** `<details>`: [summary] shows, and [children] open under it. */
@@ -29,8 +29,6 @@ internal sealed interface ViewNode {
 
     data object Rule : ViewNode
 
-    data class Image(val picture: Picture) : ViewNode
-
     /** `<table>`: its rows of cells, the first [headerRows] of them headers. */
     class Table(val rows: List<List<RichText>>, val headerRows: Int) : ViewNode
 }
@@ -42,7 +40,7 @@ private val loneTagLine = Regex("""^ {0,3}</?[a-zA-Z][^>]*>\s*$""")
 private val firstTagName = Regex("""^ {0,3}</?([a-zA-Z][a-zA-Z0-9-]*)""")
 
 /** Whether [block] starts with HTML at all, rather than being front matter or indented code. */
-private fun startsWithHtml(block: MarkdownBlock): Boolean = block.kind == BlockKind.Raw && htmlLine.containsMatchIn(block.source)
+internal fun startsWithHtml(block: MarkdownBlock): Boolean = block.kind == BlockKind.Raw && htmlLine.containsMatchIn(block.source)
 
 /**
  * Whether [block] is an HTML block as GitHub reads one: it starts with a comment, a block tag, or a line holding one
@@ -97,13 +95,10 @@ private class HtmlBlocks(private val styles: RichStyles) {
 
     private fun inline(nodes: List<HtmlNode>): RichText = HtmlInlineText(styles).add(nodes).build()
 
-    /** Inline content as a paragraph when it has any text, followed by its pictures. */
+    /** Inline content as a paragraph, with its pictures, when it has any text or pictures. */
     private fun paragraph(nodes: List<HtmlNode>, heading: Int = 0): List<ViewNode> {
         val rich = inline(nodes)
-        return buildList {
-            if (rich.text.isNotBlank()) add(ViewNode.Text(rich, heading))
-            rich.pictures.forEach { add(ViewNode.Image(it)) }
-        }
+        return if (rich.text.isNotBlank() || rich.pictures.isNotEmpty()) listOf(ViewNode.Text(rich, heading)) else emptyList()
     }
 
     private fun block(element: HtmlNode.Element): List<ViewNode> {

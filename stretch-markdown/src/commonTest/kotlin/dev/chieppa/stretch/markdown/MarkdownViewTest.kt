@@ -67,4 +67,29 @@ class MarkdownViewTest {
         onNodeWithText("Name").assertExists()
         onNodeWithText("Value").assertExists()
     }
+
+    @Test
+    fun aBadgeShowsInItsLineAndABigPictureUnderIt() = runComposeUiTest {
+        val images = ImageSource { url -> if ("big" in url) ImageBitmap(400, 300) else ImageBitmap(20, 20) }
+        setContent {
+            StretchTheme(StretchThemes.Ink) {
+                Column(Modifier.width(600.dp)) {
+                    MarkdownView(sonarComment, images = images)
+                    MarkdownView("See ![shot](https://x.test/big.png) here", images = images)
+                }
+            }
+        }
+        waitForIdle()
+        onNodeWithText("￼ Quality Gate failed", substring = true).assertExists()
+        onAllNodesWithContentDescription("Quality Gate Failed").assertCountEquals(1)
+        onNodeWithText("See  here").assertExists()
+        onAllNodesWithContentDescription("shot").assertCountEquals(1)
+    }
+
+    @Test
+    fun aTableShowsItsCellsAsTheyRead() = runComposeUiTest {
+        setContent { StretchTheme(StretchThemes.Ink) { Column(Modifier.width(600.dp)) { MarkdownView(renovateDescription) } } }
+        onNodeWithText("org.jetbrains.kotlin:kotlin-gradle-plugin").assertExists()
+        onNodeWithText("2.1.0 -> 2.1.20").assertExists()
+    }
 }

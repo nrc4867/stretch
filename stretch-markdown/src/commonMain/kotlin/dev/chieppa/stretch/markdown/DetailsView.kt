@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,8 +33,8 @@ private val arrowSize = 12.dp
 internal fun DetailsView(details: ViewNode.Details, context: BlockContext) {
     var open by rememberSaveable { mutableStateOf(false) }
     val c = Stretch.colors
-    val summary = remember(details, context.onLinkClick) {
-        details.summary.text.takeIf { it.isNotBlank() }?.let { clickableLinks(it, context.onLinkClick) } ?: AnnotatedString(context.strings.details)
+    val summary = remember(details, context.strings) {
+        details.summary.takeIf { it.text.isNotBlank() || it.pictures.isNotEmpty() } ?: RichText(AnnotatedString(context.strings.details))
     }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(blockGap)) {
         DisableSelection {
@@ -49,7 +48,7 @@ internal fun DetailsView(details: ViewNode.Details, context: BlockContext) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(if (open) StretchIcons.ChevronDown else StretchIcons.ChevronRight, c.inkMuted, size = arrowSize)
-                BasicText(summary, Modifier.weight(1f), bodyStyle)
+                RichTextView(summary, bodyStyle, Modifier.weight(1f), context.images, context.onLinkClick)
             }
         }
         if (open) ViewNodes(details.children, context, Modifier.padding(start = listGutter))
