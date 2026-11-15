@@ -9,6 +9,7 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.test.characterCenter
@@ -105,6 +106,9 @@ class CodeSymbolTest {
         line.performMouseInput { click(line.characterStart(2)) }
         waitForIdle()
         assertEquals(CodePosition(3, 2), state.caret)
+        line.performMouseInput { rightClick(line.characterStart(4)) }
+        waitForIdle()
+        assertEquals(CodePosition(3, 4), state.caret)
 
         state.caret = CodePosition(1500, 6)
         var found = false
