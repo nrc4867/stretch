@@ -27,9 +27,10 @@ private val LocalNativeTitleBar = staticCompositionLocalOf<NativeTitleBar?> { nu
  * frame, so maximize, snapping, resizing, the shadow, rounded corners and the window buttons behave like every other
  * window. Needs the JetBrains Runtime on Windows or macOS; elsewhere the system title bar stays above the top bar.
  * Drawers in a [StretchApp] inside it can pop out into windows of their own, and tabs of a [PaneGrid] can tear out
- * into full windows of the app. Clicking empty space takes focus off
- * fields and buttons. Without an [icon] it uses the app's icon from the `dev.chieppa.stretch.app` Gradle plugin, at
- * every size, so the taskbar and Alt+Tab stay sharp; the process is identified to the OS before the window opens.
+ * into full windows of the app. Clicking empty space takes focus off fields and buttons. The context menus Compose
+ * draws itself, such as Copy on selected text, are Stretch's ([StretchContextMenus]). Without an [icon] it uses the
+ * app's icon from the `dev.chieppa.stretch.app` Gradle plugin, at every size, so the taskbar and Alt+Tab stay sharp;
+ * the process is identified to the OS before the window opens.
  *
  * A crash anywhere in the window, or in one of its pane windows, goes to [onCrash] and builds that window again
  * instead of ending the app; state the app keeps outside [content] carries over. A tab of a [PaneGrid] that started
@@ -67,7 +68,7 @@ private fun AppWindow(onCloseRequest: () -> Unit, title: String, state: WindowSt
         val drawerWindows = remember(window) { DesktopDrawerWindows(window) }
         val paneWindows = remember(window) { DesktopPaneWindows(window) }
         CompositionLocalProvider(LocalNativeTitleBar provides titleBar, LocalDrawerWindows provides drawerWindows, LocalPaneWindows provides paneWindows) {
-            Box(Modifier.fillMaxSize().focusHome()) { content() }
+            StretchContextMenus { Box(Modifier.fillMaxSize().focusHome()) { content() } }
         }
     }
 }
