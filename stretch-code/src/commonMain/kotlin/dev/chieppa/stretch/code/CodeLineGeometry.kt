@@ -42,6 +42,27 @@ class CodeLineGeometry(val text: String) {
         return Rect(root.localPositionOf(coordinates, box.topLeft), box.size)
     }
 
+    /**
+     * The boxes [start] until [end] takes on this line's [layout], in the text's own pixels, one per row it wraps
+     * onto. An empty run gives one character's width at its place.
+     */
+    fun rowBoxes(start: Int, end: Int, layout: TextLayoutResult): List<Rect> {
+        val length = layout.layoutInput.text.length
+        val from = offsets[start.coerceIn(0, text.length)].coerceIn(0, length)
+        val until = offsets[end.coerceIn(0, text.length)].coerceIn(0, length)
+        if (until <= from) {
+            val caret = layout.getCursorRect(from)
+            val width = if (length == 0) layout.size.width.toFloat() else layout.getBoundingBox(from.coerceAtMost(length - 1)).width
+            return listOf(Rect(caret.left, caret.top, caret.left + width, caret.bottom))
+        }
+        return (layout.getLineForOffset(from)..layout.getLineForOffset(until - 1)).mapNotNull { row ->
+            val first = maxOf(from, layout.getLineStart(row))
+            val last = minOf(until, layout.getLineEnd(row))
+            if (last <= first) return@mapNotNull null
+            Rect(layout.getBoundingBox(first).left, layout.getLineTop(row), layout.getBoundingBox(last - 1).right, layout.getLineBottom(row))
+        }
+    }
+
     /** The column before tabs expand of [shown], an offset in the text as shown; inside a tab, the tab's own column. */
     private fun columnOf(shown: Int): Int {
         var low = 0

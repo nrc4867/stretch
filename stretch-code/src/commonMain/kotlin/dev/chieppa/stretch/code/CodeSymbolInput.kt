@@ -19,6 +19,7 @@ import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.isMetaPressed
 import androidx.compose.ui.input.pointer.areAnyPressed
 import androidx.compose.ui.input.pointer.isPrimaryPressed
+import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -49,7 +50,7 @@ fun Modifier.codeSymbolKeys(pointer: CodeSymbolPointer<*>): Modifier =
  * further names the same line answers to, such as an unchanged line's number on each side of a diff. Returns the
  * modifier for the line's text, which finds the character under the pointer through [geometry], takes a Ctrl or Cmd
  * press (so it never starts a selection) and clicks through on its release, notes where a plain press lands as the
- * caret, and shows a pointing hand over the underlined symbol. A plain press, click and drag select text as before, and
+ * caret, as does a right-click so a context menu acts where it opened, and shows a pointing hand over the underlined symbol. A plain press, click and drag select text as before, and
  * close a symbol card that is not pinned.
  */
 @Composable
@@ -102,6 +103,8 @@ fun <G> rememberCodeSymbolInput(pointer: CodeSymbolPointer<G>, keys: List<CodeLi
                                 } else {
                                     pointer.caret = spot(geometry.columnNearest(change.position))
                                 }
+                            } else if (event.buttons.isSecondaryPressed) {
+                                pointer.caret = spot(geometry.columnNearest(change.position))
                             }
                             PointerEventType.Release -> if (taken) {
                                 change.consume()

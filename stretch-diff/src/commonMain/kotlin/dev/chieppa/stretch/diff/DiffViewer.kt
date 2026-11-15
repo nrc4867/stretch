@@ -34,6 +34,7 @@ import dev.chieppa.stretch.code.codeSymbolKeys
 import dev.chieppa.stretch.code.rulerColors
 import dev.chieppa.stretch.code.CodeMetrics
 import dev.chieppa.stretch.code.longestLine
+import dev.chieppa.stretch.code.endSpace
 import dev.chieppa.stretch.code.rememberCodeMetrics
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchSpacing
@@ -59,7 +60,8 @@ import kotlinx.coroutines.withContext
  * [DiffSlots.onSymbolClick], holding Ctrl (Cmd on macOS) over a name underlines it and a click goes through to it;
  * [DiffViewerState.clickSymbolAtCaret] does the same from a key. With [DiffSlots.symbolCard] too, resting the pointer on
  * a name opens the app's card about it. [blocks] are runs of unchanged lines [DiffSlots.lineBlock] draws in place of their
- * code.
+ * code. [scrollPastEnd] is how far past its last row the view scrolls, as a share of its height. [DiffViewerState.revealLine]
+ * goes to a line, unfolding it, and [DiffViewerState.flash] washes a place gone to for a moment.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -78,6 +80,7 @@ fun DiffViewer(
     changeWash: ChangeWash = ChangeWash.Line,
     decorations: List<DiffDecoration> = emptyList(),
     blocks: List<DiffBlock> = emptyList(),
+    scrollPastEnd: Float = 0f,
 ) {
     val c = Stretch.colors
     val rows = remember(files, state.split, state.unfolded, state.collapsedFiles) {
@@ -106,6 +109,7 @@ fun DiffViewer(
         symbols.frameClock = scope.coroutineContext[MonotonicFrameClock]
     }
     SideEffect { symbols.card.enabled = slots.symbolCard != null && slots.symbolAt != null }
+    LaunchedEffect(state.flash) { state.flash.run() }
     LaunchedEffect(symbols) { symbols.followPointer() }
     LaunchedEffect(symbols) { symbols.card.follow() }
     LaunchedEffect(symbols, state.list) {
@@ -116,6 +120,7 @@ fun DiffViewer(
         marks + decorations.mapNotNull { d -> bars.of(d.style)?.let { DiffMark(d.fileIndex, d.side, d.range.line, it) } }
     }
     var listWidth by remember { mutableIntStateOf(0) }
+    var listHeight by remember { mutableIntStateOf(0) }
     val columns = wrapColumns(listWidth, state.split, metrics, slots, charWidth)
     val blockRoles = remember(rows, blocks, slots.lineBlock != null) { if (slots.lineBlock == null) emptyMap() else DiffBlockRows.of(rows, blocks) }
     val context = DiffRowContext(files, lineTokens, finds, decorated, metrics, look, state, strings, slots, blockRoles)
@@ -124,9 +129,9 @@ fun DiffViewer(
     Column(content) {
         if (showBar) DiffBar(files, state, strings)
         Row(Modifier.weight(1f).fillMaxWidth()) {
-            Box(Modifier.weight(1f).fillMaxHeight().onSizeChanged { listWidth = it.width }) {
+            Box(Modifier.weight(1f).fillMaxHeight().onSizeChanged { listWidth = it.width; listHeight = it.height }) {
                 SelectionContainer {
-                    LazyColumn(Modifier.fillMaxSize().onGloballyPositioned { state.listCoordinates = it }, state.list) {
+                    LazyColumn(Modifier.fillMaxSize().onGloballyPositioned { state.listCoordinates = it }, state.list, contentPadding = endSpace(listHeight, scrollPastEnd)) {
                         for (row in rows) {
                             when (row) {
                                 is DiffRow.FileHeader -> stickyHeader(row.key, "file") { FileHeaderRow(row, state, strings, slots) }

@@ -28,6 +28,8 @@ actual fun KeyEvent.chord(): KeyChord? {
         AwtKeyEvent.VK_SPACE -> "Space"
         AwtKeyEvent.VK_TAB -> "Tab"
         AwtKeyEvent.VK_SLASH -> "/"
+        AwtKeyEvent.VK_OPEN_BRACKET -> "["
+        AwtKeyEvent.VK_CLOSE_BRACKET -> "]"
         // AWT names these with symbols on macOS, and chords have one spelling everywhere.
         AwtKeyEvent.VK_UP -> "Up"
         AwtKeyEvent.VK_DOWN -> "Down"

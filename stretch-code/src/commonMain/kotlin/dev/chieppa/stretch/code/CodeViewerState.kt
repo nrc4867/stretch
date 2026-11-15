@@ -69,6 +69,21 @@ class CodeViewerState(wrap: Boolean = false) : TextFind {
      */
     suspend fun clickSymbolAtCaret(): Boolean = symbols.clickAtCaret { _, range -> scrollToMatch(range) }
 
+    /** The place washing for a moment after [flash] or [flashLine]. */
+    internal val flash = CodeFlash<Unit>()
+
+    /**
+     * Washes [range] in the accent for a moment, fading out, so the eye finds a place the view has just gone to, such as
+     * a definition. Scroll it into view first; a later flash replaces it.
+     */
+    fun flash(range: CodeRange) = flash.start(Unit, range.line, range.start, range.end)
+
+    /** Washes the whole of line [number] for a moment, as [flash] does a range. */
+    fun flashLine(number: Int) = flash.start(Unit, number, 0, null)
+
+    /** The range washing now, or null once it has faded; a whole line's runs from 0 to [Int.MAX_VALUE]. */
+    val flashing: CodeRange? get() = flash.spot?.let { CodeRange(it.line, it.start, it.end ?: Int.MAX_VALUE) }
+
     /** The first line showing at the top, counting from 1. */
     val firstVisibleLine: Int get() = list.firstVisibleItemIndex + 1
 
