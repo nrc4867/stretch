@@ -12,7 +12,7 @@ private data class Edit(val start: Int, val end: Int, val replacement: String = 
 /** Source characters [start] until [end] styled [style], linking to [url] when it is a link. */
 private data class StyleRange(val start: Int, val end: Int, val style: RichStyle, val url: String? = null)
 
-private val imagePattern = Regex("""!\[([^\]]*)]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)""")
+private val imagePattern = Regex("""!\[([^\]]*)]\(\s*(?:<([^>\n]*)>|([^)\s]+))(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*\)""")
 private val commentPattern = Regex("""<!--[\s\S]*?-->""")
 private val bareUrl = Regex("""https?://[^\s<>()]+[^\s<>().,;:!?'"]""")
 
@@ -25,9 +25,9 @@ private val tagStyles = mapOf(
 
 /**
  * The text of [source], a block of [kind], as a reader sees it: markers left out, markdown and inline HTML styled,
- * `<br>` breaking the line, character references decoded, bare addresses linked, comments and unknown tags dropped
- * keeping their text, and pictures, from `![alt](url)` or `<img>`, pulled out to show after the text. Code is left
- * as written.
+ * `<br>` breaking the line, character references and emoji shortcodes decoded, bare addresses linked, comments and
+ * unknown tags dropped keeping their text, and pictures, from `![alt](url "title")` or `<img>`, taken out of the
+ * text with the place each sat. Code is left as written.
  */
 internal fun readOnlyText(source: String, kind: BlockKind, styles: RichStyles): RichText {
     if (kind is BlockKind.Code || kind == BlockKind.Raw) return RichText(AnnotatedString(if (kind is BlockKind.Code) codeBody(source, kind) else source))
@@ -36,20 +36,24 @@ internal fun readOnlyText(source: String, kind: BlockKind, styles: RichStyles): 
     fun inCode(at: Int) = code.any { at in it }
     val edits = ArrayList<Edit>()
     val ranges = ArrayList<StyleRange>()
-    val pictures = ArrayList<Picture>()
+    val pictures = ArrayList<Pair<Int, Picture>>()
     markup.hidden.forEach { edits += Edit(it.first, it.last + 1) }
     fun linkAround(at: Int) = markup.spans.lastOrNull { it.style == InlineStyle.Link && at >= it.start - 1 && at <= it.end }?.url
     for (match in imagePattern.findAll(source)) {
         if (inCode(match.range.first)) continue
         edits += Edit(match.range.first, match.range.last + 1)
-        val url = match.groupValues[2]
-        pictures += Picture(url, match.groupValues[1], link = linkAround(match.range.first)?.takeIf { it != url })
+        val url = match.groupValues[2].ifEmpty { match.groupValues[3] }
+        pictures += match.range.first to Picture(url, match.groupValues[1], link = linkAround(match.range.first)?.takeIf { it != url })
     }
     for (match in commentPattern.findAll(source)) if (!inCode(match.range.first)) edits += Edit(match.range.first, match.range.last + 1)
     htmlEdits(source, ::inCode, edits, ranges, pictures)
     for (match in entityPattern.findAll(source)) {
         if (inCode(match.range.first)) continue
         decodeEntity(match.value)?.let { edits += Edit(match.range.first, match.range.last + 1, it) }
+    }
+    for (match in shortcodePattern.findAll(source)) {
+        if (inCode(match.range.first)) continue
+        emojiOf(match.groupValues[1])?.let { edits += Edit(match.range.first, match.range.last + 1, it) }
     }
     val linked = markup.spans.filter { it.style == InlineStyle.Link }
     for (match in bareUrl.findAll(source)) {
@@ -58,11 +62,13 @@ internal fun readOnlyText(source: String, kind: BlockKind, styles: RichStyles): 
         ranges += StyleRange(start, match.range.last + 1, RichStyle.Link, match.value)
     }
     markup.spans.forEach { ranges += StyleRange(it.start, it.end, richStyleOf(it.style), it.url) }
-    return RichText(rewrite(source, edits, ranges, styles), pictures)
+    val (text, landed) = rewrite(source, edits, ranges, styles)
+    val placed = pictures.sortedBy { it.first }
+    return RichText(text, placed.map { it.second }, placed.map { landed[it.first] })
 }
 
 /** Inline HTML tags in [source]: each tag dropped, `<br>` made a line break, `<img>` a picture, styled tags' text styled. */
-private fun htmlEdits(source: String, inCode: (Int) -> Boolean, edits: MutableList<Edit>, ranges: MutableList<StyleRange>, pictures: MutableList<Picture>) {
+private fun htmlEdits(source: String, inCode: (Int) -> Boolean, edits: MutableList<Edit>, ranges: MutableList<StyleRange>, pictures: MutableList<Pair<Int, Picture>>) {
     val open = ArrayList<Pair<String, Pair<Int, Map<String, String>>>>()
     var link: String? = null
     for (match in tagPattern.findAll(source)) {
@@ -76,7 +82,7 @@ private fun htmlEdits(source: String, inCode: (Int) -> Boolean, edits: MutableLi
             name == "br" -> edits += Edit(start, end, "\n")
             name == "img" -> {
                 edits += Edit(start, end)
-                attributes["src"]?.takeIf { it.isNotBlank() }?.let { pictures += Picture(it, attributes["alt"].orEmpty(), attributes["width"]?.toIntOrNull(), link) }
+                attributes["src"]?.takeIf { it.isNotBlank() }?.let { pictures += start to Picture(it, attributes["alt"].orEmpty(), attributes["width"]?.toIntOrNull(), link) }
             }
             closing -> {
                 edits += Edit(start, end)
@@ -100,8 +106,8 @@ private fun htmlEdits(source: String, inCode: (Int) -> Boolean, edits: MutableLi
     }
 }
 
-/** [source] with [edits] made and [ranges] styled where their text lands. */
-private fun rewrite(source: String, edits: List<Edit>, ranges: List<StyleRange>, styles: RichStyles): AnnotatedString {
+/** [source] with [edits] made and [ranges] styled where their text lands, and where each source offset landed. */
+private fun rewrite(source: String, edits: List<Edit>, ranges: List<StyleRange>, styles: RichStyles): Pair<AnnotatedString, IntArray> {
     val builder = AnnotatedString.Builder()
     val landed = IntArray(source.length + 1)
     var at = 0
@@ -132,6 +138,7 @@ private fun rewrite(source: String, edits: List<Edit>, ranges: List<StyleRange>,
         if (start >= end) continue
         builder.addStyle(styles(range.style), start, end)
         range.url?.let { builder.addStringAnnotation(URL_ANNOTATION, it, start, end) }
+        if (range.style == RichStyle.Code) builder.addStringAnnotation(CODE_ANNOTATION, "", start, end)
     }
-    return builder.toAnnotatedString()
+    return builder.toAnnotatedString() to landed
 }

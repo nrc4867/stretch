@@ -54,7 +54,7 @@ private fun blockEnd(lines: List<String>, start: Int, first: Boolean): Int {
     listLine.find(line)?.let { return listItemEnd(lines, start, it.groupValues[1].length + it.groupValues[2].length + 1) }
     if (imageLine.matches(line) && (start + 1 >= lines.size || lines[start + 1].isBlank())) return start + 1
     if (indentedCodeLine.containsMatchIn(line)) return indentedEnd(lines, start)
-    if (htmlLine.containsMatchIn(line)) return runEnd(lines, start + 1) { it.isNotBlank() }
+    if (htmlLine.containsMatchIn(line)) htmlBlockEnd(lines, start)?.let { return it }
     return paragraphEnd(lines, start)
 }
 
@@ -111,7 +111,7 @@ private fun indentedEnd(lines: List<String>, start: Int): Int {
 
 private fun startsBlock(line: String, next: String?): Boolean =
     line.isBlank() || fenceLine.containsMatchIn(line) || headingLine.containsMatchIn(line) || dividerLine.matches(line) ||
-        quoteLine.containsMatchIn(line) || listLine.containsMatchIn(line) || isTableStart(line, next) || htmlLine.containsMatchIn(line)
+        quoteLine.containsMatchIn(line) || listLine.containsMatchIn(line) || isTableStart(line, next) || interruptsWithHtml(line)
 
 private fun paragraphEnd(lines: List<String>, start: Int): Int {
     var at = start + 1

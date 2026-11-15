@@ -30,7 +30,11 @@ fun MarkdownView(
     val click by rememberUpdatedState(onLinkClick)
     val context = remember(state, diagrams, images, strings, styles) {
         val onLink: (String) -> Unit = { click(it) }
-        val blockText: BlockTextView = { block, style, textModifier -> ReadOnlyBlockText(block, block.kind, style, textModifier, styles, images, onLink) }
+        val blockText: BlockTextView = { block, style, textModifier ->
+            // A block that starts with an inline tag reads as a paragraph with HTML in it.
+            val kind = if (startsWithHtml(block)) BlockKind.Paragraph else block.kind
+            ReadOnlyBlockText(block, kind, style, textModifier, styles, images, onLink)
+        }
         BlockContext(state, diagrams, images, onLink, strings, readOnly = true, text = blockText)
     }
     SelectionContainer(modifier) { ViewNodes(nodes, context) }
