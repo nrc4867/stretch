@@ -121,6 +121,20 @@ class TreeTest {
     }
 
     @Test
+    fun aPlainClickCallsOnClickEachTime() = runComposeUiTest {
+        val state = TreeState(expanded = setOf("src", "main"))
+        var clicked = emptyList<String>()
+        setStretchContent {
+            Tree(folders, state, k, name, Modifier.width(260.dp).height(400.dp), onClick = { clicked = clicked + it })
+        }
+        onNodeWithText("README.md").performClick()
+        onNodeWithText("README.md").performClick()
+        onNodeWithText("App.kt").performClick()
+        assertEquals(listOf("README.md", "README.md", "App.kt"), clicked)
+        assertEquals(setOf<Any>("App.kt"), state.selection)
+    }
+
+    @Test
     fun enterAndDoubleClickActivate() = runComposeUiTest {
         val state = TreeState(expanded = setOf("src", "main"))
         var opened = emptyList<String>()
