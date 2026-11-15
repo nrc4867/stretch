@@ -1,6 +1,10 @@
 package dev.chieppa.stretch.frame
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
@@ -78,5 +82,27 @@ class MenuScrollTest {
         val scroll = onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
             .fetchSemanticsNodes().map { it.config[SemanticsProperties.VerticalScrollAxisRange] }
         assertTrue(scroll.all { it.maxValue() == 0f })
+    }
+
+    @Test
+    fun aTallMenuIsDrawnOnlyAtItsFinalPlace() = runDesktopComposeUiTest(width = 400, height = windowHeight) {
+        var open by mutableStateOf(false)
+        var top = 0f
+        val drawnAt = mutableListOf<Float>()
+        setStretchContent {
+            Box(Modifier.fillMaxSize()) {
+                Box(Modifier.align(Alignment.BottomStart).padding(bottom = 40.dp).size(40.dp)) {
+                    Menu(expanded = open, onDismiss = {}) {
+                        Box(Modifier.size(8.dp).onGloballyPositioned { top = it.positionInWindow().y }.drawBehind { drawnAt += top })
+                        for (n in 1..40) MenuItem("Item $n", {})
+                    }
+                }
+            }
+        }
+        open = true
+        waitForIdle()
+        onNodeWithText("Item 1").assertExists()
+        assertTrue(drawnAt.isNotEmpty())
+        assertEquals(listOf(drawnAt.last()), drawnAt.distinct())
     }
 }

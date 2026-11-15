@@ -48,6 +48,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -135,7 +136,8 @@ private const val DISABLED_ITEM_ALPHA = 0.4f
  * A dropdown or context menu under its anchor. Put [MenuItem], [MenuDivider] and [MenuLabel] inside. With [anchor], a
  * rectangle in pixels from the top left of the element the menu is composed in, it opens under that rectangle instead,
  * such as under a name a code view reports clicked. A menu too tall for the window takes the room beside its anchor,
- * above it when there is more there, and scrolls its items with a themed scrollbar.
+ * above it when there is more there, and scrolls its items with a themed scrollbar. It shows only once it knows that
+ * room, so a long menu appears at its final size and place rather than first at its full height.
  */
 @Composable
 fun Menu(expanded: Boolean, onDismiss: () -> Unit, anchor: Rect? = null, content: @Composable ColumnScope.() -> Unit) {
@@ -143,9 +145,11 @@ fun Menu(expanded: Boolean, onDismiss: () -> Unit, anchor: Rect? = null, content
     var room by remember { mutableIntStateOf(Int.MAX_VALUE) }
     val density = LocalDensity.current
     val position = remember(anchor) { BelowAnchor(4, anchor?.roundToIntRect(), onRoom = { if (it != room) room = it }) }
-    val maxHeight = if (room == Int.MAX_VALUE) Dp.Unspecified else (with(density) { room.toDp() } - MENU_WINDOW_MARGIN).coerceAtLeast(MENU_MIN_HEIGHT)
+    // Read here rather than while drawing: the placement that tells the room comes after this composition.
+    val placed = room != Int.MAX_VALUE
+    val maxHeight = if (!placed) Dp.Unspecified else (with(density) { room.toDp() } - MENU_WINDOW_MARGIN).coerceAtLeast(MENU_MIN_HEIGHT)
     StretchPopup(popupPositionProvider = position, onDismissRequest = onDismiss, properties = TransientPopup, shadow = Stretch.shadows.pop) {
-        MenuPanel(maxHeight = maxHeight, content = content)
+        Box(if (placed) Modifier else Modifier.drawWithContent {}) { MenuPanel(maxHeight = maxHeight, content = content) }
     }
 }
 
