@@ -67,6 +67,7 @@ internal fun DiffRowContent(row: DiffRow, context: DiffRowContext) {
                 finds = finds.highlights(row.fileIndex, line, look.code),
                 decorations = decorations.on(row.fileIndex, DiffSide.Old, line.oldNumber) + decorations.on(row.fileIndex, DiffSide.New, line.newNumber),
                 keys = unifiedKeys(row.fileIndex, ref),
+                flash = state.flash,
             )
             UnifiedLine(line, tokens.of(row.fileIndex, line), metrics, look, state.wrap, state.leftScroll, extras, state.symbols)
             slots.lineAnnotation?.invoke(ref)
@@ -91,6 +92,7 @@ internal fun DiffRowContent(row: DiffRow, context: DiffRowContext) {
                     finds = finds.highlights(row.fileIndex, ref.line, look.code, ref.side),
                     decorations = decorations.on(row.fileIndex, ref.side, number),
                     keys = listOfNotNull(number?.let { CodeLineKey(DiffFileSide(row.fileIndex, ref.side), it) }),
+                    flash = state.flash,
                 )
             }
             // Wrapped, the row is as tall as its taller side, and both sides fill it so their washes and numbers line up.

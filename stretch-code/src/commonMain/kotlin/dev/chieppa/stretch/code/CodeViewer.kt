@@ -55,6 +55,8 @@ import kotlinx.coroutines.withContext
  * underlines it and a click goes through to it; [CodeViewerState.clickSymbolAtCaret] does the same from a key. With
  * [CodeViewerSlots.symbolCard] too, resting the pointer on a name opens the app's card about it. [blocks] are runs of
  * lines [CodeViewerSlots.lineBlock] draws in place of their code; runs that overlap or fall outside the text are left out.
+ * [scrollPastEnd] is how far past its last line the view scrolls, as a share of its height, so the last lines can be
+ * read away from the bottom edge. [CodeViewerState.flash] washes a place gone to for a moment.
  */
 @Composable
 fun CodeViewer(
@@ -74,6 +76,7 @@ fun CodeViewer(
     changeWash: ChangeWash = ChangeWash.Line,
     decorations: List<CodeDecoration> = emptyList(),
     blocks: List<IntRange> = emptyList(),
+    scrollPastEnd: Float = 0f,
 ) {
     val builtIn by produceState(emptyList<List<CodeToken>>(), text, language, tokens == null) {
         value = if (tokens != null) emptyList() else withContext(Dispatchers.Default) { tokenizeLines(text.lines, language) }
@@ -106,6 +109,7 @@ fun CodeViewer(
         symbols.frameClock = scope.coroutineContext[MonotonicFrameClock]
     }
     SideEffect { symbols.card.enabled = slots.symbolCard != null && slots.symbolAt != null }
+    LaunchedEffect(state.flash) { state.flash.run() }
     LaunchedEffect(symbols) { symbols.followPointer() }
     LaunchedEffect(symbols) { symbols.card.follow() }
     LaunchedEffect(symbols, state.list) {
@@ -115,6 +119,7 @@ fun CodeViewer(
     val findFocus = remember { FocusRequester() }
     var opened by remember { mutableIntStateOf(0) }
     var listWidth by remember { mutableIntStateOf(0) }
+    var listHeight by remember { mutableIntStateOf(0) }
     // Room a wrapped line has, in characters, beside its gutter, number and padding.
     val beside = metrics.numberWidth + StretchSpacing.space8 + if (slots.gutterMark != null) slots.gutterWidth else 0.dp
     val besidePx = with(LocalDensity.current) { beside.toPx() }
@@ -125,9 +130,9 @@ fun CodeViewer(
     Column(content) {
         if (state.findOpen) FindBar(state, strings.find, findFocus, opened)
         Row(Modifier.weight(1f).fillMaxWidth()) {
-            Box(Modifier.weight(1f).fillMaxHeight().onSizeChanged { listWidth = it.width }) {
+            Box(Modifier.weight(1f).fillMaxHeight().onSizeChanged { listWidth = it.width; listHeight = it.height }) {
                 SelectionContainer {
-                    LazyColumn(Modifier.fillMaxSize(), state.list) {
+                    LazyColumn(Modifier.fillMaxSize(), state.list, contentPadding = endSpace(listHeight, scrollPastEnd)) {
                         items(text.lineCount, key = { it }) { index ->
                             val number = index + 1
                             val tone = tones(number)

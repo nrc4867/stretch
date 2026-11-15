@@ -10,6 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
+import dev.chieppa.stretch.code.CodeFlash
+import dev.chieppa.stretch.code.CodeRange
 import dev.chieppa.stretch.code.CodeSpot
 import dev.chieppa.stretch.code.CodeSymbolPointer
 import dev.chieppa.stretch.code.revealColumn
@@ -59,6 +61,22 @@ class DiffViewerState(split: Boolean = false, wrap: Boolean = false) {
     suspend fun clickSymbolAtCaret(): Boolean = symbols.clickAtCaret { spot, range ->
         scrollToMatch(DiffMatch(spot.group.fileIndex, spot.group.side, range.line, range.start, range.end))
     }
+
+    /** The place washing for a moment after [flash] or [flashLine]. */
+    internal val flash = CodeFlash<DiffFileSide>()
+
+    /**
+     * Washes [range], on [side] of file [fileIndex], in the accent for a moment, fading out, so the eye finds a place
+     * the view has just gone to, such as a definition. Bring it into view first, as [revealLine] does; a later flash
+     * replaces it.
+     */
+    fun flash(fileIndex: Int, side: DiffSide, range: CodeRange) = flash.start(DiffFileSide(fileIndex, side), range.line, range.start, range.end)
+
+    /** Washes the whole of [line] on [side] of file [fileIndex] for a moment, as [flash] does a range. */
+    fun flashLine(fileIndex: Int, side: DiffSide, line: Int) = flash.start(DiffFileSide(fileIndex, side), line, 0, null)
+
+    /** The place washing now, as a match on its side, or null once it has faded; a whole line's ends at [Int.MAX_VALUE]. */
+    val flashing: DiffMatch? get() = flash.spot?.let { DiffMatch(it.group.fileIndex, it.group.side, it.line, it.start, it.end ?: Int.MAX_VALUE) }
 
     /** The lines selected over the line numbers, if any. Set it to null to clear the selection. */
     var lineSelection by mutableStateOf<DiffLineRange?>(null)
@@ -112,6 +130,24 @@ class DiffViewerState(split: Boolean = false, wrap: Boolean = false) {
     /** Scrolls so [line] on [side] of file [fileIndex] is at the top, or the nearest line to it that shows. */
     suspend fun scrollToLine(fileIndex: Int, side: DiffSide, line: Int) {
         rowOfLine(rows, fileIndex, side, line)?.let { list.scrollToItem(it) }
+    }
+
+    /**
+     * Scrolls so [line] on [side] of file [fileIndex] is near the top with [leadIn] rows above it, opening its file and
+     * the fold that hides it first, as going to a place in the file should: unlike [scrollToLine], it never settles for
+     * a nearby line a fold leaves showing.
+     */
+    suspend fun revealLine(fileIndex: Int, side: DiffSide, line: Int, leadIn: Int = LEAD_IN_ROWS) {
+        if (fileIndex !in files.indices) return
+        val before = rows
+        if (fileIndex in collapsedFiles) collapsedFiles = collapsedFiles - fileIndex
+        val match = DiffMatch(fileIndex, side, line, 0, 0)
+        hiddenBy(match, diffRows(files, split, unfolded, collapsedFiles))?.let { unfold(it) }
+        val laidOut = diffRows(files, split, unfolded, collapsedFiles)
+        val index = rowOfLine(laidOut, fileIndex, side, line) ?: return
+        val lead = (index - leadIn).coerceAtLeast(0)
+        // When the rows change, the scroll lands on them at the next layout rather than on the rows showing now.
+        if (laidOut.size != before.size) list.requestScrollToItem(lead) else list.scrollToItem(lead)
     }
 
     /** The line number on [side] of file [fileIndex] at [window], a point in the window, if a row there has one. */

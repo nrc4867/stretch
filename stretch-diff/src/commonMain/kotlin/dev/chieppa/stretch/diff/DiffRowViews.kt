@@ -50,6 +50,8 @@ import dev.chieppa.stretch.code.LineTone
 import dev.chieppa.stretch.code.lineWash
 import dev.chieppa.stretch.code.rememberCodeLook
 import dev.chieppa.stretch.code.washesGutter
+import dev.chieppa.stretch.code.CodeFlash
+import dev.chieppa.stretch.code.codeFlash
 import dev.chieppa.stretch.code.gutterPresses
 import dev.chieppa.stretch.theme.StretchSpacing
 import dev.chieppa.stretch.theme.Icon
@@ -101,8 +103,8 @@ private fun signOf(kind: LineKind) = when (kind) {
 
 /**
  * What an app and the viewer add to one line: its wash, its gutter mark, how each side's number target answers the
- * pointer, its find matches and decorations, and the [keys] it answers to for clicking through to symbols, the one the
- * pointer reports first.
+ * pointer, its find matches and decorations, the [keys] it answers to for clicking through to symbols, the one the
+ * pointer reports first, and the viewer's [flash] it washes while the flash is on one of them.
  */
 internal class LineExtras(
     val tone: LineTone? = null,
@@ -113,6 +115,7 @@ internal class LineExtras(
     val finds: List<CodeHighlight> = emptyList(),
     val decorations: List<CodeDecoration> = emptyList(),
     val keys: List<CodeLineKey<DiffFileSide>> = emptyList(),
+    val flash: CodeFlash<DiffFileSide>? = null,
 )
 
 @Composable
@@ -166,7 +169,8 @@ private fun LineCode(
     val geometry = remember(line.text) { CodeLineGeometry(line.text) }
     SideEffect { geometry.decorations = extras.decorations }
     val input = if (keys.isEmpty()) Modifier else rememberCodeSymbolInput(symbols, keys, geometry)
-    CodeLineBody(text, metrics, look.code, wrap, scroll, modifier, paint.underlines, input) { geometry.layout = it }
+    val flashed = extras.flash?.let { input.codeFlash(it, keys, geometry, look.decoration.flash) } ?: input
+    CodeLineBody(text, metrics, look.code, wrap, scroll, modifier, paint.underlines, flashed) { geometry.layout = it }
 }
 
 @Composable

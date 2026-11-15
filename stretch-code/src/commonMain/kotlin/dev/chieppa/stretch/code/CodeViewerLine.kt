@@ -44,7 +44,7 @@ internal fun CodeViewerLine(
     val geometry = remember(line) { CodeLineGeometry(line) }
     SideEffect { geometry.decorations = decorations }
     val keys = remember(number) { listOf(CodeLineKey(Unit, number)) }
-    val input = rememberCodeSymbolInput(symbols, keys, geometry)
+    val input = rememberCodeSymbolInput(symbols, keys, geometry).codeFlash(state.flash, keys, geometry, decorationLook.flash)
     val click = slots.onLineNumberClick
     Column {
         CodeLineRow(

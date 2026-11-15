@@ -16,6 +16,8 @@ class CodeDecorationLook(
     val error: Color,
     /** The text and underline of the symbol a Ctrl or Cmd click would open. */
     val link: Color,
+    /** The wash a place the view has just gone to flashes in, at full strength. */
+    val flash: Color = link,
 ) {
     fun of(style: CodeDecorationStyle): Color = when (style) {
         CodeDecorationStyle.Reference -> reference
@@ -44,6 +46,7 @@ fun rememberCodeDecorationLook(): CodeDecorationLook {
             warning = c.warnEdge,
             error = c.errorEdge,
             link = c.affected,
+            flash = c.accent,
         )
     }
 }
