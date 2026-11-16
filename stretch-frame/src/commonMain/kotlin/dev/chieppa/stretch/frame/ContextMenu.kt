@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -23,11 +24,15 @@ import dev.chieppa.stretch.ui.opensContextMenu
  * `close` from each. Every item should also exist in the command palette, so the menu is a shortcut, never the only
  * way. An area inside another opens one menu: its own items, then a divider, then the outer area's, so a row's menu
  * keeps the menu of the card it sits in and the outer menu never opens on top of it.
+ *
+ * [opener] opens the menu under the area from outside it, for an area that never holds the focus itself, such as a
+ * cell of a grid that keeps the focus and a keyboard cursor: the grid hears Shift F10 and opens its cursor cell's menu.
  */
 @Composable
 fun ContextMenuArea(
     menu: @Composable ColumnScope.(close: () -> Unit) -> Unit,
     modifier: Modifier = Modifier,
+    opener: ContextMenuOpener? = null,
     content: @Composable () -> Unit,
 ) {
     var at by remember { mutableStateOf<Offset?>(null) }
@@ -46,6 +51,12 @@ fun ContextMenuArea(
         at = point
         outer?.dismiss?.invoke()
     }
+    if (opener != null) {
+        DisposableEffect(opener) {
+            opener.open = { open(Offset(0f, height.toFloat())) }
+            onDispose { opener.open = null }
+        }
+    }
     Box(
         modifier
             .onSizeChanged { height = it.height }
@@ -54,6 +65,16 @@ fun ContextMenuArea(
     ) {
         CompositionLocalProvider(LocalContextMenu provides ContextMenuParent(merged) { at = null }) { content() }
         ContextMenuPopup(at, { at = null }, merged)
+    }
+}
+
+/** Opens the menu of the [ContextMenuArea] it is given to, under that area, as Shift F10 there does. */
+class ContextMenuOpener {
+    internal var open: (() -> Unit)? = null
+
+    /** Opens the menu; does nothing while no area holds this opener. */
+    fun open() {
+        open?.invoke()
     }
 }
 
