@@ -500,6 +500,26 @@ class FrameEditTest {
     }
 
     @Test
+    fun aSectionsCountReadsAtItsLabelFoldedOrNot() = runComposeUiTest {
+        var folded by mutableStateOf(false)
+        setStretchContent { DrawerSection("Head", collapsed = folded, onCollapsedChange = { folded = it }, count = "8") { RowText("Ear") } }
+        onNodeWithText("8").assertExists()
+        onNodeWithText("HEAD").performClick()
+        assertTrue(folded)
+        onNodeWithText("8").assertExists()
+        onNodeWithText("Ear").assertDoesNotExist()
+    }
+
+    @Test
+    fun aSectionsLabelOpensItsMenuAndItsRowsDoNot() = runComposeUiTest {
+        setStretchContent { DrawerSection("Head", menu = { close -> MenuItem("Rename", close) }) { RowText("Ear") } }
+        onNodeWithText("Ear").performMouseInput { rightClick() }
+        onNodeWithText("Rename").assertDoesNotExist()
+        onNodeWithText("HEAD").performMouseInput { rightClick() }
+        onNodeWithText("Rename").assertExists()
+    }
+
+    @Test
     fun menusFitTheirItems() = runComposeUiTest {
         setStretchContent {
             Box {

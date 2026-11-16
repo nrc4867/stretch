@@ -68,7 +68,7 @@ private fun AppWindow(onCloseRequest: () -> Unit, title: String, state: WindowSt
         val drawerWindows = remember(window) { DesktopDrawerWindows(window) }
         val paneWindows = remember(window) { DesktopPaneWindows(window) }
         CompositionLocalProvider(LocalNativeTitleBar provides titleBar, LocalDrawerWindows provides drawerWindows, LocalPaneWindows provides paneWindows) {
-            StretchContextMenus { Box(Modifier.fillMaxSize().focusHome()) { content() } }
+            StretchContextMenus { DragAndDropHost { Box(Modifier.fillMaxSize().focusHome()) { content() } } }
         }
     }
 }

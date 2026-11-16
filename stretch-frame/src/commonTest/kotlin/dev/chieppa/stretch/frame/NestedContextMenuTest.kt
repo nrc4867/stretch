@@ -1,6 +1,7 @@
 package dev.chieppa.stretch.frame
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -45,5 +46,21 @@ class NestedContextMenuTest {
         waitForIdle()
         onNodeWithText("Hide card").assertExists()
         onNodeWithText("Remove row").assertDoesNotExist()
+    }
+
+    @Test
+    fun anOpenerOpensItsAreasMenuFromOutsideIt() = runComposeUiTest {
+        val cells = listOf("Boots", "Sandals").associateWith { ContextMenuOpener() }
+        setStretchContent {
+            Column {
+                for ((name, opener) in cells) {
+                    ContextMenuArea({ close -> MenuItem("Remove $name", close) }, opener = opener) { Box(Modifier.size(40.dp)) }
+                }
+            }
+        }
+        runOnIdle { cells.getValue("Sandals").open() }
+        waitForIdle()
+        onNodeWithText("Remove Sandals").assertExists()
+        onNodeWithText("Remove Boots").assertDoesNotExist()
     }
 }

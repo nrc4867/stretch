@@ -37,7 +37,7 @@ fun stretchPage(title: String, content: @Composable () -> Unit) {
     body.style.overflowY = HIDDEN
     ComposeViewport(body) {
         CompositionLocalProvider(LocalPageDensity provides LocalDensity.current.density) {
-            Box(Modifier.fillMaxSize().focusHome()) { content() }
+            DragAndDropHost { Box(Modifier.fillMaxSize().focusHome()) { content() } }
         }
     }
 }

@@ -147,17 +147,11 @@ fun Menu(expanded: Boolean, onDismiss: () -> Unit, anchor: Rect? = null, content
     val position = remember(anchor) { BelowAnchor(4, anchor?.roundToIntRect(), onRoom = { if (it != room) room = it }) }
     // Read here rather than while drawing: the placement that tells the room comes after this composition.
     val placed = room != Int.MAX_VALUE
-    val maxHeight = if (!placed) Dp.Unspecified else (with(density) { room.toDp() } - MENU_WINDOW_MARGIN).coerceAtLeast(MENU_MIN_HEIGHT)
+    val maxHeight = if (!placed) Dp.Unspecified else overlayHeightCap(with(density) { room.toDp() })
     StretchPopup(popupPositionProvider = position, onDismissRequest = onDismiss, properties = TransientPopup, shadow = Stretch.shadows.pop) {
         Box(if (placed) Modifier else Modifier.drawWithContent {}) { MenuPanel(maxHeight = maxHeight, content = content) }
     }
 }
-
-/** The space a menu leaves between itself and the window's edge when it has to shrink to fit. */
-private val MENU_WINDOW_MARGIN = 8.dp
-
-/** The least height a menu shrinks to, when its anchor leaves almost no room on either side. */
-private val MENU_MIN_HEIGHT = 80.dp
 
 /**
  * The floating list a menu or context menu shows: as wide as its widest item, 200 to 360dp. It knows which [SubMenuItem]
@@ -178,52 +172,6 @@ fun MenuPanel(maxHeight: Dp = Dp.Unspecified, content: @Composable ColumnScope.(
             } else {
                 ScrollColumn(panel.heightIn(max = maxHeight)) { Column(Modifier.padding(4.dp), content = content) }
             }
-        }
-    }
-}
-
-/**
- * A popover: a small panel of live controls anchored to the thing that opened it, like a brush's settings or a
- * color picker. Unlike a [Menu] it stays open while you work in it; a click outside or Esc closes it. Changes in it
- * apply at once, so it has no OK button. With [anchor], a rectangle in pixels from the top left of the element the
- * popover is composed in, it opens under that rectangle instead, such as under a name a code view reports clicked.
- */
-@Composable
-fun Popover(
-    open: Boolean,
-    onDismiss: () -> Unit,
-    title: String? = null,
-    width: Dp = 280.dp,
-    anchor: Rect? = null,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    if (!open) return
-    val c = Stretch.colors
-    StretchPopup(popupPositionProvider = remember(anchor) { BelowAnchor(6, anchor?.roundToIntRect()) }, onDismissRequest = onDismiss, properties = TransientPopup, shadow = Stretch.shadows.pop) {
-        Column(
-            Modifier
-                .width(width)
-                .floating(Stretch.shapes.cardShape, Stretch.shadows.pop)
-                .onPreviewKeyEvent { event ->
-                    if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
-                        onDismiss()
-                        true
-                    } else {
-                        false
-                    }
-                },
-        ) {
-            if (title != null) {
-                Row(
-                    Modifier.fillMaxWidth().height(StretchSizes.row).padding(start = 12.dp, end = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    BasicText(title, Modifier.weight(1f), style = Stretch.type.body.merge(TextStyle(color = c.inkStrong)), maxLines = 1)
-                    IconButton(StretchIcons.Close, stringResource(Res.string.close), onDismiss, size = StretchSizes.seg)
-                }
-                Divider()
-            }
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
         }
     }
 }

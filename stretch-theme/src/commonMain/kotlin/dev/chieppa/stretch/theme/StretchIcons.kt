@@ -122,6 +122,12 @@ object StretchIcons {
             fill("M9 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0z")
         }
     }
+    val Duplicate: ImageVector by lazy {
+        icon("duplicate") {
+            stroke("M5.5 2.5h7a1 1 0 0 1 1 1v7")
+            stroke("M3.5 5.5h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1z")
+        }
+    }
     val Eraser: ImageVector by lazy {
         icon("eraser") {
             stroke("M9.5 2.5l4 4-6.5 6.5H4.5l-2-2a1.4 1.4 0 0 1 0-2z")
@@ -437,6 +443,14 @@ object StretchIcons {
     val Theme: ImageVector by lazy {
         icon("theme") {
             stroke("M13 9.5A5.5 5.5 0 1 1 6.5 3a4.5 4.5 0 0 0 6.5 6.5z")
+        }
+    }
+    val Trash: ImageVector by lazy {
+        icon("trash") {
+            stroke("M2.5 4.5h11")
+            stroke("M6 4.5V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5")
+            stroke("M4 4.5l.7 8.6a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-8.6")
+            stroke("M6.75 7v4.5M9.25 7v4.5")
         }
     }
     val Undo: ImageVector by lazy {

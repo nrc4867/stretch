@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -127,7 +128,9 @@ fun Drawer(
 /**
  * A group of rows in a drawer, with an optional eyebrow label and a divider under it. With [collapsed] set the label
  * folds the section: a chevron leads it and clicking it reports [onCollapsedChange]. The drawer's app keeps which
- * sections are folded, like the rest of its layout.
+ * sections are folded, like the rest of its layout. [count], such as how many items the section holds, reads at the
+ * label's end in the value face, folded or not. [menu] is the label's context menu, as a [ContextMenuArea] gives it, for
+ * what acts on the section as a whole; the rows below keep their own.
  */
 @Composable
 fun DrawerSection(
@@ -135,6 +138,8 @@ fun DrawerSection(
     divider: Boolean = true,
     collapsed: Boolean? = null,
     onCollapsedChange: (Boolean) -> Unit = {},
+    count: String? = null,
+    menu: (@Composable ColumnScope.(close: () -> Unit) -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = Stretch.colors
@@ -144,7 +149,7 @@ fun DrawerSection(
             Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = if (collapsed == true) 10.dp else 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (label != null) {
+            if (label != null) SectionLabelMenu(menu) { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 if (folds) {
                     val source = remember { MutableInteractionSource() }
                     val hovered by source.collectIsHoveredAsState()
@@ -163,11 +168,21 @@ fun DrawerSection(
                 } else {
                     BasicText(label.uppercase(), style = Stretch.type.eyebrow.merge(TextStyle(color = c.inkMuted)))
                 }
-            }
+                if (count != null) {
+                    Spacer(Modifier.weight(1f))
+                    BasicText(count, style = Stretch.type.value.merge(TextStyle(color = c.inkMuted)), maxLines = 1)
+                }
+            } }
             if (collapsed != true) content()
         }
         if (divider) Divider()
     }
+}
+
+/** A section's label, inside the context menu [menu] gives it, or as it is with none. */
+@Composable
+private fun SectionLabelMenu(menu: (@Composable ColumnScope.(close: () -> Unit) -> Unit)?, label: @Composable () -> Unit) {
+    if (menu == null) label() else ContextMenuArea(menu, content = label)
 }
 
 /** A settings row: a fixed-width label, then the control and its readout. */

@@ -15,6 +15,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import dev.chieppa.stretch.theme.Stretch
 
 /**
@@ -44,13 +45,7 @@ internal fun PickCell(
         muted -> c.inkSubtle
         else -> c.ink
     }
-    val focusEdge = if (contrast(c.focus, fill) < 3f) c.inkStrong else c.focus
-    val (edgeWidth, edge) = when {
-        cursor -> (Stretch.stroke + focusGrowth) to focusEdge
-        selected -> Stretch.stroke to c.onEdge
-        marked -> Stretch.stroke to c.chipEdge
-        else -> Stretch.stroke to Color.Transparent
-    }
+    val (edgeWidth, edge) = pickEdge(fill, cursor, selected, marked)
     Box(
         modifier
             .clip(shape)
@@ -66,5 +61,20 @@ internal fun PickCell(
         contentAlignment = Alignment.Center,
     ) {
         Label(text, Stretch.type.value, ink)
+    }
+}
+
+/**
+ * The edge of a picker's cell on [fill]: the keyboard [cursor] in the focus color, a stroke thicker, or ink-strong
+ * where the focus color would vanish against [fill]; then [selected] and [marked]; otherwise none.
+ */
+@Composable
+internal fun pickEdge(fill: Color, cursor: Boolean, selected: Boolean = false, marked: Boolean = false): Pair<Dp, Color> {
+    val c = Stretch.colors
+    return when {
+        cursor -> (Stretch.stroke + focusGrowth) to (if (contrast(c.focus, fill) < 3f) c.inkStrong else c.focus)
+        selected -> Stretch.stroke to c.onEdge
+        marked -> Stretch.stroke to c.chipEdge
+        else -> Stretch.stroke to Color.Transparent
     }
 }
