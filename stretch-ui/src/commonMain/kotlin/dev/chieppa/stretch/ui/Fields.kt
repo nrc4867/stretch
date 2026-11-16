@@ -83,45 +83,95 @@ fun TextField(
     mono: Boolean = false,
     masked: Boolean = false,
 ) {
-    val c = Stretch.colors
     val state = rememberControlState()
-    val shape = Stretch.shapes.ctlShape
-    val face = if (mono) Stretch.type.valueSm else Stretch.type.body
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.holdsTyping().focusRing(state, shape, always = true).semantics {
-            this.contentDescription = contentDescription
-            if (error != null) error(error)
-            if (masked) password()
-        },
+        modifier = modifier.fieldSemantics(state, contentDescription, error, masked),
         singleLine = true,
         visualTransformation = if (masked) PasswordVisualTransformation() else VisualTransformation.None,
-        textStyle = face.merge(TextStyle(color = c.inkStrong)),
-        cursorBrush = SolidColor(c.inkStrong),
+        textStyle = fieldText(mono),
+        cursorBrush = SolidColor(Stretch.colors.inkStrong),
         interactionSource = state.source,
-        decorationBox = { inner ->
-            Row(
-                Modifier
-                    .height(StretchSizes.ctl)
-                    .clip(shape)
-                    .background(c.surfaceFloat)
-                    .border(Stretch.stroke, if (error != null) c.errorEdge else c.lineControl, shape)
-                    .padding(horizontal = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(iconGap),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (icon != null) Icon(icon, c.inkMuted)
-                leading?.invoke()
-                Box(Modifier.weight(1f)) {
-                    if (value.isEmpty()) Label(placeholder, Stretch.type.body, c.inkSubtle)
-                    inner()
-                }
-                trailing?.invoke()
-                if (error != null) ErrorMark(error)
-            }
-        },
+        decorationBox = { inner -> FieldDecoration(value.isEmpty(), placeholder, icon, leading, trailing, error, inner) },
     )
+}
+
+/**
+ * A one-line text field as [TextField] draws it, holding a [TextFieldValue] so the caller sets the selection and caret, for a
+ * name opened with all of it selected.
+ */
+@Composable
+fun TextField(
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    icon: ImageVector? = null,
+    contentDescription: String = placeholder,
+    leading: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
+    error: String? = null,
+    mono: Boolean = false,
+    masked: Boolean = false,
+) {
+    val state = rememberControlState()
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.fieldSemantics(state, contentDescription, error, masked),
+        singleLine = true,
+        visualTransformation = if (masked) PasswordVisualTransformation() else VisualTransformation.None,
+        textStyle = fieldText(mono),
+        cursorBrush = SolidColor(Stretch.colors.inkStrong),
+        interactionSource = state.source,
+        decorationBox = { inner -> FieldDecoration(value.text.isEmpty(), placeholder, icon, leading, trailing, error, inner) },
+    )
+}
+
+@Composable
+private fun Modifier.fieldSemantics(state: ControlState, contentDescription: String, error: String?, masked: Boolean): Modifier =
+    holdsTyping().focusRing(state, Stretch.shapes.ctlShape, always = true).semantics {
+        this.contentDescription = contentDescription
+        if (error != null) error(error)
+        if (masked) password()
+    }
+
+@Composable
+private fun fieldText(mono: Boolean): TextStyle = (if (mono) Stretch.type.valueSm else Stretch.type.body).merge(TextStyle(color = Stretch.colors.inkStrong))
+
+/** A text field's frame round its [inner] text: the edge, icons, and [placeholder] while [empty]. */
+@Composable
+private fun FieldDecoration(
+    empty: Boolean,
+    placeholder: String,
+    icon: ImageVector?,
+    leading: (@Composable () -> Unit)?,
+    trailing: (@Composable () -> Unit)?,
+    error: String?,
+    inner: @Composable () -> Unit,
+) {
+    val c = Stretch.colors
+    val shape = Stretch.shapes.ctlShape
+    Row(
+        Modifier
+            .height(StretchSizes.ctl)
+            .clip(shape)
+            .background(c.surfaceFloat)
+            .border(Stretch.stroke, if (error != null) c.errorEdge else c.lineControl, shape)
+            .padding(horizontal = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(iconGap),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) Icon(icon, c.inkMuted)
+        leading?.invoke()
+        Box(Modifier.weight(1f)) {
+            if (empty) Label(placeholder, Stretch.type.body, c.inkSubtle)
+            inner()
+        }
+        trailing?.invoke()
+        if (error != null) ErrorMark(error)
+    }
 }
 
 @Composable

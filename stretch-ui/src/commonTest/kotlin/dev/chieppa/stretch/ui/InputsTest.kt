@@ -7,6 +7,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -95,6 +97,16 @@ class InputsTest {
         setContent { StretchTheme(StretchThemes.Ink) { TextField(text, { text = it }, placeholder = "Search") } }
         onNodeWithContentDescription("Search").performTextInput("ear")
         assertEquals("ear", text)
+    }
+
+    @Test
+    fun aFieldOpenedWithItsTextSelectedReplacesItOnTyping() = runComposeUiTest {
+        var value by mutableStateOf(TextFieldValue("Garment 1", TextRange(0, 9)))
+        setContent { StretchTheme(StretchThemes.Ink) { TextField(value, { value = it }, contentDescription = "Name") } }
+        val field = onNodeWithContentDescription("Name")
+        field.requestFocus()
+        field.performTextInput("Cap")
+        assertEquals("Cap", value.text)
     }
 
     @Test
