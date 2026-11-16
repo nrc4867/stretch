@@ -446,6 +446,7 @@ private fun IconsDemo() {
         "command" to StretchIcons.Command, "theme" to StretchIcons.Theme, "chevron-down" to StretchIcons.ChevronDown,
         "chevron-right" to StretchIcons.ChevronRight, "dock-bottom" to StretchIcons.DockBottom, "import" to StretchIcons.Import,
         "file" to StretchIcons.File, "arrow-up" to StretchIcons.ArrowUp, "arrow-down" to StretchIcons.ArrowDown,
+        "duplicate" to StretchIcons.Duplicate, "trash" to StretchIcons.Trash,
     )
     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         for ((name, icon) in icons) {
