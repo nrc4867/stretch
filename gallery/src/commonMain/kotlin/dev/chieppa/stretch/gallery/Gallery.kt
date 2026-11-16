@@ -166,6 +166,7 @@ private fun ComponentsPage() {
         Section("Feedback") { FeedbackDemo() }
         Section("Loading") { LoadingDemo() }
         Section("Grid") { GridDemo() }
+        Section("Picker grid, drag and drop, long popover") { PickAndDropDemo() }
         Section("Toolbar and readouts") { ToolbarDemo() }
         Section("Icons") { IconsDemo() }
     }
