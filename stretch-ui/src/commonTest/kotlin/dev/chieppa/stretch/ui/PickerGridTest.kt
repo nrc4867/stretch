@@ -56,6 +56,7 @@ class PickerGridTest {
         picked: MutableList<String>,
         enabled: (String) -> Boolean = { true },
         onLeaveTop: () -> Unit = {},
+        pickOnClick: (String) -> Boolean = { false },
         gridModifier: Modifier = Modifier,
         above: @Composable () -> Unit = {},
     ) = setContent {
@@ -65,7 +66,7 @@ class PickerGridTest {
                 PickerGrid(
                     parts, cursor(), onCursor, { picked += it }, "Parts",
                     gridModifier.width(256.dp).testTag("grid"),
-                    enabled = enabled, onLeaveTop = onLeaveTop,
+                    enabled = enabled, onLeaveTop = onLeaveTop, pickOnClick = pickOnClick,
                 ) { part, _ -> BasicText(part, Modifier.fillMaxWidth().height(40.dp)) }
             }
         }
@@ -111,6 +112,24 @@ class PickerGridTest {
         onNodeWithText("Paw").performMouseInput { doubleClick() }
         assertEquals("Paw", cursor)
         assertEquals(listOf("Paw"), picked)
+    }
+
+    @Test
+    fun aClickPicksTheCellsThatPickOnClickAndADoubleClickPicksThemOnce() = runComposeUiTest {
+        var cursor by mutableStateOf<String?>(null)
+        val picked = mutableListOf<String>()
+        show({ cursor }, { cursor = it }, picked, pickOnClick = { it != "Head" })
+        onNodeWithText("Hand").performClick()
+        assertEquals("Hand", cursor)
+        assertEquals(listOf("Hand"), picked)
+        onNodeWithText("Paw").performMouseInput { doubleClick() }
+        assertEquals(listOf("Hand", "Paw"), picked)
+        onNodeWithTag("grid").requestFocus()
+        onNodeWithTag("grid").performKeyInput { pressKey(Key.Enter) }
+        assertEquals(listOf("Hand", "Paw", "Paw"), picked)
+        onNodeWithText("Head").performClick()
+        assertEquals("Head", cursor)
+        assertEquals(listOf("Hand", "Paw", "Paw"), picked)
     }
 
     @Test

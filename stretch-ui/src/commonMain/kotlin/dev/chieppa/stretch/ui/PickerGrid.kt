@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -50,6 +51,9 @@ val PickerGridGap = 8.dp
  * focus on, such as up into a search field or down into the next group's grid. Give the grid a
  * `Modifier.focusRequester` to bring the focus to it. Enter with no cursor is left to the content around the grid, such
  * as a panel's default button. [contentDescription] names the grid for assistive tools.
+ *
+ * A click picks the cells [pickOnClick] names too, for cells that act at once, such as a toggle or a New cell; a
+ * double-click on one picks once, as its first click, not twice or three times.
  */
 @Composable
 fun <T> PickerGrid(
@@ -63,6 +67,7 @@ fun <T> PickerGrid(
     enabled: (T) -> Boolean = { true },
     onLeaveTop: () -> Unit = {},
     onLeaveBottom: () -> Unit = {},
+    pickOnClick: (T) -> Boolean = { false },
     cell: @Composable (item: T, cursor: Boolean) -> Unit,
 ) {
     val density = LocalDensity.current
@@ -106,18 +111,23 @@ fun <T> PickerGrid(
                 PickerGridCell(
                     cursor = on,
                     enabled = enabled(item),
+                    pickOnClick = pickOnClick(item),
                     onClick = { onCursorChange(item) },
-                    onDoubleClick = { onPick(item) },
+                    onPick = { onPick(item) },
                 ) { cell(item, on) }
             }
         }
     }
 }
 
-/** One cell of a [PickerGrid]: the hover and press fill under [content], the cursor ring over it. */
+/**
+ * One cell of a [PickerGrid]: the hover and press fill under [content], the cursor ring over it. With [pickOnClick] a
+ * click picks, and the second click of a double-click, which the double-click hears before the click, does nothing.
+ */
 @Composable
-private fun PickerGridCell(cursor: Boolean, enabled: Boolean, onClick: () -> Unit, onDoubleClick: () -> Unit, content: @Composable () -> Unit) {
+private fun PickerGridCell(cursor: Boolean, enabled: Boolean, pickOnClick: Boolean, onClick: () -> Unit, onPick: () -> Unit, content: @Composable () -> Unit) {
     val state = rememberControlState()
+    var secondClick by remember { mutableStateOf(false) }
     val shape = Stretch.shapes.rowShape
     val fill = if (enabled) Fills.borderless(state) else Color.Transparent
     val (edgeWidth, edge) = pickEdge(Stretch.colors.surfacePanel, cursor)
@@ -130,8 +140,15 @@ private fun PickerGridCell(cursor: Boolean, enabled: Boolean, onClick: () -> Uni
             .background(fill)
             .focusProperties { canFocus = false }
             .hoverable(state.source, enabled)
-            .onDoubleClick(enabled, onDoubleClick)
-            .controlPointer().clickable(state.source, null, enabled, role = Role.Button, onClick = onClick)
+            .onDoubleClick(enabled) { if (pickOnClick) secondClick = true else onPick() }
+            .controlPointer().clickable(state.source, null, enabled, role = Role.Button) {
+                onClick()
+                when {
+                    !pickOnClick -> Unit
+                    secondClick -> secondClick = false
+                    else -> onPick()
+                }
+            }
             .semantics { selected = cursor }
             .border(edgeWidth, edge, shape),
     ) { content() }
