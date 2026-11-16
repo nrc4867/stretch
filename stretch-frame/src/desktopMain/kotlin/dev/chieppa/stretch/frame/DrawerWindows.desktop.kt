@@ -100,7 +100,7 @@ internal class DesktopDrawerWindows(private val owner: java.awt.Window) : Drawer
             val binding = rememberTitleBarBinding(window)
             UiScale(scale) {
                 CompositionLocalProvider(LocalTitleBar provides binding) {
-                    Box(Modifier.fillMaxSize().background(Stretch.colors.surfacePanel).focusHome()) { content() }
+                    DragAndDropHost { Box(Modifier.fillMaxSize().background(Stretch.colors.surfacePanel).focusHome()) { content() } }
                 }
             }
         }

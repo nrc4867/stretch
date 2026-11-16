@@ -79,7 +79,7 @@ internal class DesktopPaneWindows(owner: java.awt.Window) : PaneWindowHost {
             val inner = remember(window) { DesktopPaneWindows(window) }
             UiScale(scale) {
                 CompositionLocalProvider(LocalTitleBar provides binding, LocalPaneWindows provides inner, LocalDrawerWindows provides null) {
-                    Box(Modifier.fillMaxSize().background(Stretch.colors.surfacePanel).focusHome()) { content() }
+                    DragAndDropHost { Box(Modifier.fillMaxSize().background(Stretch.colors.surfacePanel).focusHome()) { content() } }
                 }
             }
         }
