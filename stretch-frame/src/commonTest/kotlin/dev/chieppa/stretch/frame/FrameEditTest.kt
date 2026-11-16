@@ -511,6 +511,15 @@ class FrameEditTest {
     }
 
     @Test
+    fun aSectionsLabelOpensItsMenuAndItsRowsDoNot() = runComposeUiTest {
+        setStretchContent { DrawerSection("Head", menu = { close -> MenuItem("Rename", close) }) { RowText("Ear") } }
+        onNodeWithText("Ear").performMouseInput { rightClick() }
+        onNodeWithText("Rename").assertDoesNotExist()
+        onNodeWithText("HEAD").performMouseInput { rightClick() }
+        onNodeWithText("Rename").assertExists()
+    }
+
+    @Test
     fun menusFitTheirItems() = runComposeUiTest {
         setStretchContent {
             Box {
