@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
@@ -92,6 +94,25 @@ class DragAndDropUiTest {
         assertEquals(listOf("leg" to Offset(30f, 40f)), log.drops)
         assertNull(log.hovers.last().first)
         onNodeWithText("Lifted leg").assertDoesNotExist()
+    }
+
+    @Test
+    fun thePreviewSeesTheLocalsAroundItsSource() = runComposeUiTest {
+        val word = staticCompositionLocalOf { "outside" }
+        setStretchContent {
+            DragAndDropHost {
+                CompositionLocalProvider(word provides "inside") {
+                    Row(Modifier.fillMaxSize()) {
+                        Box(Modifier.size(60.dp).testTag("source").dragSource({ "leg" }) { BasicText("Lifted ${word.current}") })
+                        Spacer(Modifier.width(100.dp))
+                        Box(Modifier.size(200.dp).testTag("target"))
+                    }
+                }
+            }
+        }
+        dragTo(targetPoint(30f, 40f))
+        onNodeWithText("Lifted inside").assertExists()
+        onRoot().performMouseInput { release() }
     }
 
     @Test
