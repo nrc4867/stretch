@@ -218,4 +218,90 @@ class DragAndDropUiTest {
         waitForIdle()
         assertTrue(log.drops.isEmpty())
     }
+
+    /** A source dragging "leg" with a 20 dp preview, and a target that snaps the preview to [snapAt] while the pointer is left of its middle. */
+    private fun ComposeUiTest.showSnapping(snapAt: Offset, log: Log, seen: (DragAndDrop?) -> Unit = {}) {
+        setStretchContent {
+            DragAndDropHost {
+                seen(LocalDragAndDrop.current)
+                Row(Modifier.fillMaxSize().focusHome().testTag("home")) {
+                    Box(Modifier.size(60.dp).testTag("source").dragSource({ "leg" }) { Box(Modifier.size(20.dp).testTag("preview")) })
+                    Spacer(Modifier.width(100.dp))
+                    Box(
+                        Modifier.size(200.dp).testTag("target").dropTarget<String>(
+                            accepts = { true },
+                            onHover = { dragged, at -> log.hovers += dragged to at },
+                            snap = { _, at -> if (at.x < 100f) DropSnap(snapAt) else null },
+                            onDrop = { dragged, at -> log.drops += dragged to at; true },
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun ComposeUiTest.previewCentre(): Offset {
+        val preview = onNodeWithTag("preview").getUnclippedBoundsInRoot()
+        return with(density) { Offset(((preview.left + preview.right) / 2).toPx(), ((preview.top + preview.bottom) / 2).toPx()) }
+    }
+
+    @Test
+    fun theItemShowsWhileThePointerHoldsItAndClearsOnTheDrop() = runComposeUiTest {
+        var drags: DragAndDrop? = null
+        showSnapping(Offset(10f, 10f), Log()) { drags = it }
+        assertNull(drags?.item)
+        dragTo(targetPoint(150f, 40f))
+        assertEquals("leg", drags?.item)
+        onRoot().performMouseInput { release() }
+        waitForIdle()
+        assertNull(drags?.item)
+    }
+
+    @Test
+    fun theItemClearsAsSoonAsEscSendsItBack() = runComposeUiTest {
+        var drags: DragAndDrop? = null
+        showSnapping(Offset(10f, 10f), Log()) { drags = it }
+        dragTo(targetPoint(150f, 40f))
+        mainClock.autoAdvance = false
+        onNodeWithTag("home").performKeyInput { pressKey(Key.Escape) }
+        assertNull(drags?.item)
+        onNodeWithTag("preview").assertExists()
+        onRoot().performMouseInput { release() }
+    }
+
+    @Test
+    fun aTargetSnapsThePreviewOntoItsPointWhileThePointerIsNear() = runComposeUiTest {
+        val log = Log()
+        showSnapping(Offset(80f, 90f), log)
+        dragTo(targetPoint(30f, 40f))
+        val centre = previewCentre()
+        val expected = targetPoint(80f, 90f)
+        assertEquals(expected.x, centre.x, 1f)
+        assertEquals(expected.y, centre.y, 1f)
+        assertEquals("leg" to Offset(30f, 40f), log.hovers.last())
+        onRoot().performMouseInput { release() }
+    }
+
+    @Test
+    fun movingAwayFromTheSnapLetsThePreviewFollowThePointerAgain() = runComposeUiTest {
+        showSnapping(Offset(80f, 90f), Log())
+        dragTo(targetPoint(30f, 40f))
+        onRoot().performMouseInput { moveTo(targetPoint(150f, 40f)) }
+        val centre = previewCentre()
+        val pointer = targetPoint(150f, 40f)
+        assertEquals(pointer.x, centre.x, 1f)
+        assertEquals(pointer.y, centre.y, 1f)
+        onRoot().performMouseInput { release() }
+    }
+
+    @Test
+    fun aDropWhileSnappedGetsThePointer() = runComposeUiTest {
+        val log = Log()
+        showSnapping(Offset(80f, 90f), log)
+        dragTo(targetPoint(30f, 40f))
+        onRoot().performMouseInput { release() }
+        waitForIdle()
+        assertEquals(listOf("leg" to Offset(30f, 40f)), log.drops)
+        onNodeWithTag("preview").assertDoesNotExist()
+    }
 }

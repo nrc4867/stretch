@@ -74,7 +74,10 @@ fun DragAndDropHost(modifier: Modifier = Modifier, content: @Composable () -> Un
     }
 }
 
-/** The preview of [drag], under the pointer while it drags and going back to where it started once it has ended untaken. */
+/**
+ * The preview of [drag], under the pointer or on the point a target snaps it to while it drags, and going back to where it
+ * started once it has ended untaken.
+ */
 @Composable
 private fun DragPreview(drags: DragAndDrop, drag: DragSession, host: LayoutCoordinates?) {
     val back = remember(drag) { Animatable(drag.pointer, Offset.VectorConverter) }
@@ -84,13 +87,15 @@ private fun DragPreview(drags: DragAndDrop, drag: DragSession, host: LayoutCoord
         back.animateTo(drag.start, tween(RETURN_MILLIS))
         drags.finish(drag)
     }
+    val snap = drag.snap
     val pointer = if (drag.returning) back.value else drag.pointer
+    val toHost = { at: Offset -> host?.takeIf { it.isAttached }?.windowToLocal(at) ?: at }
     if (dragPreviewInPopup) {
-        val inHost = host?.takeIf { it.isAttached }?.windowToLocal(pointer) ?: pointer
+        val held = if (snap != null) toHost(snap.at) to snap.anchor else toHost(pointer) to drag.grab
         val room = previewRoom()
         val roomPx = with(LocalDensity.current) { room.roundToPx() }
-        StretchPopup(UnderPointer(inHost, drag.grab, roomPx), properties = PreviewPopup) {
-            Box(Modifier.padding(room).sourceSized(drag.size)) { drag.preview() }
+        StretchPopup(UnderPointer(held.first, held.second, roomPx), properties = PreviewPopup) {
+            Box(Modifier.padding(room).sourceSized(drag)) { drag.preview() }
         }
         return
     }
@@ -99,9 +104,11 @@ private fun DragPreview(drags: DragAndDrop, drag: DragSession, host: LayoutCoord
             .zIndex(1f)
             .layout { measurable, _ ->
                 val placeable = measurable.measure(atMost(drag.size))
+                drag.shown = IntSize(placeable.width, placeable.height)
                 layout(0, 0) {
-                    val inHost = host?.takeIf { it.isAttached }?.windowToLocal(pointer) ?: pointer
-                    placeable.place(previewTopLeft(inHost, drag.grab, Size(placeable.width.toFloat(), placeable.height.toFloat())).round())
+                    val size = Size(placeable.width.toFloat(), placeable.height.toFloat())
+                    val topLeft = if (snap != null) previewTopLeft(snap.at, snap.anchor, size) else previewTopLeft(pointer, drag.grab, size)
+                    placeable.place(toHost(topLeft).round())
                 }
             },
     ) { drag.preview() }
@@ -110,9 +117,10 @@ private fun DragPreview(drags: DragAndDrop, drag: DragSession, host: LayoutCoord
 /** Constraints that let content be at most [size], whatever room it is given. */
 private fun atMost(size: IntSize) = Constraints(maxWidth = size.width.coerceAtLeast(0), maxHeight = size.height.coerceAtLeast(0))
 
-/** Measures the content at most [size], whatever room it is given, as a preview stands in its source's place. */
-private fun Modifier.sourceSized(size: IntSize) = layout { measurable, _ ->
-    val placeable = measurable.measure(atMost(size))
+/** Measures [drag]'s preview at most its source's size, whatever room it is given, as it stands in its source's place. */
+private fun Modifier.sourceSized(drag: DragSession) = layout { measurable, _ ->
+    val placeable = measurable.measure(atMost(drag.size))
+    drag.shown = IntSize(placeable.width, placeable.height)
     layout(placeable.width, placeable.height) { placeable.place(0, 0) }
 }
 
@@ -133,8 +141,8 @@ private val TURN_ROOM = 6.dp
 private val PreviewPopup = PopupProperties(focusable = false, dismissOnBackPress = false, dismissOnClickOutside = false)
 
 /**
- * Places a preview popup held at [grab] under [pointer], given in the host's own coordinates, its preview inset by
- * [room] pixels on every side.
+ * Places a preview popup with its preview's point at [grab], a fraction of its size, on [pointer], given in the host's
+ * own coordinates: the pointer, or the point a target snaps it to. Its preview is inset by [room] pixels on every side.
  */
 internal class UnderPointer(private val pointer: Offset, private val grab: Offset, private val room: Int = 0) : PopupPositionProvider {
     override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {

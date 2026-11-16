@@ -3,6 +3,10 @@ package dev.chieppa.stretch.frame
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -35,5 +39,12 @@ class DropChoiceTest {
     @Test
     fun thePreviewKeepsThePointerWhereItWasGrabbed() {
         assertEquals(Offset(90f, 180f), previewTopLeft(Offset(100f, 200f), Offset(0.25f, 0.5f), Size(40f, 40f)))
+    }
+
+    @Test
+    fun aPreviewPopupPutsItsAnchorOnThePointGivenInsideItsRoom() {
+        val place = UnderPointer(Offset(100f, 100f), Offset(0.5f, 1f), room = 10)
+        val at = place.calculatePosition(IntRect(5, 5, 300, 300), IntSize(300, 300), LayoutDirection.Ltr, IntSize(60, 40))
+        assertEquals(IntOffset(5 + 100 - 20 - 10, 5 + 100 - 20 - 10), at)
     }
 }

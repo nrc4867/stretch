@@ -23,8 +23,12 @@ class DragAndDrop internal constructor() {
 
     internal val targets = mutableListOf<DropTargetEntry>()
 
-    /** The item being dragged, while a drag is under way and until a cancelled one has gone back; otherwise null. */
-    val item: Any? get() = session?.item
+    /**
+     * The item being dragged while the pointer holds it, so a target can show where it could go before the drag is over
+     * it; null when nothing drags, and from the moment the drag ends, whether dropped, let go where nothing takes it or
+     * cancelled. Reading it in composition or drawing redraws when it changes.
+     */
+    val item: Any? get() = session?.takeUnless { it.returning }?.item
 
     /** Ends the drag under way, if any, as Esc does: no target takes it, and its preview goes back where it came from. */
     fun cancel() {
@@ -45,7 +49,13 @@ class DragAndDrop internal constructor() {
         val previous = drag.hovered
         if (previous != null && previous !== target) previous.onHover(null, Offset.Zero)
         drag.hovered = target
-        target?.let { it.onHover(drag.item, it.local(pointer)) }
+        if (target == null) {
+            drag.snap = null
+            return
+        }
+        val local = target.local(pointer)
+        drag.snap = target.snap(drag.item, local)?.let { it.copy(at = target.window(it.at)) }
+        target.onHover(drag.item, local)
     }
 
     /** Lets go of [drag] where its pointer is: the target there takes it, or it goes back. */
@@ -55,13 +65,23 @@ class DragAndDrop internal constructor() {
         drag.hovered = null
         target?.onHover(null, Offset.Zero)
         val taken = target != null && target.onDrop(drag.item, target.local(drag.pointer))
-        if (taken) session = null else drag.returning = true
+        if (taken) session = null else sendBack(drag)
     }
 
     internal fun cancel(drag: DragSession) {
         if (session !== drag || drag.returning) return
         drag.hovered?.onHover(null, Offset.Zero)
         drag.hovered = null
+        sendBack(drag)
+    }
+
+    /** Starts [drag]'s preview going back from where it shows, snapped or under the pointer. */
+    private fun sendBack(drag: DragSession) {
+        drag.snap?.let { snap ->
+            val shown = drag.shown
+            drag.pointer = snap.at + Offset((drag.grab.x - snap.anchor.x) * shown.width, (drag.grab.y - snap.anchor.y) * shown.height)
+        }
+        drag.snap = null
         drag.returning = true
     }
 
@@ -73,7 +93,10 @@ class DragAndDrop internal constructor() {
     internal fun remove(target: DropTargetEntry) {
         targets.remove(target)
         val drag = session ?: return
-        if (drag.hovered === target) drag.hovered = null
+        if (drag.hovered === target) {
+            drag.hovered = null
+            drag.snap = null
+        }
     }
 
     private fun targetAt(item: Any, pointer: Offset): DropTargetEntry? {
@@ -92,6 +115,12 @@ internal class DragSession(val item: Any, val preview: @Composable () -> Unit, v
     var returning by mutableStateOf(false)
 
     var hovered: DropTargetEntry? = null
+
+    /** Where the target under the pointer holds the preview, its point given in the window; null while it follows the pointer. */
+    var snap by mutableStateOf<DropSnap?>(null)
+
+    /** The preview's size as last measured. */
+    var shown: IntSize = size
 }
 
 /** One [dropTarget] as the drags see it, its callbacks kept current by its modifier. */
@@ -100,12 +129,15 @@ internal class DropTargetEntry(
     var accepts: (Any) -> Boolean,
     var onHover: (Any?, Offset) -> Unit,
     var onDrop: (Any, Offset) -> Boolean,
+    var snap: (Any, Offset) -> DropSnap? = { _, _ -> null },
 ) {
     var coordinates: LayoutCoordinates? = null
 
     fun takes(item: Any) = type.isInstance(item) && accepts(item)
 
     fun local(pointer: Offset): Offset = coordinates?.takeIf { it.isAttached }?.windowToLocal(pointer) ?: Offset.Zero
+
+    fun window(local: Offset): Offset = coordinates?.takeIf { it.isAttached }?.localToWindow(local) ?: local
 }
 
 /** The window's [DragAndDrop], or null outside a [DragAndDropHost], where drag sources do nothing. */
