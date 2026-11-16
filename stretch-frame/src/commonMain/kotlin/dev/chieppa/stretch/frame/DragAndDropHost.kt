@@ -23,8 +23,15 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
+import dev.chieppa.stretch.ui.StretchPopup
 
 /** How long a dragged item's preview takes to go back when nothing takes it. */
 private const val RETURN_MILLIS = 160
@@ -33,7 +40,8 @@ private const val RETURN_MILLIS = 160
  * Lets [dragSource] items in [content] be dragged onto [dropTarget]s in it: it keeps their [DragAndDrop], draws the
  * dragged item's preview over [content], and ends a drag on Esc while anything in [content] has the focus. Put it at
  * the root of a window; `StretchWindow`, its pane and drawer windows, and `stretchPage` do already. The preview draws
- * under popups, so a drag shows over the window's own content.
+ * under popups, so a drag shows over the window's own content; where popups show over native surfaces it is a popup
+ * itself, so it shows over those too.
  */
 @Composable
 fun DragAndDropHost(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
@@ -69,6 +77,11 @@ private fun DragPreview(drags: DragAndDrop, drag: DragSession, host: LayoutCoord
         drags.finish(drag)
     }
     val pointer = if (drag.returning) back.value else drag.pointer
+    if (dragPreviewInPopup) {
+        val inHost = host?.takeIf { it.isAttached }?.windowToLocal(pointer) ?: pointer
+        StretchPopup(UnderPointer(inHost, drag.grab), properties = PreviewPopup) { drag.preview() }
+        return
+    }
     Box(
         Modifier
             .zIndex(1f)
@@ -80,4 +93,13 @@ private fun DragPreview(drags: DragAndDrop, drag: DragSession, host: LayoutCoord
                 }
             },
     ) { drag.preview() }
+}
+
+/** A preview popup: it never takes the keyboard or closes itself; the drag ends it. */
+private val PreviewPopup = PopupProperties(focusable = false, dismissOnBackPress = false, dismissOnClickOutside = false)
+
+/** Places a preview popup held at [grab] under [pointer], given in the host's own coordinates. */
+internal class UnderPointer(private val pointer: Offset, private val grab: Offset) : PopupPositionProvider {
+    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset =
+        anchorBounds.topLeft + previewTopLeft(pointer, grab, Size(popupContentSize.width.toFloat(), popupContentSize.height.toFloat())).round()
 }
