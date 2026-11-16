@@ -9,6 +9,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.unit.IntSize
 import kotlin.reflect.KClass
 
 /**
@@ -30,8 +31,8 @@ class DragAndDrop internal constructor() {
         session?.let(::cancel)
     }
 
-    internal fun begin(item: Any, preview: @Composable () -> Unit, grab: Offset, start: Offset, pointer: Offset): DragSession {
-        val drag = DragSession(item, preview, grab, start)
+    internal fun begin(item: Any, preview: @Composable () -> Unit, size: IntSize, grab: Offset, start: Offset, pointer: Offset): DragSession {
+        val drag = DragSession(item, preview, size, grab, start)
         session = drag
         moveTo(drag, pointer)
         return drag
@@ -83,7 +84,7 @@ class DragAndDrop internal constructor() {
 }
 
 /** A drag under way: the [item], the [preview] following the pointer, held at [grab] (a fraction of its size). */
-internal class DragSession(val item: Any, val preview: @Composable () -> Unit, val grab: Offset, val start: Offset) {
+internal class DragSession(val item: Any, val preview: @Composable () -> Unit, val size: IntSize, val grab: Offset, val start: Offset) {
     /** Where the pointer is, in the window. */
     var pointer by mutableStateOf(start)
 

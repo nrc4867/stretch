@@ -34,7 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -46,14 +46,14 @@ import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import dev.chieppa.stretch.theme.Icon
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchIcons
-import dev.chieppa.stretch.theme.stretchShadow
 import kotlin.math.roundToInt
 
 /** One drag in progress: the item's start index, where the pointer went, and where it would land. */
@@ -97,16 +97,12 @@ private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.dragItem
     onDragCancel = { state.session = null },
 )
 
-@Composable
-private fun Modifier.lifted(shape: Shape): Modifier {
-    val c = Stretch.colors
-    return zIndex(1f).stretchShadow(Stretch.shadows.pop, shape).framedSurface(shape, c.surfaceFloat, c.lineStrong, Stretch.stroke)
-}
-
 /**
  * A list reordered by dragging. With [handles] only the grip drags, so rows keep their own clicks; without, the
- * whole row drags after a short move. Alt Up and Alt Down move the focused row; Esc cancels a drag. Each finished
- * move reports [onMove] once, for the caller to apply as one command.
+ * whole row drags after a short move. While a drag lasts the row lifts and follows the pointer, its place stays faint
+ * and a line shows where it would land. Alt Up and Alt Down move the focused row; Esc cancels a drag. Each finished
+ * move reports [onMove] once, for the caller to apply as one command. A [selected] row is filled as picked, lifted or
+ * not; [gripLabel] names the grips for assistive technology.
  */
 @Composable
 fun <T> SortableList(
@@ -117,6 +113,8 @@ fun <T> SortableList(
     handles: Boolean = true,
     rowHeight: Dp = 32.dp,
     onClick: ((T) -> Unit)? = null,
+    selected: (T) -> Boolean = { false },
+    gripLabel: String? = null,
     content: @Composable RowScope.(T) -> Unit,
 ) {
     val c = Stretch.colors
@@ -133,7 +131,11 @@ fun <T> SortableList(
         Modifier.fillMaxWidth().height(rowHeight).padding(end = 10.dp, start = if (handles) 0.dp else 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (handles) Box(grip.width(24.dp).fillMaxHeight(), contentAlignment = Alignment.Center) { Icon(StretchIcons.Drag, c.inkSubtle) }
+        if (handles) {
+            Box(grip.width(24.dp).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                Icon(StretchIcons.Drag, if (selected(item)) c.onInk else c.inkSubtle, contentDescription = gripLabel)
+            }
+        }
         content(item)
     }
 
@@ -168,13 +170,16 @@ fun <T> SortableList(
                         }
                     }
                     val ghost = session?.from == index
+                    val on = selected(item)
                     Box(
                         Modifier
                             .fillMaxWidth()
                             .alpha(if (ghost) 0.4f else 1f)
                             .focusRing(control, shape)
                             .clip(shape)
-                            .background(control.fill(c.surfacePanel, c.surfaceControl, c.surfaceControlHi))
+                            .background(if (on) control.fill(c.onFill, c.onFill, c.onFillPress) else control.fill(c.surfacePanel, c.surfaceControl, c.surfaceControlHi))
+                            .border(Stretch.stroke, if (on) c.onEdge else Color.Transparent, shape)
+                            .semantics { this.selected = on }
                             .hoverable(control.source)
                             .focusRequester(itemFocus)
                             .then(if (onClick != null) Modifier.controlPointer().clickable(control.source, null, role = Role.Button) { onClick(item) } else Modifier.focusable(interactionSource = control.source))
@@ -208,7 +213,7 @@ fun <T> SortableList(
                 Modifier
                     .offset { IntOffset(8.dp.roundToPx(), (session.pointer.y - session.grab.y + session.from * slot).roundToInt()) }
                     .fillMaxWidth()
-                    .lifted(shape),
+                    .lifted(shape, if (selected(items[session.from])) c.onFill else c.surfaceFloat),
             ) { RowBody(items[session.from], Modifier) }
         }
     }

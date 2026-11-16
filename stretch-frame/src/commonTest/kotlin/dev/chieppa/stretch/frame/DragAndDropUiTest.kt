@@ -116,6 +116,42 @@ class DragAndDropUiTest {
     }
 
     @Test
+    fun aPreviewThatFillsItsSpaceComesOutTheSourcesSize() = runComposeUiTest {
+        setStretchContent {
+            DragAndDropHost {
+                Row(Modifier.fillMaxSize()) {
+                    Box(Modifier.size(60.dp, 40.dp).testTag("source").dragSource({ "leg" }) { Box(Modifier.fillMaxSize().testTag("preview")) })
+                    Spacer(Modifier.width(100.dp))
+                    Box(Modifier.size(200.dp).testTag("target"))
+                }
+            }
+        }
+        dragTo(targetPoint(30f, 40f))
+        val preview = onNodeWithTag("preview").getUnclippedBoundsInRoot()
+        assertEquals(60.dp, preview.right - preview.left)
+        assertEquals(40.dp, preview.bottom - preview.top)
+        onRoot().performMouseInput { release() }
+    }
+
+    @Test
+    fun aPreviewSmallerThanItsSourceKeepsItsOwnSize() = runComposeUiTest {
+        setStretchContent {
+            DragAndDropHost {
+                Row(Modifier.fillMaxSize()) {
+                    Box(Modifier.size(60.dp, 40.dp).testTag("source").dragSource({ "leg" }) { Box(Modifier.size(20.dp, 10.dp).testTag("preview")) })
+                    Spacer(Modifier.width(100.dp))
+                    Box(Modifier.size(200.dp).testTag("target"))
+                }
+            }
+        }
+        dragTo(targetPoint(30f, 40f))
+        val preview = onNodeWithTag("preview").getUnclippedBoundsInRoot()
+        assertEquals(20.dp, preview.right - preview.left)
+        assertEquals(10.dp, preview.bottom - preview.top)
+        onRoot().performMouseInput { release() }
+    }
+
+    @Test
     fun escCancelsTheDrag() = runComposeUiTest {
         val log = Log()
         show("leg", log)

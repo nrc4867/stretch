@@ -22,8 +22,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 /**
  * Makes this element draggable onto [dropTarget]s in the same window, carrying the item [item] gives. [item] is asked
  * when a drag starts; null means there is nothing to drag. While the drag lasts, [preview] follows the pointer, held
- * where the element was grabbed; draw it lifted, as the thing being moved. It reads the composition locals the element
- * sees, such as the app's theme, though the host draws it. Letting go over a target that takes the
+ * where the element was grabbed; draw it lifted, as the thing being moved, such as with `Modifier.lifted`. It is
+ * measured as though it stood in the element's place, at most the element's size, so a preview that fills its space
+ * comes out the element's size; it draws on nothing of the element's own, so it brings its own fill. It reads the
+ * composition locals the element sees, such as the app's theme, though the host draws it. Letting go over a target that takes the
  * item drops it there; letting go anywhere else, or Esc, ends the drag, and the preview goes back to where it started.
  * The drag ends when the pointer lets go, never on a timer.
  *
@@ -49,7 +51,7 @@ fun <T : Any> Modifier.dragSource(item: () -> T?, preview: @Composable () -> Uni
             val at = source.placed?.takeIf { it.isAttached } ?: return@awaitEachGesture
             start.consume()
             val grab = Offset(down.position.x / size.width.coerceAtLeast(1), down.position.y / size.height.coerceAtLeast(1))
-            val drag = drags.begin(thing, source.draw, grab, at.localToWindow(down.position), at.localToWindow(start.position))
+            val drag = drags.begin(thing, source.draw, at.size, grab, at.localToWindow(down.position), at.localToWindow(start.position))
             try {
                 while (true) {
                     val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break

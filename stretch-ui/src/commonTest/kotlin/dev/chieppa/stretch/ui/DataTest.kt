@@ -1,6 +1,10 @@
 package dev.chieppa.stretch.ui
 
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -9,6 +13,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -164,6 +170,34 @@ class DataTest {
             release()
         }
         assertEquals(listOf("Head", "Tail", "Body", "Paws"), items)
+    }
+
+    @Test
+    fun aGripDragInAScrollingPanelLiftsTheRowAndMovesItOnce() = runComposeUiTest {
+        var items by mutableStateOf(listOf("Body", "Head", "Tail", "Paws", "Ears", "Nose"))
+        val moves = mutableListOf<Pair<Int, Int>>()
+        setContent {
+            StretchTheme(StretchThemes.Ink) {
+                Column(Modifier.width(240.dp).height(120.dp).verticalScroll(rememberScrollState())) {
+                    SortableList(items, { it }, { from, to -> moves += from to to; items = items.moved(from, to) }, onClick = {}, selected = { it == "Body" }, gripLabel = "Reorder") {
+                        androidx.compose.foundation.text.BasicText(it)
+                    }
+                }
+            }
+        }
+        onNodeWithText("Body").assertIsSelected()
+        onNodeWithText("Head").assertIsNotSelected()
+        onAllNodesWithContentDescription("Reorder", useUnmergedTree = true)[0].performMouseInput {
+            moveTo(center)
+            press()
+            repeat(15) { moveBy(Offset(0f, 5f)) }
+        }
+        assertEquals(2, onAllNodesWithText("Body").fetchSemanticsNodes().size, "the row lifts while it drags")
+        assertTrue(moves.isEmpty(), "nothing moves before the grip lets go")
+        onAllNodesWithContentDescription("Reorder", useUnmergedTree = true)[0].performMouseInput { release() }
+        assertEquals(listOf(0 to 2), moves)
+        assertEquals(listOf("Head", "Tail", "Body", "Paws", "Ears", "Nose"), items)
+        assertEquals(1, onAllNodesWithText("Body").fetchSemanticsNodes().size)
     }
 
     @Test

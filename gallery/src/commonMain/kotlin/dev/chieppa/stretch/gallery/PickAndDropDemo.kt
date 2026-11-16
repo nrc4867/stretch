@@ -41,6 +41,7 @@ import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.ui.Button
 import dev.chieppa.stretch.ui.ButtonKind
 import dev.chieppa.stretch.ui.PickerGrid
+import dev.chieppa.stretch.ui.lifted
 import dev.chieppa.stretch.ui.TextField
 import dev.chieppa.stretch.ui.opensOnPress
 import kotlin.math.roundToInt
@@ -127,7 +128,7 @@ private fun StampTile(stamp: String, modifier: Modifier = Modifier, faint: Boole
         modifier
             .fillMaxWidth()
             .height(56.dp)
-            .then(if (lifted) Modifier.width(80.dp).background(c.surfaceFloat, shape).border(Stretch.stroke, c.lineStrong, shape) else Modifier.border(Stretch.stroke, c.linePanel, shape))
+            .then(if (lifted) Modifier.lifted(shape) else Modifier.border(Stretch.stroke, c.linePanel, shape))
             .padding(6.dp),
         contentAlignment = Alignment.BottomStart,
     ) {
