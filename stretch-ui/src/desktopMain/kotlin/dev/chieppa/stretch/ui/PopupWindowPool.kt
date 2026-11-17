@@ -17,15 +17,21 @@ internal object PopupWindowPool {
 
     fun take(owner: Window): ComposeDialog? = kept[owner]?.removeLastOrNull()
 
-    /** Hides and empties [dialog] to reuse it, or disposes it when its owner is gone or keeps enough already. */
+    /**
+     * Empties and hides [dialog] to reuse it, or disposes it when its owner is gone or keeps enough already.
+     *
+     * It is emptied first, so the popups its content opened close while they still show. AWT marks every window that
+     * shows when its owner hides to show again with that owner; a popup marked so and then closed would be shown again,
+     * closed, when the dialog is reused.
+     */
     fun release(dialog: ComposeDialog) {
         val owner = dialog.owner
         if (!owner.isDisplayable || (kept[owner]?.size ?: 0) >= MOST_KEPT) {
             dialog.dispose()
             return
         }
-        dialog.isVisible = false
         dialog.setContent {}
+        dialog.isVisible = false
         kept.getOrPut(owner) { ArrayDeque<ComposeDialog>().also { forgetWhenClosed(owner) } }.addLast(dialog)
     }
 

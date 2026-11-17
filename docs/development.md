@@ -12,7 +12,7 @@ Needs JDK 25 for Gradle (`JAVA_HOME`); Gradle provisions the toolchain. Apps run
 ./gradlew :gallery:run -Pdocuments        # opens on the diff viewer, markdown editor and HTML view
 ./gradlew :gallery:run -Pdocuments -PjavaHome=<a JDK without JCEF>   # offers to fetch the engine, then runs on it
 ./gradlew :stretch-web:desktopTest :stretch-mermaid:desktopTest :gallery:desktopTest -Pcef   # also tests the real browser engine; pictures land in each module's build folder
-./gradlew :stretch-frame:desktopTest :stretch-devtools:test -Pscreen   # also runs the tests that need real windows
+./gradlew :stretch-ui:desktopTest :stretch-frame:desktopTest :stretch-devtools:test -Pscreen   # also runs the tests that need real windows
 ./gradlew :stretch-gpu:desktopTest -Pgpu  # also runs the tests that need a GPU
 ./gradlew compileKotlinWasmJs             # compiles for the browser, which check does not
 ./gradlew :gallery:wasmJsBrowserProductionRun   # the gallery in a browser
