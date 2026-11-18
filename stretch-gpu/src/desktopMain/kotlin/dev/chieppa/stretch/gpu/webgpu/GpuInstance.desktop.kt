@@ -57,14 +57,44 @@ internal actual class GpuInstance private constructor(
             WgpuLibrary.load()
             val callbacks = Arena.ofShared()
             return Arena.ofConfined().use { arena ->
-                val instance = createInstance(arena, backend)
-                val surface = window?.let { GpuSurface(createSurface(arena, instance, it)) }
-                val adapter = requestAdapter(arena, instance, surface, power)
+                val (instance, surface, adapter) = preferred(window, backend)?.let { open(arena, window, it, power, orNull = true) }
+                    ?: checkNotNull(open(arena, window, backend, power, orNull = false))
                 val description = describe(arena, adapter)
                 var gpu: GpuInstance? = null
                 val device = requestDevice(arena, callbacks, instance, adapter, onError) { reason -> gpu?.lostReason = reason }
                 GpuInstance(callbacks, instance, adapter, surface, GpuDevice(device, instance), description).also { gpu = it }
             }
+        }
+
+        /**
+         * The backend to try first when the app names none, before letting wgpu choose. On Windows a window presents
+         * through Direct3D 12: there wgpu's Vulkan swap chain on a child window can spin on the CPU while it waits for the
+         * display, most of a core for a scene that animates, where Direct3D 12 waits idle.
+         */
+        private fun preferred(window: SurfaceHandle?, backend: GpuBackend?): GpuBackend? =
+            if (backend == null && window is SurfaceHandle.Win32) GpuBackend.DX12 else null
+
+        /**
+         * An instance on [backend], [window]'s surface and an adapter for both. When no adapter suits, all of it is
+         * released and it answers null with [orNull], or throws without.
+         */
+        private fun open(
+            arena: Arena,
+            window: SurfaceHandle?,
+            backend: GpuBackend?,
+            power: PowerPreference,
+            orNull: Boolean,
+        ): Triple<MemorySegment, GpuSurface?, MemorySegment>? {
+            val instance = createInstance(arena, backend)
+            val surface = window?.let { GpuSurface(createSurface(arena, instance, it)) }
+            val adapter = try {
+                requestAdapter(arena, instance, surface, power)
+            } catch (failure: IllegalStateException) {
+                surface?.close()
+                wgpu_h.wgpuInstanceRelease(instance)
+                if (orNull) return null else throw failure
+            }
+            return Triple(instance, surface, adapter)
         }
 
         private fun createInstance(arena: Arena, backend: GpuBackend?): MemorySegment {
