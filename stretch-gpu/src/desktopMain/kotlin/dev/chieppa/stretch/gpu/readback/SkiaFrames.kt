@@ -6,8 +6,6 @@ import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageInfo
 import java.lang.foreign.MemorySegment
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 private const val BYTES_PER_PIXEL = 4
 
@@ -33,16 +31,6 @@ internal fun bgraFrameImage(width: Int, height: Int, rowBytes: Int, fill: (Memor
     } finally {
         pixmap.close()
     }
-    bitmap.setImmutable()
-    return bitmap to Image.makeFromBitmap(bitmap)
-}
-
-/** An image of packed ARGB [pixels], the obvious way: through a byte array copied into a fresh bitmap. */
-internal fun argbFrameImage(width: Int, height: Int, pixels: IntArray): Pair<Bitmap, Image> {
-    // Little-endian ARGB ints are B, G, R, A bytes.
-    val bytes = ByteBuffer.allocate(pixels.size * BYTES_PER_PIXEL).order(ByteOrder.LITTLE_ENDIAN).also { it.asIntBuffer().put(pixels) }.array()
-    val bitmap = Bitmap()
-    check(bitmap.installPixels(bgraInfo(width, height), bytes, width * BYTES_PER_PIXEL)) { "Could not fill a $width by $height frame" }
     bitmap.setImmutable()
     return bitmap to Image.makeFromBitmap(bitmap)
 }

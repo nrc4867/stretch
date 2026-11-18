@@ -11,6 +11,7 @@ import kotlin.coroutines.resume
  * latest published state if the state or size changed or the renderer asked for more. Picks from [picks] run after the
  * frame. [run] returns only by being cancelled, which detaches the renderer; what the renderer throws comes out of it.
  */
+@OptIn(SurfaceImplementation::class)
 internal class BrowserSurfaceLoop<S>(
     private val canvas: HTMLCanvasElement,
     private val renderer: SurfaceRenderer<S>,

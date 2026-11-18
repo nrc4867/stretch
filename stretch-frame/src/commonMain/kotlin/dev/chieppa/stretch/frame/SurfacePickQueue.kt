@@ -6,8 +6,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlin.concurrent.Volatile
 
 /**
- * Asks a [NativeSurface] what is under a point. The app holds one, hands it to the surface, and calls [pick]; the
- * surface's renderer, which must be a [SurfacePicker] answering [R], runs each pick after the next frame. Points are in
+ * Asks a surface what is under a point. The app holds one, hands it to the surface (a [NativeSurface], or
+ * `stretch-gpu`'s `GpuSurface`), and calls [pick]; the surface's [SurfacePicker] answering [R] runs each pick after the
+ * next frame. Points are in
  * the surface's pixels from its top-left corner, as Compose positions are. A pick answers null when nothing is under
  * the point, the point is off the surface, the renderer cannot pick, or no surface is showing.
  */
@@ -27,27 +28,34 @@ class SurfacePickQueue<R> {
     }
 
     /** Called by the surface's render loop when it starts: [wake] tells it a pick is waiting. */
-    internal fun attach(wake: () -> Unit) {
+    @SurfaceImplementation
+    fun attach(wake: () -> Unit) {
         this.wake = wake
         wake()
     }
 
     /** Called by the surface's render loop when it stops: waiting picks answer null. */
-    internal fun detach() {
+    @SurfaceImplementation
+    fun detach() {
         wake = null
         answerNothing()
     }
 
     /** Answers every waiting pick through [renderer], which has drawn a frame of size [drawn]. */
-    internal suspend fun answerWith(renderer: SurfaceRenderer<*>, drawn: SurfaceSize) {
+    @OptIn(SurfaceImplementation::class)
+    internal suspend fun answerWith(renderer: SurfaceRenderer<*>, drawn: SurfaceSize) = answerWith(renderer as? SurfacePicker<*>, drawn)
+
+    /** Answers every waiting pick through [picker], or with null when there is none, after a frame of size [drawn]. */
+    @SurfaceImplementation
+    suspend fun answerWith(picker: SurfacePicker<*>?, drawn: SurfaceSize) {
         @Suppress("UNCHECKED_CAST")
-        val picker = renderer as? SurfacePicker<R>
+        val typed = picker as? SurfacePicker<R>
         while (true) {
             val request = pending.tryReceive().getOrNull() ?: return
             val x = request.at.x.toInt()
             val y = request.at.y.toInt()
             val inside = !drawn.isEmpty && x in 0 until drawn.width && y in 0 until drawn.height
-            runCatching { if (picker == null || !inside) null else picker.pick(x, y) }
+            runCatching { if (typed == null || !inside) null else typed.pick(x, y) }
                 .onSuccess { request.result.complete(it) }
                 .onFailure { request.result.completeExceptionally(it) }
         }

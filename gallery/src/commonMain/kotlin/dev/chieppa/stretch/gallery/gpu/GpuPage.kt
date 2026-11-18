@@ -29,11 +29,9 @@ import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.frame.BoxTransform
 import dev.chieppa.stretch.frame.Guide
 import dev.chieppa.stretch.frame.Hud
-import dev.chieppa.stretch.frame.NativeSurface
 import dev.chieppa.stretch.frame.SurfacePickQueue
 import dev.chieppa.stretch.frame.Viewport
 import dev.chieppa.stretch.frame.ViewportCamera
-import dev.chieppa.stretch.frame.guidesOverlay
 import dev.chieppa.stretch.frame.handlesOverlay
 import dev.chieppa.stretch.frame.marquee
 import dev.chieppa.stretch.frame.marqueeOverlay
@@ -41,9 +39,9 @@ import dev.chieppa.stretch.frame.rememberGuideDragState
 import dev.chieppa.stretch.frame.rememberMarqueeState
 import dev.chieppa.stretch.frame.transformHandleInput
 import dev.chieppa.stretch.gpu.GpuPick
+import dev.chieppa.stretch.gpu.GpuSurface
 import dev.chieppa.stretch.gpu.OrbitCamera
 import dev.chieppa.stretch.gpu.Vec3
-import dev.chieppa.stretch.gpu.WebGpuRenderer
 import dev.chieppa.stretch.gpu.orbitNavigation
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.ui.Segmented
@@ -58,7 +56,7 @@ private const val SHADE_DARKEN = 0.35f
 private const val PICKED_LIGHTEN = 0.35f
 
 /** Where the frame the handles go around starts, in the view's pixels. */
-private val START_FRAME = Rect(60f, 60f, 260f, 180f)
+private val START_FRAME = Rect(120f, 160f, 320f, 280f)
 private const val START_GUIDE = 140f
 
 private const val DEGREES_PER_RADIAN = (180 / PI).toFloat()
@@ -72,9 +70,9 @@ private enum class Shading(val label: String) { Flat("Flat"), TwoTone("Two-tone"
 private enum class PickPath(val label: String) { Ray("Ray"), Gpu("GPU") }
 
 /**
- * A WebGPU viewport inside the frame: a cube drawn by [CubeScene] in a native surface, orbited with the middle button,
- * the wheel and two fingers, with the scene's axes drawn as an overlay. Rulers sit beside the surface; guides, a frame
- * with handles and the marquee are drawn by the renderer; the toolbar and a readout float over it in popups. Clicking
+ * A WebGPU viewport inside the frame: a cube drawn by [CubeScene] in a [GpuSurface], orbited with the middle button,
+ * the wheel and two fingers, with the scene's axes drawn as an overlay. A frame with handles and the marquee are drawn
+ * by the scene; the rulers, guides, toolbar and a readout are Compose, over it. Clicking
  * with the pick tool finds the cube by ray or on the GPU. Labels here are examples, not app text.
  */
 @Composable
@@ -83,7 +81,6 @@ fun GpuPage() {
     val density = LocalDensity.current
     val camera = remember { OrbitCamera(distance = 4.5f) }
     val spin = remember { CubeSpin() }
-    val renderer = remember { WebGpuRenderer<CubeState> { CubeScene(it, spin) } }
     val picks = remember { SurfacePickQueue<GpuPick>() }
     // The rulers, guides, marquee and frame measure the view in pixels, so their camera stays put.
     val view = remember { ViewportCamera() }
@@ -99,6 +96,7 @@ fun GpuPage() {
     var picked by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("Pick the cube with a click.") }
     var failure by remember { mutableStateOf<String?>(null) }
+    var gpuName by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val label = Stretch.type.body.merge(TextStyle(color = c.inkStrong))
 
@@ -141,7 +139,7 @@ fun GpuPage() {
             BasicText("Pick with", style = label)
             Segmented(PickPath.entries, path, { path = it }, { it.label })
             BasicText(status, style = label)
-            BasicText(failure ?: renderer.description.orEmpty(), style = Stretch.type.bodySm.merge(TextStyle(color = c.inkMuted)))
+            BasicText(failure ?: gpuName, style = Stretch.type.bodySm.merge(TextStyle(color = c.inkMuted)))
         }
         Viewport(
             Modifier.orbitNavigation(camera),
@@ -151,12 +149,11 @@ fun GpuPage() {
             guides = guides,
             onGuidesChange = { guides = it },
             guideDrag = guideDrag,
-            nativeContent = true,
             topStart = { GpuToolbar(tool, { tool = it }, folded, { folded = it }) },
             bottomEnd = { Hud(camera.readout()) },
         ) {
-            val overlay = guidesOverlay(view, guideDrag.shown(guides), c.accent) +
-                frame.handlesOverlay(view, c.ringSelected, c.surfaceFloat, density) +
+            // The viewport draws the guides over the surface; the handles and marquee show the scene drawing an overlay.
+            val overlay = frame.handlesOverlay(view, c.ringSelected, c.surfaceFloat, density) +
                 marqueeOverlay(marquee.box, c.ringSelected)
             val input = when (tool) {
                 GpuTool.Pick -> Modifier.pointerInput(path) { detectTapGestures(onTap = ::pickAt) }
@@ -165,13 +162,13 @@ fun GpuPage() {
                     .transformHandleInput(frame, view, { frame = it })
             }
             val base = if (picked) lerp(c.accent, Color.White, PICKED_LIGHTEN) else c.accent
-            NativeSurface(
+            GpuSurface(
                 state = CubeState(camera.view, shading == Shading.TwoTone, spinning, c.surfaceWell, base, lerp(base, Color.Black, SHADE_DARKEN), overlay),
-                renderer = renderer,
                 modifier = Modifier.fillMaxSize().then(input),
                 picks = picks,
+                onReady = { gpuName = it },
                 onFailure = { failure = it.message ?: it.toString() },
-            )
+            ) { CubeScene(it, spin) }
         }
     }
 }

@@ -98,18 +98,3 @@ compose.desktop {
         if (providers.gradleProperty("documents").isPresent) jvmArgs += "-Dstretch.documents=true"
     }
 }
-
-// The readback spike: ./gradlew :gallery:runReadbackSpike [-Pheavy] [-Pbench]. See spike/ReadbackSpikeMain.kt.
-tasks.register<JavaExec>("runReadbackSpike") {
-    val desktop = kotlin.targets.getByName("desktop").compilations.getByName("main")
-    dependsOn(desktop.compileTaskProvider)
-    classpath = files(desktop.output.allOutputs, desktop.runtimeDependencyFiles)
-    mainClass = "dev.chieppa.stretch.gallery.spike.ReadbackSpikeMainKt"
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of(libs.versions.jvmToolchain.get().toInt()))
-        vendor.set(JvmVendorSpec.JETBRAINS)
-    }
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
-    if (providers.gradleProperty("heavy").isPresent) systemProperty("spike.heavy", "true")
-    if (providers.gradleProperty("bench").isPresent) systemProperty("spike.bench", "true")
-}

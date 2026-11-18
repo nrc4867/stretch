@@ -12,6 +12,7 @@ private const val JOIN_MILLIS = 3000L
  * Anything the renderer throws stops the loop and goes to [onFailure], on the render thread. Picks from [picks] run
  * after the next frame when the renderer is a [SurfacePicker]; a pick that throws fails on its own.
  */
+@OptIn(SurfaceImplementation::class)
 internal class SurfaceLoop<S>(
     private val handle: SurfaceHandle,
     private val renderer: SurfaceRenderer<S>,

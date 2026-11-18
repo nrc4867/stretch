@@ -4,8 +4,9 @@ import dev.chieppa.stretch.ui.LAYERS_IN_WINDOWS
 import dev.chieppa.stretch.ui.LAYERS_PROPERTY
 
 /**
- * Lets a [NativeSurface] share a window with Compose UI. Call [enable] at the start of `main`, before the first window
- * opens. Stretch's menus, tooltips, popovers and dialogs then open in OS windows of their own (see
+ * Lets a [NativeSurface] share a window with Compose UI. A WebGPU scene does not need this: `stretch-gpu`'s
+ * `GpuSurface` is drawn by Compose, which can draw over it. Call [enable] at the start of `main`, before the first
+ * window opens. Stretch's menus, tooltips, popovers and dialogs then open in OS windows of their own (see
  * [dev.chieppa.stretch.ui.StretchPopup]), so they show over a native surface, and on Windows Compose draws through
  * OpenGL, the renderer that mode works with there. Without it a native surface still renders, but popups that reach
  * over it are hidden behind it. A property already set on the command line wins.

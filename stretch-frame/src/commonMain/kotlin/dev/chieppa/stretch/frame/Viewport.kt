@@ -44,7 +44,8 @@ private const val GRID_THIN_OUT = 4
  * people drag out of the rulers and back; each change comes back through [onGuidesChange], and [guideDrag] holds the
  * drag in progress.
  *
- * Set [nativeContent] when [content] is a [NativeSurface], which Compose cannot draw over. The rulers then form a band
+ * Set [nativeContent] when [content] is a [NativeSurface], which Compose cannot draw over; a `GpuSurface` needs no
+ * such setting. The rulers then form a band
  * with the content beside them rather than under them, so the camera's origin is the content's top-left corner, which
  * is also the surface's pixel origin. The corners show in popups of their own, which needs `NativeSurfaces.enable()`,
  * and never take focus. Guides, a [marquee] and [transformHandles] keep working, but their drawing is the renderer's:

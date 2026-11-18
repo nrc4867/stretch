@@ -114,7 +114,7 @@ fun main() = application {
             Column(Modifier.fillMaxSize()) {
                 WindowTopBar("Fox", "Untitled")
                 Viewport(Modifier.weight(1f)) {
-                    // Your canvas, or a NativeSurface for a GPU renderer.
+                    // Your canvas, or a GpuSurface for a WebGPU scene.
                 }
             }
         }

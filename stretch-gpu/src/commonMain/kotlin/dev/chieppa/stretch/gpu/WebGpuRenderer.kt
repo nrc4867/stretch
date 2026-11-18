@@ -7,10 +7,7 @@ import dev.chieppa.stretch.frame.SurfaceHandle
 import dev.chieppa.stretch.frame.SurfacePicker
 import dev.chieppa.stretch.frame.SurfaceRenderer
 import dev.chieppa.stretch.frame.SurfaceSize
-import dev.chieppa.stretch.gpu.webgpu.BufferUsage
-import dev.chieppa.stretch.gpu.webgpu.GpuBuffer
 import dev.chieppa.stretch.gpu.webgpu.GpuInstance
-import dev.chieppa.stretch.gpu.webgpu.TextureAspect
 import dev.chieppa.stretch.gpu.webgpu.TextureFormat
 
 /** The color formats a frame prefers, in order: plain 8-bit, so colors match Compose's. */
@@ -26,6 +23,10 @@ private val PREFERRED_FORMATS = listOf(TextureFormat.BGRA8Unorm, TextureFormat.R
  * has the scene draw the last state's IDs for that one pixel (see [GpuScene.renderIds]) and reads back its ID and
  * depth.
  */
+@Deprecated(
+    "Show a GpuScene with GpuSurface: Compose draws over it and it moves with the rest of the UI, so popups need no windows " +
+        "of their own and NativeSurfaces.enable() is not needed.",
+)
 class WebGpuRenderer<S>(
     private val options: GpuOptions = GpuOptions(),
     private val scene: (GpuContext) -> GpuScene<S>,
@@ -35,8 +36,7 @@ class WebGpuRenderer<S>(
     private var targets: RenderTargets? = null
     private var current: GpuScene<S>? = null
     private var configured = SurfaceSize.Zero
-    private var ids: IdTargets? = null
-    private var pickReadback: GpuBuffer? = null
+    private var picking: GpuPicking? = null
 
     /** The last frame's state and size, which a pick draws again. */
     private var last: Pair<S, SurfaceSize>? = null
@@ -86,19 +86,8 @@ class WebGpuRenderer<S>(
     override suspend fun pick(x: Int, y: Int): GpuPick? {
         val context = checkNotNull(context) { "Not attached" }
         val (state, size) = last ?: return null
-        val device = context.device
-        val targets = ids ?: IdTargets(context).also { ids = it }
-        val readback = pickReadback
-            ?: device.createBuffer(GpuPick.BUFFER_BYTES.toLong(), BufferUsage.CopyDst + BufferUsage.MapRead, "pick readback").also { pickReadback = it }
-        device.createCommandEncoder().use { encoder ->
-            checkNotNull(current).renderIds(GpuIdFrame(context, encoder, size, x, y, targets.ids.view, targets.depth.view), state)
-            encoder.copyTextureToBuffer(targets.ids.texture, readback, COPY_ROW_ALIGNMENT, bufferOffset = GpuPick.ID_OFFSET.toLong())
-            encoder.copyTextureToBuffer(
-                targets.depth.texture, readback, COPY_ROW_ALIGNMENT, bufferOffset = GpuPick.DEPTH_OFFSET.toLong(), aspect = TextureAspect.DepthOnly,
-            )
-            device.queue.submit(encoder.finish())
-        }
-        return GpuPick.decode(device.readBuffer(readback))
+        val picking = picking ?: GpuPicking(context).also { picking = it }
+        return picking.pick(checkNotNull(current), state, size, x, y)
     }
 
     private fun configure(size: SurfaceSize) {
@@ -108,14 +97,12 @@ class WebGpuRenderer<S>(
     }
 
     override fun detach() {
-        pickReadback?.close()
-        ids?.close()
+        picking?.close()
         current?.close()
         targets?.close()
         context?.close()
         gpu?.close()
-        pickReadback = null
-        ids = null
+        picking = null
         last = null
         current = null
         targets = null
