@@ -44,6 +44,9 @@ private const val GRID_THIN_OUT = 4
  * people drag out of the rulers and back; each change comes back through [onGuidesChange], and [guideDrag] holds the
  * drag in progress.
  *
+ * With [well] off the viewport has no background of its own, so one laid over a surface drawn beneath it, such as a
+ * `GpuSurface` several viewports share, lets it show through; turn [grid] off too.
+ *
  * Set [nativeContent] when [content] is a [NativeSurface], which Compose cannot draw over; a `GpuSurface` needs no
  * such setting. The rulers then form a band
  * with the content beside them rather than under them, so the camera's origin is the content's top-left corner, which
@@ -63,6 +66,7 @@ fun Viewport(
     onGuidesChange: ((List<Guide>) -> Unit)? = null,
     guideDrag: GuideDragState = rememberGuideDragState(),
     nativeContent: Boolean = false,
+    well: Boolean = true,
     topStart: (@Composable () -> Unit)? = null,
     topEnd: (@Composable () -> Unit)? = null,
     bottomStart: (@Composable () -> Unit)? = null,
@@ -75,7 +79,7 @@ fun Viewport(
     val band = nativeContent && withRulers
     val navigation = if (camera != null) Modifier.viewportNavigation(camera) else Modifier
     Box(
-        modifier.fillMaxSize().clipToBounds().background(c.surfaceWell)
+        modifier.fillMaxSize().clipToBounds().then(if (well) Modifier.background(c.surfaceWell) else Modifier)
             .then(if (band) Modifier else navigation)
             .then(if (withRulers) Modifier.guideGrabbing(camera, guides, onGuidesChange, guideDrag, band) else Modifier),
     ) {
