@@ -20,7 +20,7 @@ import java.lang.foreign.ValueLayout
  * A WebGPU device: makes buffers, textures, shaders, render and compute pipelines and bind groups, and owns the
  * [queue] that runs commands. Made by a [dev.chieppa.stretch.gpu.GpuContext]'s session; use it from one thread at a time.
  */
-actual class GpuDevice internal constructor(handle: MemorySegment, private val instance: MemorySegment) :
+actual class GpuDevice internal constructor(handle: MemorySegment, internal val instance: MemorySegment) :
     GpuHandle(handle, wgpu_h::wgpuDeviceRelease) {
     actual val queue: GpuQueue = GpuQueue(wgpu_h.wgpuDeviceGetQueue(handle))
 
