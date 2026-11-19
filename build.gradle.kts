@@ -1,4 +1,5 @@
 import dev.chieppa.stretch.build.CheckTestSources
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
     base
@@ -48,6 +49,8 @@ subprojects {
     tasks.withType<Test>().configureEach {
         if (!providers.gradleProperty("screen").isPresent) exclude("**/*ScreenTest*")
         if (!providers.gradleProperty("gpu").isPresent) exclude("**/*GpuTest*")
+        // A failure prints its message and stack, so a CI log alone says what went wrong.
+        testLogging.exceptionFormat = TestExceptionFormat.FULL
     }
 }
 

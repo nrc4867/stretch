@@ -17,8 +17,11 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
+import java.awt.Dialog
 import java.awt.EventQueue
+import java.awt.Frame
 import java.awt.GraphicsEnvironment
+import java.awt.Rectangle
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
@@ -30,6 +33,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 /**
  * Real crashes in real windows, placed off every screen: Compose's own window exception handling reaching
@@ -55,6 +59,7 @@ class WindowRecoveryScreenTest {
 
     /** Opens the window and returns once it has drawn its first frame. */
     private fun launch(chrome: @Composable () -> Unit = {}, bad: @Composable () -> Unit) {
+        val before = showing()
         app = thread {
             application(exitProcessOnExit = false) {
                 if (open) {
@@ -83,10 +88,27 @@ class WindowRecoveryScreenTest {
             }
         }
         frames.next("first frame")
+        val first = showing()
+        if (first.all { it.offScreen }) return
+        // Seen again a frame later, which tells a window placed late from one left on screen by an earlier test.
+        nextFrame()
+        fail("on screen at the first frame: $first\na frame later: ${showing()}\nshowing before this test: $before")
+    }
+
+    /** A showing window as the failure message lists it: which window, its title and where it is. */
+    private data class Shown(val id: Int, val type: String, val title: String?, val bounds: Rectangle) {
+        val offScreen get() = bounds.x + bounds.width < 0 && bounds.y + bounds.height < 0
+        override fun toString() = "#$id $type \"$title\" $bounds${if (offScreen) "" else " ON SCREEN"}"
+    }
+
+    private fun showing(): List<Shown> {
+        var shown = emptyList<Shown>()
         EventQueue.invokeAndWait {
-            val shown = java.awt.Window.getWindows().filter { it.isShowing }
-            assertTrue(shown.all { it.x + it.width < 0 && it.y + it.height < 0 }, "on screen: ${shown.map { it.bounds }}")
+            shown = java.awt.Window.getWindows().filter { it.isShowing }.map {
+                Shown(System.identityHashCode(it), it.javaClass.simpleName, (it as? Frame)?.title ?: (it as? Dialog)?.title, it.bounds)
+            }
         }
+        return shown
     }
 
     /** Waits for the main window to draw a frame begun after this call. */

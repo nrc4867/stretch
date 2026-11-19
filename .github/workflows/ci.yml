@@ -17,6 +17,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       # On a screen of its own, so the tests that need real windows run too.
       - run: xvfb-run --auto-servernum ./gradlew check -Pscreen
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: linux-test-reports
+          path: |
+            **/build/reports/tests
+            **/build/test-results
 
   web:
     runs-on: ubuntu-latest
