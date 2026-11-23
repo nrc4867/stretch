@@ -5,6 +5,15 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+  packages: read
+
+# The wgpu-native bindings come from GitHub Packages, which needs a token even for public packages.
+env:
+  ORG_GRADLE_PROJECT_GitHubPackagesUsername: ${{ github.actor }}
+  ORG_GRADLE_PROJECT_GitHubPackagesPassword: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   linux:
     runs-on: ubuntu-latest

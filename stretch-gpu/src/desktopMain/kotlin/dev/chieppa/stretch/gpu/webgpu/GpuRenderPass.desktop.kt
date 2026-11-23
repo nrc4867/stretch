@@ -1,6 +1,6 @@
 package dev.chieppa.stretch.gpu.webgpu
 
-import dev.chieppa.stretch.gpu.ffi.wgpu_h
+import dev.chieppa.webgpu.ffi.wgpu_h
 import java.lang.foreign.MemorySegment
 
 /** A render pass being recorded. [end] finishes it; nothing may be recorded on it after that. */

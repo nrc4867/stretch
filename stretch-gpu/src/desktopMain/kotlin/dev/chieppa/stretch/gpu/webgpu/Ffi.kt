@@ -1,7 +1,7 @@
 package dev.chieppa.stretch.gpu.webgpu
 
-import dev.chieppa.stretch.gpu.ffi.WGPUChainedStruct
-import dev.chieppa.stretch.gpu.ffi.WGPUStringView
+import dev.chieppa.webgpu.ffi.WGPUChainedStruct
+import dev.chieppa.webgpu.ffi.WGPUStringView
 import java.lang.foreign.Arena
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout

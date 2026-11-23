@@ -96,6 +96,20 @@ dependencyResolutionManagement {
 }
 ```
 
+An app on `stretch-gpu` also needs the repository of its wgpu-native bindings, with the same token:
+
+```kotlin
+maven {
+    name = "WebgpuNativeFfm"
+    url = uri("https://maven.pkg.github.com/nrc4867/webgpu-native-ffm")
+    credentials {
+        username = providers.gradleProperty("GitHubPackagesUsername").orNull
+        password = providers.gradleProperty("GitHubPackagesPassword").orNull
+    }
+    mavenContent { includeModule("dev.chieppa", "webgpu-native-ffm") }
+}
+```
+
 Then depend on `stretch-frame`, which brings the components, themes and core with it, along with Compose's desktop runtime:
 
 ```kotlin
@@ -140,7 +154,7 @@ fun main() = application {
 | `stretch-web` | Optional HTML view, on a browser engine |
 | `stretch-mermaid` | Optional Mermaid diagrams for the markdown editor, on the same engine |
 | `stretch-code` | Syntax coloring and a code viewer, shared by the diff viewer and the markdown editor |
-| `stretch-gpu`, `stretch-gpu-native` | Optional WebGPU viewports and their wgpu-native bindings |
+| `stretch-gpu` | Optional WebGPU viewports, on wgpu-native through [webgpu-native-ffm](https://github.com/nrc4867/webgpu-native-ffm) |
 | `stretch-gradle-plugin` | App name, id and icon |
 | `stretch-test` | Command scenarios and Compose UI test helpers |
 | `gallery` | Every component in every theme, on the desktop and in the browser |

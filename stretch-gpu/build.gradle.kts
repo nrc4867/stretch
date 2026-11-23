@@ -16,8 +16,12 @@ kotlin {
         }
         val desktopMain by getting {
             dependencies {
-                // WebGPU through wgpu-native: generated bindings and the library itself, kept out of apps' sight.
-                implementation(project(":stretch-gpu-native"))
+                // WebGPU through wgpu-native: the bindings, kept out of apps' sight, and the library for every
+                // platform, so an app runs wherever it is packaged.
+                implementation(libs.webgpu.native.ffm)
+                for (platform in listOf("windows-x64", "linux-x64", "linux-arm64", "macos-x64", "macos-arm64")) {
+                    runtimeOnly(project.dependencies.variantOf(libs.webgpu.native.ffm) { classifier("natives-$platform") })
+                }
             }
         }
         commonTest.dependencies {
