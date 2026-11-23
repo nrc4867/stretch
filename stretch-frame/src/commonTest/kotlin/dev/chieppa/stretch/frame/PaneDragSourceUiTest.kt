@@ -23,7 +23,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp

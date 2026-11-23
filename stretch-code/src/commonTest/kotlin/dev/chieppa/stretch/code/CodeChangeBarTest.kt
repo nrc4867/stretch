@@ -9,7 +9,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.test.inEveryTheme
 import kotlin.test.Test
@@ -36,8 +36,8 @@ class CodeChangeBarTest {
             CodeViewer(code, Modifier.size(400.dp, 200.dp), tones = tones)
         }) {
             assertEquals(colors!!.added, startOf("added"))
-            assertEquals(colors!!.removed, startOf("removed"))
-            assertNotEquals(colors!!.added, startOf("plain"))
+            assertEquals(colors.removed, startOf("removed"))
+            assertNotEquals(colors.added, startOf("plain"))
         }
     }
 

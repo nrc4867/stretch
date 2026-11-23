@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.test.setStretchContent
 import dev.chieppa.stretch.theme.StretchThemes
@@ -31,7 +31,7 @@ class CodeViewerMatchesTest {
         onNodeWithText("line 1500 of the file").assertDoesNotExist()
         runOnIdle { runBlocking { state.scrollToMatch(matches[1]) } }
         waitForIdle()
-        assertTrue(look!!.currentMatch in onNodeWithText("line 1500 of the file").spanBackgrounds())
+        assertTrue(look.currentMatch in onNodeWithText("line 1500 of the file").spanBackgrounds())
         assertTrue(state.firstVisibleLine in 1400..1500)
     }
 }

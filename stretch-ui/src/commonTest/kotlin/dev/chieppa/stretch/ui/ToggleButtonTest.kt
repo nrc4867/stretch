@@ -9,7 +9,7 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import dev.chieppa.stretch.theme.StretchIcons
 import dev.chieppa.stretch.theme.StretchSizes
 import dev.chieppa.stretch.theme.StretchTheme

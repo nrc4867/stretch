@@ -15,7 +15,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import dev.chieppa.stretch.test.setStretchContent
 import dev.chieppa.stretch.theme.Stretch
 import kotlin.test.Test

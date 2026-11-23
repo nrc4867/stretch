@@ -121,14 +121,17 @@ class MarkdownEditorState(
     }
 
     private fun settle(next: MarkdownDocument) {
+        val before = document
         edited = true
         document = next
         selectedBlocks = null
         val caret = next.caret ?: return
         val block = next.blocks.firstOrNull { it.id == caret.block } ?: return
         val moved = caret.block != focusedBlock
+        // A block that turns into another kind is drawn by a new field, which must take the focus again.
+        val redrawn = before.blocks.firstOrNull { it.id == block.id }?.let { it.kind::class != block.kind::class } == true
         setField(block, caret.start, caret.end)
-        if (moved) focusTicket++
+        if (moved || redrawn) focusTicket++
     }
 
     /** Moves the caret to [start] in block [id], and the focus with it. */

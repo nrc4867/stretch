@@ -6,7 +6,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchTheme

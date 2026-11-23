@@ -82,7 +82,7 @@ class ReadbackLoopGpuTest {
         } finally {
             loop.close()
         }
-        assertTrue(!failed.isCompleted, "The loop failed: ${failed.takeIf { it.isCompleted }?.getCompleted()}")
+        assertNull(failed.takeIf { it.isCompleted }?.await(), "The loop failed")
         assertEquals(emptyList(), errors)
     }
 }

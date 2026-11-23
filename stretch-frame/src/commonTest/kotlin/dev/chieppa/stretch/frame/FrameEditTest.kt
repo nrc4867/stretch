@@ -32,7 +32,7 @@ import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -349,8 +349,8 @@ class FrameEditTest {
         assertTrue(help.detached && !help.open, "popped out: $help")
         assertEquals(Side.Left, help.side, "its rail button stays where it was")
         assertEquals(320f, help.window!!.width)
-        assertEquals(FrameLayout.DEFAULT_WINDOW_HEIGHT, help.window!!.height)
-        assertTrue(help.window!!.x > 1000f && help.window!!.y > 2000f, "opens where it was let go: ${help.window}")
+        assertEquals(FrameLayout.DEFAULT_WINDOW_HEIGHT, help.window.height)
+        assertTrue(help.window.x > 1000f && help.window.y > 2000f, "opens where it was let go: ${help.window}")
         onNodeWithTag("window Help").assertExists()
     }
 
