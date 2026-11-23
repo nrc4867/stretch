@@ -1,22 +1,23 @@
 package dev.chieppa.stretch.gpu.webgpu
 
 import dev.chieppa.stretch.frame.SurfaceHandle
-import dev.chieppa.stretch.gpu.ffi.WGPUAdapterInfo
-import dev.chieppa.stretch.gpu.ffi.WGPUDeviceDescriptor
-import dev.chieppa.stretch.gpu.ffi.WGPUDeviceLostCallback
-import dev.chieppa.stretch.gpu.ffi.WGPUDeviceLostCallbackInfo
-import dev.chieppa.stretch.gpu.ffi.WGPUInstanceDescriptor
-import dev.chieppa.stretch.gpu.ffi.WGPUInstanceExtras
-import dev.chieppa.stretch.gpu.ffi.WGPURequestAdapterCallback
-import dev.chieppa.stretch.gpu.ffi.WGPURequestAdapterCallbackInfo
-import dev.chieppa.stretch.gpu.ffi.WGPURequestAdapterOptions
-import dev.chieppa.stretch.gpu.ffi.WGPURequestDeviceCallback
-import dev.chieppa.stretch.gpu.ffi.WGPURequestDeviceCallbackInfo
-import dev.chieppa.stretch.gpu.ffi.WGPUSurfaceDescriptor
-import dev.chieppa.stretch.gpu.ffi.WGPUSurfaceSourceWindowsHWND
-import dev.chieppa.stretch.gpu.ffi.WGPUUncapturedErrorCallback
-import dev.chieppa.stretch.gpu.ffi.WGPUUncapturedErrorCallbackInfo
-import dev.chieppa.stretch.gpu.ffi.wgpu_h
+import dev.chieppa.webgpu.WgpuNative
+import dev.chieppa.webgpu.ffi.WGPUAdapterInfo
+import dev.chieppa.webgpu.ffi.WGPUDeviceDescriptor
+import dev.chieppa.webgpu.ffi.WGPUDeviceLostCallback
+import dev.chieppa.webgpu.ffi.WGPUDeviceLostCallbackInfo
+import dev.chieppa.webgpu.ffi.WGPUInstanceDescriptor
+import dev.chieppa.webgpu.ffi.WGPUInstanceExtras
+import dev.chieppa.webgpu.ffi.WGPURequestAdapterCallback
+import dev.chieppa.webgpu.ffi.WGPURequestAdapterCallbackInfo
+import dev.chieppa.webgpu.ffi.WGPURequestAdapterOptions
+import dev.chieppa.webgpu.ffi.WGPURequestDeviceCallback
+import dev.chieppa.webgpu.ffi.WGPURequestDeviceCallbackInfo
+import dev.chieppa.webgpu.ffi.WGPUSurfaceDescriptor
+import dev.chieppa.webgpu.ffi.WGPUSurfaceSourceWindowsHWND
+import dev.chieppa.webgpu.ffi.WGPUUncapturedErrorCallback
+import dev.chieppa.webgpu.ffi.WGPUUncapturedErrorCallbackInfo
+import dev.chieppa.webgpu.ffi.wgpu_h
 import java.lang.foreign.Arena
 import java.lang.foreign.MemorySegment
 
@@ -54,7 +55,7 @@ internal actual class GpuInstance private constructor(
             power: PowerPreference,
             onError: (String) -> Unit,
         ): GpuInstance {
-            WgpuLibrary.load()
+            WgpuNative.load()
             val callbacks = Arena.ofShared()
             return Arena.ofConfined().use { arena ->
                 val (instance, surface, adapter) = preferred(window, backend)?.let { open(arena, window, it, power, orNull = true) }

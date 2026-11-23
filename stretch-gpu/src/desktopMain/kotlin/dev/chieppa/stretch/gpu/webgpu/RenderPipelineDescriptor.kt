@@ -1,18 +1,18 @@
 package dev.chieppa.stretch.gpu.webgpu
 
-import dev.chieppa.stretch.gpu.ffi.WGPUBlendComponent
-import dev.chieppa.stretch.gpu.ffi.WGPUBlendState
-import dev.chieppa.stretch.gpu.ffi.WGPUColorTargetState
-import dev.chieppa.stretch.gpu.ffi.WGPUDepthStencilState
-import dev.chieppa.stretch.gpu.ffi.WGPUFragmentState
-import dev.chieppa.stretch.gpu.ffi.WGPUMultisampleState
-import dev.chieppa.stretch.gpu.ffi.WGPUPrimitiveState
-import dev.chieppa.stretch.gpu.ffi.WGPURenderPipelineDescriptor
-import dev.chieppa.stretch.gpu.ffi.WGPUStencilFaceState
-import dev.chieppa.stretch.gpu.ffi.WGPUVertexAttribute
-import dev.chieppa.stretch.gpu.ffi.WGPUVertexBufferLayout
-import dev.chieppa.stretch.gpu.ffi.WGPUVertexState
-import dev.chieppa.stretch.gpu.ffi.wgpu_h
+import dev.chieppa.webgpu.ffi.WGPUBlendComponent
+import dev.chieppa.webgpu.ffi.WGPUBlendState
+import dev.chieppa.webgpu.ffi.WGPUColorTargetState
+import dev.chieppa.webgpu.ffi.WGPUDepthStencilState
+import dev.chieppa.webgpu.ffi.WGPUFragmentState
+import dev.chieppa.webgpu.ffi.WGPUMultisampleState
+import dev.chieppa.webgpu.ffi.WGPUPrimitiveState
+import dev.chieppa.webgpu.ffi.WGPURenderPipelineDescriptor
+import dev.chieppa.webgpu.ffi.WGPUStencilFaceState
+import dev.chieppa.webgpu.ffi.WGPUVertexAttribute
+import dev.chieppa.webgpu.ffi.WGPUVertexBufferLayout
+import dev.chieppa.webgpu.ffi.WGPUVertexState
+import dev.chieppa.webgpu.ffi.wgpu_h
 import java.lang.foreign.Arena
 import java.lang.foreign.MemorySegment
 

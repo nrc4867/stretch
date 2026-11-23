@@ -1,16 +1,16 @@
 package dev.chieppa.stretch.gpu.webgpu
 
-import dev.chieppa.stretch.gpu.ffi.WGPUColor
-import dev.chieppa.stretch.gpu.ffi.WGPUComputePassDescriptor
-import dev.chieppa.stretch.gpu.ffi.WGPUExtent3D
-import dev.chieppa.stretch.gpu.ffi.WGPUOrigin3D
-import dev.chieppa.stretch.gpu.ffi.WGPURenderPassColorAttachment
-import dev.chieppa.stretch.gpu.ffi.WGPURenderPassDepthStencilAttachment
-import dev.chieppa.stretch.gpu.ffi.WGPURenderPassDescriptor
-import dev.chieppa.stretch.gpu.ffi.WGPUTexelCopyBufferInfo
-import dev.chieppa.stretch.gpu.ffi.WGPUTexelCopyBufferLayout
-import dev.chieppa.stretch.gpu.ffi.WGPUTexelCopyTextureInfo
-import dev.chieppa.stretch.gpu.ffi.wgpu_h
+import dev.chieppa.webgpu.ffi.WGPUColor
+import dev.chieppa.webgpu.ffi.WGPUComputePassDescriptor
+import dev.chieppa.webgpu.ffi.WGPUExtent3D
+import dev.chieppa.webgpu.ffi.WGPUOrigin3D
+import dev.chieppa.webgpu.ffi.WGPURenderPassColorAttachment
+import dev.chieppa.webgpu.ffi.WGPURenderPassDepthStencilAttachment
+import dev.chieppa.webgpu.ffi.WGPURenderPassDescriptor
+import dev.chieppa.webgpu.ffi.WGPUTexelCopyBufferInfo
+import dev.chieppa.webgpu.ffi.WGPUTexelCopyBufferLayout
+import dev.chieppa.webgpu.ffi.WGPUTexelCopyTextureInfo
+import dev.chieppa.webgpu.ffi.wgpu_h
 import java.lang.foreign.Arena
 import java.lang.foreign.MemorySegment
 

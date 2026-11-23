@@ -1,9 +1,9 @@
 package dev.chieppa.stretch.gpu.webgpu
 
-import dev.chieppa.stretch.gpu.ffi.WGPUSurfaceCapabilities
-import dev.chieppa.stretch.gpu.ffi.WGPUSurfaceConfiguration
-import dev.chieppa.stretch.gpu.ffi.WGPUSurfaceTexture
-import dev.chieppa.stretch.gpu.ffi.wgpu_h
+import dev.chieppa.webgpu.ffi.WGPUSurfaceCapabilities
+import dev.chieppa.webgpu.ffi.WGPUSurfaceConfiguration
+import dev.chieppa.webgpu.ffi.WGPUSurfaceTexture
+import dev.chieppa.webgpu.ffi.wgpu_h
 import java.lang.foreign.Arena
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout

@@ -23,7 +23,6 @@ val publishedModules = setOf(
     "stretch-document",
     "stretch-input",
     "stretch-gpu",
-    "stretch-gpu-native",
     "stretch-test",
     "stretch-code",
     "stretch-diff",

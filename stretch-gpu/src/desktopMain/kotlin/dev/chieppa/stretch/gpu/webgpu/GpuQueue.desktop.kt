@@ -1,6 +1,6 @@
 package dev.chieppa.stretch.gpu.webgpu
 
-import dev.chieppa.stretch.gpu.ffi.wgpu_h
+import dev.chieppa.webgpu.ffi.wgpu_h
 import java.lang.foreign.Arena
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout

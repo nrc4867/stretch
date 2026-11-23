@@ -25,6 +25,14 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        // wgpu-native's bindings, from GitHub Packages: credentials from GitHubPackagesUsername and
+        // GitHubPackagesPassword, as for publishing.
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/nrc4867/webgpu-native-ffm")
+            credentials(PasswordCredentials::class)
+            mavenContent { includeModule("dev.chieppa", "webgpu-native-ffm") }
+        }
     }
 }
 
@@ -42,7 +50,6 @@ include(":stretch-frame")
 include(":stretch-document")
 include(":stretch-input")
 include(":stretch-gpu")
-include(":stretch-gpu-native")
 include(":stretch-test")
 include(":stretch-devtools")
 include(":gallery")

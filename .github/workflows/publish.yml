@@ -6,7 +6,6 @@ on:
 
 jobs:
   publish:
-    # stretch-gpu-native packs the wgpu-native library of the machine that builds it, and GPU surfaces are Windows only.
     runs-on: windows-latest
     permissions:
       contents: write
