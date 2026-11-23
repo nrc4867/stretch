@@ -7,7 +7,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.code.CodeLook
 import dev.chieppa.stretch.code.rememberCodeLook
@@ -48,8 +48,8 @@ class DiffMatchTest {
             DiffViewer(listOf(file), Modifier.size(800.dp, 600.dp), rememberDiffViewerState(split = true), matches = listOf(current, other), currentMatch = current)
         }
         assertTrue(look!!.currentMatch in onNodeWithText("changed line").spanBackgrounds())
-        assertTrue(look!!.match in onNodeWithText("line 20").spanBackgrounds())
-        assertTrue(look!!.currentMatch !in onNodeWithText("line 20").spanBackgrounds())
+        assertTrue(look.match in onNodeWithText("line 20").spanBackgrounds())
+        assertTrue(look.currentMatch !in onNodeWithText("line 20").spanBackgrounds())
     }
 
     @Test

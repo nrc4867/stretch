@@ -10,7 +10,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.test.setStretchContent
 import dev.chieppa.stretch.theme.StretchThemes
@@ -40,7 +40,7 @@ class CodeChangeWashTest {
         }
         val (gutter, code) = colorsOf("added line with some words after it", fromStart = 6)
         assertEquals(look!!.wash(LineTone.Added), gutter)
-        assertEquals(look!!.wash(LineTone.Added), code)
+        assertEquals(look.wash(LineTone.Added), code)
     }
 
     @Test
@@ -52,7 +52,7 @@ class CodeChangeWashTest {
         }
         val (gutter, code) = colorsOf("added line with some words after it", fromStart = 6)
         assertEquals(look!!.wash(LineTone.Added), gutter)
-        assertNotEquals(look!!.wash(LineTone.Added), code)
+        assertNotEquals(look.wash(LineTone.Added), code)
     }
 
 }

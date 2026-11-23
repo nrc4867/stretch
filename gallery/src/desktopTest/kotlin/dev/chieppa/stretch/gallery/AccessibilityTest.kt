@@ -9,7 +9,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import kotlin.test.Test
 import kotlin.test.fail
 
@@ -43,7 +43,7 @@ class AccessibilityTest {
             val interactive = SemanticsActions.OnClick in c || SemanticsActions.SetProgress in c ||
                 SemanticsProperties.ToggleableState in c || SemanticsActions.SetText in c || SemanticsProperties.Focused in c
             when {
-                c.getOrNull(SemanticsProperties.InvisibleToUser) != null -> null
+                c.getOrNull(SemanticsProperties.HideFromAccessibility) != null -> null
                 interactive && !node.named() -> "$page: unnamed control ${node.describe()}"
                 SemanticsActions.SetProgress in c && c.getOrNull(SemanticsProperties.ProgressBarRangeInfo) == null &&
                     c.getOrNull(SemanticsProperties.StateDescription) == null -> "$page: adjustable without a value ${node.describe()}"

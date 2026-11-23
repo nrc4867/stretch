@@ -12,7 +12,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.code.CodeColors
 import dev.chieppa.stretch.code.CodeToken
@@ -60,8 +60,8 @@ class DiffTokensTest {
         waitForIdle()
         assertEquals(before, state.list.firstVisibleItemIndex)
         assertTrue(colors!!.type in onNodeWithText("other 20").spanColors())
-        assertTrue(colors!!.string in onNodeWithText("word 20").spanColors())
+        assertTrue(colors.string in onNodeWithText("word 20").spanColors())
         // The other file keeps the built-in tokenizer's keyword.
-        assertTrue(colors!!.keyword in onAllNodesWithText("fun a() = 2")[0].spanColors())
+        assertTrue(colors.keyword in onAllNodesWithText("fun a() = 2")[0].spanColors())
     }
 }
