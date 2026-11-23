@@ -11,6 +11,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import dev.chieppa.stretch.ui.FindStrings
 import dev.chieppa.stretch.ui.TextFind
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.withContext
 
 /**
  * How a [CodeViewer] is laid out, where it has scrolled and what it is finding. Changing a property updates the viewer.
@@ -95,6 +99,24 @@ class CodeViewerState(wrap: Boolean = false) : TextFind {
     /** Puts line [number] at the very top, as another viewer following this one does. */
     suspend fun alignLine(number: Int, offset: Int = 0) {
         list.scrollToItem((number - 1).coerceAtLeast(0), offset)
+    }
+
+    private var running = 0
+    private val idleFlow = MutableStateFlow(true)
+
+    /** True while no search or coloring for this viewer runs off the UI thread; a test waits on it. */
+    val idle: StateFlow<Boolean> get() = idleFlow
+
+    /** Runs [work] off the UI thread, counted in [idle]. Called from the UI thread. */
+    internal suspend fun <T> offThread(work: () -> T): T {
+        running++
+        idleFlow.value = false
+        try {
+            return withContext(Dispatchers.Default) { work() }
+        } finally {
+            running--
+            idleFlow.value = running == 0
+        }
     }
 
     internal fun updateMatches(found: List<CodeRange>) {

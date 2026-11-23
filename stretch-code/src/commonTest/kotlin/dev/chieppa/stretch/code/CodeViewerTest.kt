@@ -19,6 +19,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chieppa.stretch.theme.StretchTheme
 import dev.chieppa.stretch.theme.StretchThemes
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -72,6 +73,9 @@ class CodeViewerTest {
         }
         waitForIdle()
         onNodeWithContentDescription("Find").performTextInput("marker")
+        waitForIdle()
+        // The search runs off the UI thread.
+        state.idle.first { it }
         waitForIdle()
         onNodeWithText("1 of 4").assertExists()
         onNodeWithContentDescription("Find").performKeyInput { pressKey(Key.Enter) }

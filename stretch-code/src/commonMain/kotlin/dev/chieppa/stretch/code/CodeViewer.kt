@@ -33,9 +33,7 @@ import dev.chieppa.stretch.theme.Stretch
 import dev.chieppa.stretch.theme.StretchSpacing
 import dev.chieppa.stretch.ui.FindBar
 import dev.chieppa.stretch.ui.Scrollbar
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.withContext
 
 /**
  * A whole text, read-only, with line numbers and code colored by [language]. Only the lines on screen are built, so
@@ -79,11 +77,11 @@ fun CodeViewer(
     scrollPastEnd: Float = 0f,
 ) {
     val builtIn by produceState(emptyList<List<CodeToken>>(), text, language, tokens == null) {
-        value = if (tokens != null) emptyList() else withContext(Dispatchers.Default) { tokenizeLines(text.lines, language) }
+        value = if (tokens != null) emptyList() else state.offThread { tokenizeLines(text.lines, language) }
     }
     val lineTokens = tokens ?: builtIn
     LaunchedEffect(text, state.query, state.matchCase) {
-        val found = withContext(Dispatchers.Default) { findInLines(text.lines, state.query, state.matchCase) }
+        val found = state.offThread { findInLines(text.lines, state.query, state.matchCase) }
         state.updateMatches(found)
     }
     val shownMatches = matches ?: state.matches
