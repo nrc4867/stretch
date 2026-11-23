@@ -57,7 +57,7 @@ Tests open no window anyone sees, and `check` opens none at all. A test that nee
 
 `stretch-theme/.../Tokens.kt` comes from `design/tokens.json` and `StretchIcons.kt` from `design/icons/*.svg`. Change the source, then run `./gradlew :stretch-theme:generateTokens :stretch-theme:generateIcons`; `check` fails when they are out of date.
 
-`stretch-gpu` reaches wgpu-native through [webgpu-native-ffm](https://github.com/nrc4867/webgpu-native-ffm): its jextract bindings and a natives jar per platform, all five of which `stretch-gpu` ships. It comes from GitHub Packages, so building Stretch needs the `read:packages` token described in the README. To move to a newer wgpu-native, release webgpu-native-ffm and change its version in `gradle/libs.versions.toml`.
+`stretch-gpu` reaches wgpu-native through [webgpu-native-ffm](https://github.com/nrc4867/webgpu-native-ffm): its jextract bindings, and a natives jar per platform that apps add for the platform they package for. Here `stretch-gpu`'s tests and the gallery take this machine's, or the platform named by `-Pwebgpu.natives=<platform>`. It comes from GitHub Packages, so building Stretch needs the `read:packages` token described in the README. To move to a newer wgpu-native, release webgpu-native-ffm and change its version in `gradle/libs.versions.toml`.
 
 ## macOS
 

@@ -110,6 +110,12 @@ maven {
 }
 ```
 
+`stretch-gpu` brings the bindings but not wgpu-native itself, which comes in a jar per platform. Add the one for the platform the app is built and packaged for (`natives-windows-x64`, `natives-linux-x64`, `natives-linux-arm64`, `natives-macos-x64` or `natives-macos-arm64`), at the version `stretch-gpu` uses:
+
+```kotlin
+runtimeOnly("dev.chieppa:webgpu-native-ffm:0.1.0:natives-windows-x64")
+```
+
 Then depend on `stretch-frame`, which brings the components, themes and core with it, along with Compose's desktop runtime:
 
 ```kotlin

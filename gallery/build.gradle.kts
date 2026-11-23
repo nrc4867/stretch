@@ -1,3 +1,4 @@
+import dev.chieppa.stretch.build.WebgpuNatives
 import dev.chieppa.stretch.gradle.GenerateAppIdentity
 
 plugins {
@@ -47,6 +48,7 @@ kotlin {
             dependencies {
                 implementation(project(":stretch-devtools"))
                 implementation(compose.desktop.currentOs)
+                runtimeOnly(project.dependencies.variantOf(libs.webgpu.native.ffm) { classifier(WebgpuNatives.classifier(providers)) })
                 implementation(libs.kotlinx.coroutines.swing)
             }
         }
