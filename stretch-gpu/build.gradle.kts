@@ -1,3 +1,5 @@
+import dev.chieppa.stretch.build.WebgpuNatives
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
@@ -16,12 +18,9 @@ kotlin {
         }
         val desktopMain by getting {
             dependencies {
-                // WebGPU through wgpu-native: the bindings, kept out of apps' sight, and the library for every
-                // platform, so an app runs wherever it is packaged.
+                // WebGPU through wgpu-native's bindings, kept out of apps' sight. The library itself comes in a
+                // natives jar per platform, which each app takes for the platform it packages for.
                 implementation(libs.webgpu.native.ffm)
-                for (platform in listOf("windows-x64", "linux-x64", "linux-arm64", "macos-x64", "macos-arm64")) {
-                    runtimeOnly(project.dependencies.variantOf(libs.webgpu.native.ffm) { classifier("natives-$platform") })
-                }
             }
         }
         commonTest.dependencies {
@@ -31,6 +30,7 @@ kotlin {
         val desktopTest by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                runtimeOnly(project.dependencies.variantOf(libs.webgpu.native.ffm) { classifier(WebgpuNatives.classifier(providers)) })
             }
         }
     }
