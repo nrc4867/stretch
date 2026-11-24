@@ -19,7 +19,7 @@ class GpuFrame internal constructor(
     val encoder: GpuCommandEncoder,
     val size: SurfaceSize,
     private val targets: RenderTargets,
-    private val output: GpuTextureView,
+    internal val output: GpuTextureView,
 ) {
     val width: Int get() = size.width
     val height: Int get() = size.height
